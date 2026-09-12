@@ -1,10 +1,10 @@
 {
   "name": "student-excellence-bank",
-  "version": "1.3.0",
+  "version": "1.4.0",
   "private": true,
   "type": "module",
   "scripts": {
-    "prebuild": "node scripts/upgrade-app.mjs && node scripts/scope-upgrade.mjs && node scripts/staff-direct-assign.mjs",
+    "prebuild": "node scripts/upgrade-app.mjs && node scripts/scope-upgrade.mjs && node scripts/staff-direct-assign.mjs && node scripts/excel-import-upgrade.mjs",
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview"
@@ -14,7 +14,8 @@
     "@neondatabase/neon-js": "latest",
     "qrcode": "latest",
     "react": "19.2.0",
-    "react-dom": "19.2.0"
+    "react-dom": "19.2.0",
+    "xlsx": "latest"
   },
   "devDependencies": {
     "@types/qrcode": "latest",

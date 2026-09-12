@@ -3,8 +3,6 @@ import { readFileSync, writeFileSync } from "node:fs";
 const path = "src/App.tsx";
 let src = readFileSync(path, "utf8");
 
-if (src.includes('className="student-stage-rows"')) process.exit(0);
-
 const start = src.indexOf("function StudentsView(");
 const end = src.indexOf("function RankingsView(", start);
 if (start < 0 || end < 0) throw new Error("student-stage-rows: StudentsView block not found");
@@ -21,17 +19,17 @@ const component = `function StudentsView({students}:{students:Student[]}){
     });
     const gradeRank=(name:string)=>/الأول|الاول/.test(name)?1:/الثاني|ثانى|ثاني/.test(name)?2:/الثالث|ثالث/.test(name)?3:99;
     return Array.from(map.values()).sort((a,b)=>{
-      const stageA=/متوسط/.test(a.grade_name)?1:/ثان/.test(a.grade_name)?2:3;
-      const stageB=/متوسط/.test(b.grade_name)?1:/ثان/.test(b.grade_name)?2:3;
+      const stageA=/المتوسط|متوسط/.test(a.grade_name)?1:/الثانوي|ثانوي/.test(a.grade_name)?2:3;
+      const stageB=/المتوسط|متوسط/.test(b.grade_name)?1:/الثانوي|ثانوي/.test(b.grade_name)?2:3;
       if(stageA!==stageB)return stageA-stageB;
       const gradeDiff=gradeRank(a.grade_name)-gradeRank(b.grade_name);
       if(gradeDiff!==0)return gradeDiff;
       return a.class_name.localeCompare(b.class_name,"ar",{numeric:true});
     });
   },[students]);
-  const middleGroups=groups.filter(g=>/متوسط/.test(g.grade_name));
-  const secondaryGroups=groups.filter(g=>/ثان/.test(g.grade_name));
-  const otherGroups=groups.filter(g=>!/متوسط|ثان/.test(g.grade_name));
+  const middleGroups=groups.filter(g=>/المتوسط|متوسط/.test(g.grade_name));
+  const secondaryGroups=groups.filter(g=>/الثانوي|ثانوي/.test(g.grade_name));
+  const otherGroups=groups.filter(g=>!/المتوسط|متوسط|الثانوي|ثانوي/.test(g.grade_name));
   useEffect(()=>{if(activeClass!=="ALL"&&!groups.some(g=>g.key===activeClass))setActiveClass("ALL")},[activeClass,groups]);
   const selected=activeClass==="ALL"?null:groups.find(g=>g.key===activeClass)||null;
   const scoped=selected?selected.students:students;

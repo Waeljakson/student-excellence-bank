@@ -10,6 +10,7 @@ import "./styles.css";
 import "./premium.css";
 import "./scopes.css";
 import "./student-tabs.css";
+import "./ui-polish.css";
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>

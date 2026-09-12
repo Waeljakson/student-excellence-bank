@@ -1,10 +1,10 @@
 {
   "name": "student-excellence-bank",
-  "version": "1.4.5",
+  "version": "1.4.6",
   "private": true,
   "type": "module",
   "scripts": {
-    "prebuild": "node scripts/upgrade-app.mjs && node scripts/scope-upgrade.mjs && node scripts/staff-direct-assign.mjs && node scripts/excel-import-upgrade.mjs && node scripts/student-import-autodetect-v2.mjs && node scripts/student-import-unlock.mjs && node scripts/student-import-stage-sync.mjs && node scripts/student-import-stage-resolve.mjs",
+    "prebuild": "node scripts/upgrade-app.mjs && node scripts/scope-upgrade.mjs && node scripts/staff-direct-assign.mjs && node scripts/excel-import-upgrade.mjs && node scripts/student-import-autodetect-v2.mjs && node scripts/student-import-unlock.mjs && node scripts/student-import-stage-sync.mjs && node scripts/student-import-stage-resolve.mjs && node scripts/student-import-department-fallback.mjs",
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview"

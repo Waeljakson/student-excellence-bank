@@ -1,0 +1,252 @@
+/* Behavioral excellence cycle admin — final layout override */
+.behavioral-admin-panel{
+  overflow:hidden;
+}
+.behavioral-admin-panel .panel-title{
+  align-items:flex-start;
+  margin-bottom:18px;
+}
+.behavioral-admin-panel .panel-title h3{
+  margin:0 0 5px;
+  font-size:20px;
+  line-height:1.45;
+  color:#102f48;
+}
+.behavioral-admin-panel .panel-title p{
+  margin:0;
+  max-width:760px;
+  font-size:11px;
+  line-height:1.8;
+}
+.behavioral-admin-panel .counter{
+  min-width:46px;
+  height:32px;
+  padding:0 10px;
+  background:#f08a24;
+  font-size:11px;
+}
+
+.behavioral-cycle-form{
+  display:grid;
+  gap:14px;
+}
+.behavioral-cycle-head{
+  display:grid;
+  grid-template-columns:minmax(250px,.75fr) minmax(0,1.6fr);
+  gap:14px;
+  align-items:stretch;
+}
+.behavioral-cycle-head>div:first-child{
+  min-height:96px;
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  padding:18px 20px;
+  border-radius:16px;
+  background:linear-gradient(135deg,#0d7769,#0b4f6d);
+  color:#fff;
+  box-shadow:0 8px 22px rgba(11,79,109,.12);
+}
+.behavioral-cycle-head>div:first-child span{
+  font-size:9px;
+  opacity:.8;
+  margin-bottom:5px;
+}
+.behavioral-cycle-head>div:first-child strong{
+  font-size:25px;
+  line-height:1.35;
+}
+
+.behavioral-time-fields{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:12px;
+}
+.behavioral-cycle-form label{
+  display:grid;
+  gap:7px;
+  min-width:0;
+  color:#405769;
+  font-size:11px;
+  font-weight:800;
+}
+.behavioral-time-fields label{
+  align-content:center;
+  padding:13px 14px;
+  border:1px solid #dce6eb;
+  border-radius:14px;
+  background:#f8fbfc;
+}
+.behavioral-cycle-form input,
+.behavioral-cycle-form textarea{
+  width:100%;
+  min-width:0;
+  border:1px solid #cfdde4;
+  border-radius:11px;
+  background:#fff;
+  color:#173248;
+  padding:10px 12px;
+  outline:none;
+  font-family:inherit;
+}
+.behavioral-cycle-form input{
+  min-height:44px;
+  direction:ltr;
+  text-align:left;
+  font-size:13px;
+}
+.behavioral-cycle-form textarea{
+  min-height:92px;
+  resize:vertical;
+  line-height:1.9;
+  font-size:12px;
+  text-align:right;
+}
+.behavioral-cycle-form input:focus,
+.behavioral-cycle-form textarea:focus{
+  border-color:#11836b;
+  box-shadow:0 0 0 3px rgba(17,131,107,.10);
+}
+.behavioral-cycle-form>label{
+  padding:14px;
+  border:1px solid #dfe8ec;
+  border-radius:14px;
+  background:#fbfdfd;
+}
+
+.behavioral-admin-note{
+  display:flex;
+  align-items:flex-start;
+  gap:8px;
+  padding:12px 14px;
+  border:1px solid #efd7a0;
+  border-radius:12px;
+  background:#fff8e9;
+  color:#705616;
+  font-size:10px;
+  line-height:1.8;
+}
+.behavioral-admin-note b{
+  flex:0 0 auto;
+  color:#5d470f;
+}
+.behavioral-admin-note span{
+  min-width:0;
+}
+.behavioral-cycle-form>.btn.primary{
+  width:100%;
+  min-height:48px;
+  border-radius:12px;
+  font-size:14px;
+  box-shadow:0 8px 18px rgba(20,135,101,.15);
+}
+
+.behavioral-cycle-list{
+  margin-top:18px;
+  display:grid;
+  gap:9px;
+}
+.behavioral-cycle-list>h4{
+  margin:0 0 2px;
+  color:#153b57;
+}
+.behavioral-cycle-list article{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:14px;
+  padding:13px 14px;
+  border:1px solid #dfe8ec;
+  border-radius:13px;
+  background:#fff;
+}
+.behavioral-cycle-list article>div:first-child{
+  min-width:0;
+  display:grid;
+  gap:3px;
+}
+.behavioral-cycle-list article b{
+  color:#173b56;
+}
+.behavioral-cycle-list article small,
+.behavioral-cycle-list article p{
+  overflow-wrap:anywhere;
+}
+
+@media(max-width:900px){
+  .behavioral-cycle-head{
+    grid-template-columns:1fr;
+  }
+  .behavioral-cycle-head>div:first-child{
+    min-height:82px;
+  }
+}
+
+@media(max-width:600px){
+  .behavioral-admin-panel{
+    padding:13px;
+  }
+  .behavioral-admin-panel .panel-title{
+    gap:9px;
+    margin-bottom:13px;
+  }
+  .behavioral-admin-panel .panel-title h3{
+    font-size:16px;
+  }
+  .behavioral-admin-panel .panel-title p{
+    font-size:9px;
+  }
+  .behavioral-admin-panel .counter{
+    min-width:40px;
+    height:28px;
+    font-size:9px;
+  }
+  .behavioral-cycle-form{
+    gap:10px;
+  }
+  .behavioral-cycle-head{
+    gap:10px;
+  }
+  .behavioral-cycle-head>div:first-child{
+    min-height:72px;
+    padding:13px 14px;
+    border-radius:13px;
+  }
+  .behavioral-cycle-head>div:first-child strong{
+    font-size:20px;
+  }
+  .behavioral-time-fields{
+    grid-template-columns:1fr;
+    gap:8px;
+  }
+  .behavioral-time-fields label,
+  .behavioral-cycle-form>label{
+    padding:10px;
+    border-radius:12px;
+  }
+  .behavioral-cycle-form input{
+    min-height:42px;
+    font-size:12px;
+  }
+  .behavioral-cycle-form textarea{
+    min-height:86px;
+    font-size:11px;
+  }
+  .behavioral-admin-note{
+    display:grid;
+    gap:3px;
+    padding:10px 11px;
+    font-size:9px;
+  }
+  .behavioral-cycle-form>.btn.primary{
+    min-height:44px;
+    font-size:11px;
+  }
+  .behavioral-cycle-list article{
+    flex-direction:column;
+    align-items:stretch;
+  }
+  .cycle-actions{
+    justify-content:space-between;
+  }
+}

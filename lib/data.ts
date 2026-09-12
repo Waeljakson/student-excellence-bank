@@ -28,9 +28,10 @@ export async function getDashboardData() {
     sql`SELECT COUNT(*)::int AS value FROM students WHERE school_id=${schoolId} AND is_active=true`,
     sql`SELECT COUNT(DISTINCT student_id)::int AS value FROM wallet_transactions WHERE school_id=${schoolId} AND transaction_type IN ('EARN','BONUS') AND created_at >= date_trunc('month', now())`,
     sql`SELECT COALESCE(SUM(-points_delta),0)::int AS points FROM wallet_transactions WHERE school_id=${schoolId} AND transaction_type='REDEEM'`,
-    sql`SELECT s.full_name_ar AS name, c.name_ar AS class_name, COALESCE(b.points_balance,0)::int AS points
+    sql`SELECT s.id, s.full_name_ar AS name, g.name_ar AS grade_name, c.name_ar AS class_name, COALESCE(b.points_balance,0)::int AS points
         FROM students s
         JOIN classes c ON c.id=s.class_id
+        JOIN grades g ON g.id=c.grade_id
         LEFT JOIN student_wallet_balances b ON b.student_id=s.id
         WHERE s.school_id=${schoolId} AND s.is_active=true
         ORDER BY COALESCE(b.points_balance,0) DESC, s.full_name_ar ASC LIMIT 5`,
@@ -75,16 +76,46 @@ export async function getStudentsForIssuing() {
 
 export async function getStudentsWallets() {
   const sql = getDb();
-  return sql`SELECT s.id, s.full_name_ar AS name, s.student_no, c.name_ar AS class_name,
+  return sql`SELECT s.id, s.full_name_ar AS name, s.student_no, d.name_ar AS department_name, g.name_ar AS grade_name, c.name_ar AS class_name,
     COALESCE(b.points_balance,0)::int AS points,
     (COALESCE(b.points_balance,0) * sch.point_value_sar)::numeric(10,2) AS value_sar,
     COALESCE((SELECT l.name_ar FROM levels l WHERE l.school_id=s.school_id AND l.min_points <= COALESCE(b.points_balance,0) ORDER BY l.min_points DESC LIMIT 1),'مبتدئ') AS level
     FROM students s
     JOIN classes c ON c.id=s.class_id
+    JOIN grades g ON g.id=c.grade_id
+    JOIN departments d ON d.id=g.department_id
     JOIN schools sch ON sch.id=s.school_id
     LEFT JOIN student_wallet_balances b ON b.student_id=s.id
     WHERE s.school_id=(SELECT id FROM schools WHERE code='MISHKAT') AND s.is_active=true
-    ORDER BY points DESC, s.full_name_ar`;
+    ORDER BY g.sort_order, c.name_ar, s.full_name_ar`;
+}
+
+export async function getRankingsData() {
+  const sql = getDb();
+  const [students, classes] = await Promise.all([
+    sql`SELECT s.id, s.full_name_ar AS name, s.student_no, g.name_ar AS grade_name, c.name_ar AS class_name,
+      COALESCE(b.points_balance,0)::int AS points
+      FROM students s
+      JOIN classes c ON c.id=s.class_id
+      JOIN grades g ON g.id=c.grade_id
+      LEFT JOIN student_wallet_balances b ON b.student_id=s.id
+      WHERE s.school_id=(SELECT id FROM schools WHERE code='MISHKAT') AND s.is_active=true
+      ORDER BY COALESCE(b.points_balance,0) DESC, s.full_name_ar ASC
+      LIMIT 50`,
+    sql`SELECT c.id, g.name_ar AS grade_name, c.name_ar AS class_name,
+      COUNT(s.id)::int AS student_count,
+      COALESCE(SUM(COALESCE(b.points_balance,0)),0)::int AS total_points,
+      ROUND(CASE WHEN COUNT(s.id)=0 THEN 0 ELSE COALESCE(SUM(COALESCE(b.points_balance,0)),0)::numeric / COUNT(s.id) END, 2) AS average_points
+      FROM classes c
+      JOIN grades g ON g.id=c.grade_id
+      JOIN departments d ON d.id=g.department_id
+      LEFT JOIN students s ON s.class_id=c.id AND s.is_active=true
+      LEFT JOIN student_wallet_balances b ON b.student_id=s.id
+      WHERE d.school_id=(SELECT id FROM schools WHERE code='MISHKAT') AND c.is_active=true
+      GROUP BY c.id, g.name_ar, g.sort_order, c.name_ar
+      ORDER BY average_points DESC, total_points DESC, g.sort_order, c.name_ar`,
+  ]);
+  return { students, classes };
 }
 
 export async function getRewards() {

@@ -9,6 +9,7 @@ import "@fontsource/cairo/800.css";
 import "./styles.css";
 import "./premium.css";
 import "./scopes.css";
+import "./student-tabs.css";
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>

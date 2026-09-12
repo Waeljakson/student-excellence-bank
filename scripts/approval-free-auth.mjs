@@ -29,3 +29,9 @@ src=src.replace('<h3>المستخدمون المعتمدون</h3><p>يمكن ت�
 src=src.replace('if(isAdmin){const[p,u,st,cl]=await Promise.all([rpc<PendingUser[]>("api_pending_users"),rpc<ManagedUser[]>("api_managed_users"),rpc<StaffMember[]>("api_staff_directory"),rpc<AdminClass[]>("api_admin_classes")]);setPending(p);setUsers(u);setStaff(st);setAdminClasses(cl)}','if(isAdmin){const[u,st,cl]=await Promise.all([rpc<ManagedUser[]>("api_managed_users"),rpc<StaffMember[]>("api_staff_directory"),rpc<AdminClass[]>("api_admin_classes")]);setPending([]);setUsers(u);setStaff(st);setAdminClasses(cl)}');
 
 writeFileSync(appPath,src);
+
+const clientPath="src/client.ts";
+let client=readFileSync(clientPath,"utf8");
+client=client.replace('  if (message.includes("APPROVAL_REQUIRED")) return "الحساب مسجل، لكنه ما زال بانتظار اعتماد الإدارة.";\n','');
+client=client.replace('يجب تحديد فصل واحد على الأقل لهذا الموظف قبل اعتماد الصلاحية.','يجب تحديد فصل واحد على الأقل لهذا الموظف.');
+writeFileSync(clientPath,client);

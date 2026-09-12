@@ -1,0 +1,194 @@
+import { FormEvent, useEffect, useMemo, useState } from "react";
+import QRCode from "qrcode";
+import { neon, niceError, rpc } from "./client";
+
+type Profile = {
+  status: "PENDING" | "APPROVED" | "DISABLED";
+  app_user_id?: string;
+  auth_user_id?: string;
+  name?: string;
+  email?: string;
+  roles: string[];
+  can_issue: boolean;
+  monthly_limit?: number | null;
+  is_unlimited?: boolean;
+  used_this_month?: number;
+  remaining?: number | null;
+};
+
+type Student = { id: string; student_no: string; name: string; grade_name: string; class_name: string; points: number; value_sar: number; level: string };
+type Rule = { id: string; name_ar: string; description_ar?: string; default_points: number; min_points: number; max_points: number; is_mega: boolean; category_name?: string };
+type Check = { id: string; serial_no: string; points: number; reason_ar?: string; reason?: string; status: string; approval_status: string; qr_nonce: string; issued_at: string; student_name: string; issuer_name?: string };
+type Dashboard = { students: number; today_points: number; month_checks: number; reinforced_students: number; point_value_sar: number };
+type Rankings = { students: Array<{ id: string; name: string; grade_name: string; class_name: string; points: number }>; classes: Array<{ id: string; grade_name: string; class_name: string; student_count: number; total_points: number; average_points: number }> };
+type PendingUser = { auth_user_id: string; name: string; email: string; created_at: string };
+type ManagedUser = { id: string; auth_user_id: string; name: string; email: string; is_active: boolean; roles: string[]; monthly_limit: number | null; is_unlimited: boolean };
+type Reward = { id: string; name_ar: string; description_ar?: string; cost_points: number; cash_value_sar?: number; stock?: number };
+
+type Tab = "dashboard" | "checks" | "students" | "rankings" | "rewards" | "admin";
+
+const BASE_URL = new URL(import.meta.env.BASE_URL, window.location.origin).toString();
+const SCHOOL_LOGO = `${import.meta.env.BASE_URL}school-logo.png`;
+const GUIDANCE_LOGO = `${import.meta.env.BASE_URL}guidance-logo.png`;
+
+function unwrapError(result: any) {
+  if (result?.error) throw new Error(result.error.message || result.error.code || "تعذر تنفيذ العملية");
+  return result;
+}
+
+function Loading({ text = "جارٍ تحميل بنك التميز..." }: { text?: string }) {
+  return <div className="full-center"><div className="loader" /><p>{text}</p></div>;
+}
+
+function AuthScreen() {
+  const [mode, setMode] = useState<"otp" | "register" | "password">("otp");
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [otp, setOtp] = useState("");
+  const [otpSent, setOtpSent] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [message, setMessage] = useState("");
+
+  async function sendOtp(e: FormEvent) {
+    e.preventDefault(); setBusy(true); setMessage("");
+    try {
+      const result = await neon.auth.emailOtp.sendVerificationOtp({ email: email.trim(), type: "sign-in" });
+      unwrapError(result); setOtpSent(true); setMessage("تم إرسال رمز الدخول إلى بريدك الإلكتروني.");
+    } catch (e) { setMessage(niceError(e)); } finally { setBusy(false); }
+  }
+
+  async function verifyOtp(e: FormEvent) {
+    e.preventDefault(); setBusy(true); setMessage("");
+    try {
+      const result = await neon.auth.signIn.emailOtp({ email: email.trim(), otp: otp.trim() });
+      unwrapError(result); setMessage("تم تسجيل الدخول.");
+    } catch (e) { setMessage(niceError(e)); } finally { setBusy(false); }
+  }
+
+  async function register(e: FormEvent) {
+    e.preventDefault(); setBusy(true); setMessage("");
+    try {
+      const result = await neon.auth.signUp.email({ name: name.trim(), email: email.trim(), password });
+      unwrapError(result); setMessage("تم إنشاء الحساب. بعد الدخول سيظهر طلبك للإدارة لاعتماد صلاحية المعلم.");
+    } catch (e) { setMessage(niceError(e)); } finally { setBusy(false); }
+  }
+
+  async function passwordLogin(e: FormEvent) {
+    e.preventDefault(); setBusy(true); setMessage("");
+    try {
+      const result = await neon.auth.signIn.email({ email: email.trim(), password });
+      unwrapError(result);
+    } catch (e) { setMessage(niceError(e)); } finally { setBusy(false); }
+  }
+
+  return <div className="auth-page">
+    <div className="auth-brand">
+      <div className="logos"><img src={SCHOOL_LOGO} alt="مدارس المشكاة"/><img src={GUIDANCE_LOGO} alt="التوجيه الطلابي"/></div>
+      <span>مدارس المشكاة الأهلية</span>
+      <h1>بنك التميز الطلابي</h1>
+      <p>منصة إلكترونية لإصدار شيكات التميز وإدارة نقاط الطلاب ومكافآتهم.</p>
+    </div>
+    <div className="auth-card">
+      <div className="auth-tabs">
+        <button className={mode==="otp"?"active":""} onClick={()=>{setMode("otp");setMessage("")}}>دخول برمز البريد</button>
+        <button className={mode==="password"?"active":""} onClick={()=>{setMode("password");setMessage("")}}>دخول بكلمة مرور</button>
+        <button className={mode==="register"?"active":""} onClick={()=>{setMode("register");setMessage("")}}>إنشاء حساب معلم</button>
+      </div>
+      {mode==="otp" && (!otpSent ? <form onSubmit={sendOtp} className="form-stack">
+        <h2>تسجيل الدخول</h2><p>مناسب أيضًا لحساب مدير النظام.</p>
+        <label>البريد الإلكتروني<input type="email" required value={email} onChange={e=>setEmail(e.target.value)} placeholder="name@example.com"/></label>
+        <button className="btn primary" disabled={busy}>{busy?"جارٍ الإرسال...":"إرسال رمز الدخول"}</button>
+      </form> : <form onSubmit={verifyOtp} className="form-stack">
+        <h2>أدخل الرمز</h2><p>أرسلنا رمزًا إلى {email}</p>
+        <label>رمز OTP<input inputMode="numeric" required value={otp} onChange={e=>setOtp(e.target.value)} placeholder="000000"/></label>
+        <button className="btn primary" disabled={busy}>{busy?"جارٍ التحقق...":"دخول"}</button>
+        <button type="button" className="btn ghost" onClick={()=>setOtpSent(false)}>تغيير البريد</button>
+      </form>)}
+      {mode==="password" && <form onSubmit={passwordLogin} className="form-stack"><h2>الدخول بكلمة المرور</h2>
+        <label>البريد الإلكتروني<input type="email" required value={email} onChange={e=>setEmail(e.target.value)}/></label>
+        <label>كلمة المرور<input type="password" required value={password} onChange={e=>setPassword(e.target.value)}/></label>
+        <button className="btn primary" disabled={busy}>دخول</button>
+      </form>}
+      {mode==="register" && <form onSubmit={register} className="form-stack"><h2>إنشاء حساب معلم</h2><p>إنشاء الحساب لا يمنح صلاحية إصدار الشيكات تلقائيًا؛ الإدارة تعتمدها من لوحة الصلاحيات.</p>
+        <label>الاسم الكامل<input required value={name} onChange={e=>setName(e.target.value)}/></label>
+        <label>البريد الإلكتروني<input type="email" required value={email} onChange={e=>setEmail(e.target.value)}/></label>
+        <label>كلمة المرور<input type="password" minLength={8} required value={password} onChange={e=>setPassword(e.target.value)}/></label>
+        <button className="btn primary" disabled={busy}>إنشاء الحساب</button>
+      </form>}
+      {message && <div className="notice">{message}</div>}
+    </div>
+  </div>;
+}
+
+function VerifyView({ nonce }: { nonce: string }) {
+  const [data,setData]=useState<any>(null); const [error,setError]=useState("");
+  useEffect(()=>{rpc("api_verify_check",{p_nonce:nonce}).then(setData).catch(e=>setError(niceError(e)))},[nonce]);
+  if(error) return <div className="full-center"><div className="verify-card invalid"><h1>تعذر التحقق</h1><p>{error}</p></div></div>;
+  if(!data) return <Loading text="جارٍ التحقق من شيك التميز..."/>;
+  return <div className="full-center"><div className={`verify-card ${data.valid?"valid":"invalid"}`}>
+    <div className="logos"><img src={SCHOOL_LOGO}/><img src={GUIDANCE_LOGO}/></div>
+    {data.valid ? <><span className="verify-icon">✓</span><h1>شيك تميز صحيح</h1><h2>{data.student_name}</h2><div className="verify-grid"><div><small>رقم الشيك</small><b>{data.serial_no}</b></div><div><small>النقاط</small><b>{data.points}</b></div><div><small>السبب</small><b>{data.reason}</b></div><div><small>الحالة</small><b>{data.status}</b></div></div><p>{data.school}</p></> : <><span className="verify-icon">×</span><h1>الشيك غير موجود</h1><p>رمز التحقق غير صحيح أو غير مسجل.</p></>}
+  </div></div>;
+}
+
+function PendingAccount({ profile, onRefresh }: { profile: Profile; onRefresh: ()=>void }) {
+  return <div className="full-center"><div className="pending-card"><div className="logos"><img src={SCHOOL_LOGO}/><img src={GUIDANCE_LOGO}/></div><span className="pending-icon">⏳</span><h1>الحساب بانتظار الصلاحية</h1><p>أهلًا {profile.name || profile.email}. تم تسجيل حسابك بنجاح، لكن إصدار شيكات التميز لن يعمل حتى تعتمد الإدارة حسابك كمعلم.</p><button className="btn primary" onClick={onRefresh}>تحديث حالة الحساب</button><button className="btn ghost" onClick={()=>neon.auth.signOut()}>تسجيل الخروج</button></div></div>;
+}
+
+function AppShell({ profile, children, tab, setTab }: { profile: Profile; children: any; tab: Tab; setTab:(t:Tab)=>void }) {
+  const isAdmin=profile.roles?.some(r=>["SUPER_ADMIN","SCHOOL_ADMIN","PRINCIPAL"].includes(r));
+  const nav:Array<[Tab,string,string]>=[["dashboard","الرئيسية","⌂"],["checks","شيكات التميز","▣"],["students","الطلاب والمحافظ","◎"],["rankings","لوحة الترتيب","★"],["rewards","المكافآت","◇"]];
+  if(isAdmin) nav.push(["admin","صلاحيات المعلمين","⚙"]);
+  return <div className="app-shell"><aside className="sidebar"><div className="brand"><div className="brand-logos"><img src={SCHOOL_LOGO}/><img src={GUIDANCE_LOGO}/></div><div><b>بنك التميز</b><span>مدارس المشكاة الأهلية</span></div></div><nav>{nav.map(([id,label,icon])=><button key={id} className={tab===id?"active":""} onClick={()=>setTab(id)}><span>{icon}</span>{label}</button>)}</nav><div className="issuer-card"><small>المستخدم</small><b>{profile.name}</b><span>{profile.roles?.includes("TEACHER")?"معلم معتمد":"إدارة"}</span>{profile.can_issue && <><small>المتاح هذا الشهر</small><strong>{profile.is_unlimited?"غير محدود":profile.remaining ?? "—"} نقطة</strong></>}</div><button className="signout" onClick={()=>neon.auth.signOut()}>تسجيل الخروج</button></aside><div className="main-area">{children}<footer><span>برمجة وتنفيذ: محمد صلاح الدين محمد الجمل</span><span>جميع الحقوق محفوظة © مدارس المشكاة الأهلية</span></footer></div></div>;
+}
+
+function DashboardView({ data, checks }: { data: Dashboard|null; checks: Check[] }) {
+  if(!data) return <Loading/>;
+  return <><Header title="لوحة بنك التميز الطلابي" subtitle="بيانات مباشرة وآمنة من Neon"/><main className="content"><section className="hero"><div><span className="eyebrow">مدارس المشكاة الأهلية</span><h2>التميز يُرى، يُقاس، ويُكافأ.</h2><p>شيكات تميز رقمية، محافظ طلابية، ترتيب فوري، ومتابعة عادلة للفصول.</p></div><div className="point-value"><small>قيمة نقطة التميز</small><strong>{Number(data.point_value_sar).toLocaleString("ar-SA")} ر.س</strong></div></section><section className="stats-grid"><Stat label="الطلاب" value={data.students}/><Stat label="نقاط اليوم" value={data.today_points}/><Stat label="شيكات هذا الشهر" value={data.month_checks}/><Stat label="طلاب حصلوا على تعزيز" value={data.reinforced_students}/></section><section className="panel"><div className="panel-title"><div><h3>آخر شيكات التميز</h3><p>آخر العمليات المسجلة في البنك.</p></div></div>{checks.length?<div className="activity-list">{checks.slice(0,8).map(c=><div className="activity" key={c.id}><span className="points">+{c.points}</span><div><b>{c.student_name}</b><small>{c.reason_ar || c.reason} — {c.issuer_name}</small></div><time>{new Date(c.issued_at).toLocaleDateString("ar-SA")}</time></div>)}</div>:<Empty text="لم يتم إصدار شيكات حتى الآن."/>}</section></main></>;
+}
+
+function Stat({label,value}:{label:string;value:number|string}) { return <article className="stat"><span>{label}</span><strong>{Number(value).toLocaleString("ar-SA")}</strong></article>; }
+function Header({title,subtitle}:{title:string;subtitle:string}) { return <header className="topbar"><div><h1>{title}</h1><p>{subtitle}</p></div><div className="header-logos"><img src={SCHOOL_LOGO}/><img src={GUIDANCE_LOGO}/></div></header>; }
+function Empty({text}:{text:string}) { return <div className="empty">{text}</div>; }
+
+function ChecksView({students,rules,onIssued}:{students:Student[];rules:Rule[];onIssued:()=>Promise<void>}) {
+  const [query,setQuery]=useState(""); const [studentId,setStudentId]=useState(""); const [ruleId,setRuleId]=useState(""); const [points,setPoints]=useState(2); const [reason,setReason]=useState(""); const [notes,setNotes]=useState(""); const [busy,setBusy]=useState(false); const [message,setMessage]=useState(""); const [issued,setIssued]=useState<Check|null>(null); const [qr,setQr]=useState("");
+  const filtered=useMemo(()=>students.filter(s=>`${s.name} ${s.student_no} ${s.grade_name} ${s.class_name}`.includes(query.trim())).slice(0,60),[students,query]);
+  function chooseRule(id:string){setRuleId(id);const r=rules.find(x=>x.id===id);if(r){setPoints(r.default_points);setReason(r.name_ar)}}
+  async function submit(e:FormEvent){e.preventDefault();if(!studentId||!ruleId)return;setBusy(true);setMessage("");try{const result=await rpc<Check>("api_issue_check",{p_student_id:studentId,p_rule_id:ruleId,p_points:points,p_reason_ar:reason,p_notes:notes||null});setIssued(result);setQr(await QRCode.toDataURL(`${BASE_URL}?verify=${result.qr_nonce}`,{width:280,margin:1,errorCorrectionLevel:"M"}));setMessage("تم إصدار شيك التميز وتحديث محفظة الطالب.");await onIssued();}catch(e){setMessage(niceError(e))}finally{setBusy(false)}}
+  return <><Header title="إصدار شيك تميز" subtitle="المعلم لا يستطيع الإصدار إلا بعد اعتماد الإدارة لصلاحيته"/><main className="content"><section className="grid-2"><form className="panel form-stack" onSubmit={submit}><h3>بيانات الشيك</h3><label>ابحث عن الطالب<input value={query} onChange={e=>setQuery(e.target.value)} placeholder="الاسم أو رقم الطالب"/></label><label>الطالب<select required value={studentId} onChange={e=>setStudentId(e.target.value)}><option value="">اختر الطالب</option>{filtered.map(s=><option key={s.id} value={s.id}>{s.name} — {s.grade_name} / {s.class_name}</option>)}</select></label><label>فئة التميز<select required value={ruleId} onChange={e=>chooseRule(e.target.value)}><option value="">اختر الفئة</option>{rules.map(r=><option key={r.id} value={r.id}>{r.name_ar} ({r.default_points} نقاط){r.is_mega?" — شيك عملاق":""}</option>)}</select></label><div className="form-row"><label>النقاط<input type="number" required value={points} onChange={e=>setPoints(Number(e.target.value))}/></label><label>سبب الشيك<input required value={reason} onChange={e=>setReason(e.target.value)}/></label></div><label>ملاحظات<textarea value={notes} onChange={e=>setNotes(e.target.value)} rows={3}/></label><button className="btn primary" disabled={busy}>{busy?"جارٍ الإصدار...":"إصدار شيك التميز"}</button>{message&&<div className="notice">{message}</div>}</form><section className="panel rule-panel"><h3>الفئات المتاحة لحسابك</h3>{rules.length?<div className="rules">{rules.map(r=><button key={r.id} className={ruleId===r.id?"rule active":"rule"} onClick={()=>chooseRule(r.id)}><b>{r.name_ar}</b><span>{r.default_points} نقاط</span>{r.is_mega&&<small>خاص بالإدارة والتوجيه</small>}</button>)}</div>:<Empty text="لا توجد فئات إصدار متاحة لهذه الصلاحية."/>}</section></section>{issued&&<section className="check-print panel"><div className="check-head"><div className="logos"><img src={SCHOOL_LOGO}/><img src={GUIDANCE_LOGO}/></div><div><span>بنك التميز الطلابي</span><h2>شيك تميز</h2></div><b>{issued.serial_no}</b></div><div className="check-body"><div><small>الطالب</small><h2>{issued.student_name}</h2><small>سبب التميز</small><h3>{issued.reason}</h3><div className="big-points">+{issued.points} نقطة</div></div>{qr&&<div className="qr"><img src={qr}/><small>امسح للتحقق من الشيك</small></div>}</div><button className="btn ghost no-print" onClick={()=>window.print()}>طباعة الشيك</button></section>}</main></>;
+}
+
+function StudentsView({students}:{students:Student[]}){const[q,setQ]=useState("");const list=students.filter(s=>`${s.name} ${s.student_no} ${s.grade_name} ${s.class_name}`.includes(q));const total=students.reduce((a,s)=>a+Number(s.points),0);return <><Header title="الطلاب والمحافظ" subtitle="الأرصدة ناتجة من دفتر الحركات ولا تُعدّل يدويًا"/><main className="content"><section className="stats-grid"><Stat label="إجمالي الطلاب" value={students.length}/><Stat label="طلاب لديهم نقاط" value={students.filter(s=>Number(s.points)>0).length}/><Stat label="إجمالي النقاط" value={total}/><Stat label="عدد الفصول" value={new Set(students.map(s=>`${s.grade_name}-${s.class_name}`)).size}/></section><section className="panel"><div className="panel-title"><h3>محافظ الطلاب</h3><input className="search" value={q} onChange={e=>setQ(e.target.value)} placeholder="بحث..."/></div><div className="table-wrap"><table><thead><tr><th>الطالب</th><th>الرقم</th><th>الصف</th><th>الفصل</th><th>المستوى</th><th>الرصيد</th><th>القيمة</th></tr></thead><tbody>{list.map(s=><tr key={s.id}><td><b>{s.name}</b></td><td>{s.student_no}</td><td>{s.grade_name}</td><td>{s.class_name}</td><td><span className="pill">{s.level}</span></td><td><b>{s.points} نقطة</b></td><td>{Number(s.value_sar).toLocaleString("ar-SA")} ر.س</td></tr>)}</tbody></table></div></section></main></>}
+
+function RankingsView({data}:{data:Rankings|null}){if(!data)return <Loading/>;return <><Header title="لوحة الترتيب" subtitle="ترتيب الطلاب والفصول من النقاط الفعلية"/><main className="content grid-2"><section className="panel"><h3>أوائل الطلاب</h3><div className="rank-list">{data.students.slice(0,10).map((s,i)=><div className="rank" key={s.id}><span>{i+1}</span><div><b>{s.name}</b><small>{s.grade_name} — فصل {s.class_name}</small></div><strong>{s.points} نقطة</strong></div>)}</div></section><section className="panel"><h3>ترتيب الفصول</h3><p>المعيار: متوسط النقاط لكل طالب، ثم إجمالي النقاط.</p><div className="table-wrap"><table><thead><tr><th>#</th><th>الصف</th><th>الفصل</th><th>الطلاب</th><th>الإجمالي</th><th>المتوسط</th></tr></thead><tbody>{data.classes.map((c,i)=><tr key={c.id}><td><b>{i+1}</b></td><td>{c.grade_name}</td><td>{c.class_name}</td><td>{c.student_count}</td><td>{c.total_points}</td><td><b>{Number(c.average_points).toFixed(2)}</b></td></tr>)}</tbody></table></div></section></main></>}
+
+function RewardsView({rewards}:{rewards:Reward[]}){return <><Header title="متجر المكافآت" subtitle="المكافآت المعتمدة في بنك التميز"/><main className="content"><div className="reward-grid">{rewards.map(r=><article className="reward" key={r.id}><span>مكافأة</span><h3>{r.name_ar}</h3><p>{r.description_ar||"مكافأة للطلاب المتميزين"}</p><strong>{r.cost_points} نقطة</strong>{r.cash_value_sar!=null&&<small>قيمة تقديرية {r.cash_value_sar} ر.س</small>}</article>)}</div></main></>}
+
+function AdminView({pending,users,reload}:{pending:PendingUser[];users:ManagedUser[];reload:()=>Promise<void>}){const[busy,setBusy]=useState("");const[msg,setMsg]=useState("");async function approve(u:PendingUser){const raw=window.prompt(`الحد الشهري للمعلم ${u.name || u.email}`,"100");if(!raw)return;setBusy(u.auth_user_id);setMsg("");try{await rpc("api_approve_teacher",{p_auth_user_id:u.auth_user_id,p_monthly_limit:Number(raw)});setMsg(`تم اعتماد ${u.name||u.email} كمعلم ومنحه صلاحية إصدار الشيكات.`);await reload()}catch(e){setMsg(niceError(e))}finally{setBusy("")}}async function budget(u:ManagedUser){const raw=window.prompt(`الحد الشهري الجديد لـ ${u.name}`,String(u.monthly_limit||100));if(!raw)return;try{await rpc("api_set_teacher_budget",{p_app_user_id:u.id,p_monthly_limit:Number(raw),p_unlimited:false});setMsg("تم تحديث حد الإصدار.");await reload()}catch(e){setMsg(niceError(e))}}return <><Header title="صلاحيات المعلمين" subtitle="الحساب الجديد لا يصدر أي نقاط حتى تعتمد أنت صلاحيته"/><main className="content"><section className="panel"><div className="panel-title"><div><h3>طلبات اعتماد جديدة</h3><p>المعلم يسجل حسابه بنفسه ثم يظهر هنا.</p></div><span className="counter">{pending.length}</span></div>{pending.length?<div className="user-list">{pending.map(u=><div className="user-row" key={u.auth_user_id}><div><b>{u.name||"مستخدم جديد"}</b><small>{u.email}</small></div><button className="btn primary" disabled={busy===u.auth_user_id} onClick={()=>approve(u)}>{busy===u.auth_user_id?"جارٍ الاعتماد...":"اعتماد كمعلم"}</button></div>)}</div>:<Empty text="لا توجد طلبات صلاحية جديدة."/>}</section><section className="panel"><h3>المستخدمون المعتمدون</h3><div className="table-wrap"><table><thead><tr><th>الاسم</th><th>البريد</th><th>الصلاحيات</th><th>حد الإصدار</th><th></th></tr></thead><tbody>{users.map(u=><tr key={u.id}><td><b>{u.name}</b></td><td>{u.email}</td><td>{u.roles.join("، ")}</td><td>{u.is_unlimited?"غير محدود":u.monthly_limit??"—"}</td><td>{u.roles.includes("TEACHER")&&<button className="mini-btn" onClick={()=>budget(u)}>تعديل الحد</button>}</td></tr>)}</tbody></table></div></section>{msg&&<div className="notice sticky-note">{msg}</div>}</main></>}
+
+function BankApp({ profile, refreshProfile }: { profile: Profile; refreshProfile:()=>Promise<void> }) {
+  const [tab,setTab]=useState<Tab>("dashboard"); const [dashboard,setDashboard]=useState<Dashboard|null>(null); const[students,setStudents]=useState<Student[]>([]);const[rules,setRules]=useState<Rule[]>([]);const[checks,setChecks]=useState<Check[]>([]);const[rankings,setRankings]=useState<Rankings|null>(null);const[rewards,setRewards]=useState<Reward[]>([]);const[pending,setPending]=useState<PendingUser[]>([]);const[users,setUsers]=useState<ManagedUser[]>([]);const[error,setError]=useState("");const[loading,setLoading]=useState(true);
+  const isAdmin=profile.roles?.some(r=>["SUPER_ADMIN","SCHOOL_ADMIN","PRINCIPAL"].includes(r));
+  async function loadAll(){setLoading(true);setError("");try{const [d,s,ru,c,ra,rw]=await Promise.all([rpc<Dashboard>("api_dashboard"),rpc<Student[]>("api_students"),rpc<Rule[]>("api_point_rules"),rpc<Check[]>("api_recent_checks"),rpc<Rankings>("api_rankings"),rpc<Reward[]>("api_rewards")]);setDashboard(d);setStudents(s);setRules(ru);setChecks(c);setRankings(ra);setRewards(rw);if(isAdmin){const[p,u]=await Promise.all([rpc<PendingUser[]>("api_pending_users"),rpc<ManagedUser[]>("api_managed_users")]);setPending(p);setUsers(u)}}catch(e){setError(niceError(e))}finally{setLoading(false)}}
+  useEffect(()=>{loadAll()},[profile.app_user_id]);
+  async function afterIssued(){await Promise.all([loadAll(),refreshProfile()])}
+  return <AppShell profile={profile} tab={tab} setTab={setTab}>{loading&&!dashboard?<Loading/>:<>{error&&<div className="notice error global-error">{error}</div>}{tab==="dashboard"&&<DashboardView data={dashboard} checks={checks}/>} {tab==="checks"&&<ChecksView students={students} rules={rules} onIssued={afterIssued}/>} {tab==="students"&&<StudentsView students={students}/>} {tab==="rankings"&&<RankingsView data={rankings}/>} {tab==="rewards"&&<RewardsView rewards={rewards}/>} {tab==="admin"&&isAdmin&&<AdminView pending={pending} users={users} reload={loadAll}/>}</>}</AppShell>;
+}
+
+export default function App(){
+  const verifyNonce=new URLSearchParams(window.location.search).get("verify");
+  const sessionState=neon.auth.useSession();
+  const [profile,setProfile]=useState<Profile|null>(null);const[profileError,setProfileError]=useState("");const[profileLoading,setProfileLoading]=useState(false);
+  async function refreshProfile(){setProfileLoading(true);setProfileError("");try{setProfile(await rpc<Profile>("api_profile"))}catch(e){setProfileError(niceError(e))}finally{setProfileLoading(false)}}
+  useEffect(()=>{if(sessionState?.data?.user?.id)refreshProfile();else setProfile(null)},[sessionState?.data?.user?.id]);
+  if(verifyNonce)return <VerifyView nonce={verifyNonce}/>;
+  if(sessionState?.isPending)return <Loading text="جارٍ التحقق من الجلسة..."/>;
+  if(!sessionState?.data)return <AuthScreen/>;
+  if(profileLoading&&!profile)return <Loading text="جارٍ تحميل صلاحيات الحساب..."/>;
+  if(profileError&&!profile)return <div className="full-center"><div className="pending-card"><h1>تعذر تحميل الصلاحيات</h1><p>{profileError}</p><button className="btn primary" onClick={refreshProfile}>إعادة المحاولة</button><button className="btn ghost" onClick={()=>neon.auth.signOut()}>تسجيل الخروج</button></div></div>;
+  if(!profile)return <Loading/>;
+  if(profile.status!=="APPROVED")return <PendingAccount profile={profile} onRefresh={refreshProfile}/>;
+  return <BankApp profile={profile} refreshProfile={refreshProfile}/>;
+}

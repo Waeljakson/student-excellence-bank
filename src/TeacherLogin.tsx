@@ -2,7 +2,7 @@ import { FormEvent, useState } from "react";
 import { neon, niceError, rpc } from "./client";
 import "./feature-upgrade.css";
 
-type Lookup = { exists: boolean; claimed: boolean };
+type Lookup = { exists: boolean; claimed: boolean; staff_name?:string; job_title?:string };
 
 function authError(result: any) {
   if (result?.error) throw new Error(result.error.message || result.error.code || "تعذر تسجيل الدخول");
@@ -22,10 +22,9 @@ export default function TeacherLogin() {
     setBusy(true);
     setMessage("");
     try {
-      // نستخدم RPC قديمًا وموجودًا بالفعل في Data API لتجنب مشكلة schema cache.
-      const teacherKey = `T:${phone}`;
-      const lookup = await rpc<Lookup>("api_student_lookup", { p_student_no: teacherKey });
-      if (!lookup.exists) throw new Error("رقم الجوال غير موجود ضمن المعلمين المسجلين في دليل الهيئة.");
+      const staffKey = `T:${phone}`;
+      const lookup = await rpc<Lookup>("api_student_lookup", { p_student_no: staffKey });
+      if (!lookup.exists) throw new Error("رقم الجوال غير موجود ضمن الهيئة المسجلة في النظام.");
 
       if (lookup.claimed) {
         try {
@@ -33,7 +32,7 @@ export default function TeacherLogin() {
           authError(signed);
           return;
         } catch {
-          throw new Error("رقم الجوال أو كلمة المرور غير صحيحة.");
+          throw new Error("رقم الجوال أو كلمة المرور غير صحيحة، أو أن هذا الموظف مرتبط بحساب إدارة مختلف.");
         }
       }
 
@@ -41,7 +40,7 @@ export default function TeacherLogin() {
 
       let ready = false;
       try {
-        const created = await neon.auth.signUp.email({ name: "معلم", email, password });
+        const created = await neon.auth.signUp.email({ name: lookup.staff_name || "موظف", email, password });
         authError(created);
         ready = true;
       } catch (createErr) {
@@ -54,7 +53,7 @@ export default function TeacherLogin() {
         }
       }
 
-      if (!ready) throw new Error("تعذر تفعيل حساب المعلم.");
+      if (!ready) throw new Error("تعذر تفعيل حساب الهيئة.");
       try {
         const signed = await neon.auth.signIn.email({ email, password });
         authError(signed);
@@ -62,8 +61,7 @@ export default function TeacherLogin() {
         // signUp قد ينشئ الجلسة تلقائيًا.
       }
 
-      // نفس RPC القديم يقوم بربط حساب المعلم عندما يبدأ المفتاح بـ T:.
-      await rpc("api_claim_student_account", { p_student_no: teacherKey });
+      await rpc("api_claim_student_account", { p_student_no: staffKey });
       window.location.reload();
     } catch (err) {
       setMessage(niceError(err));
@@ -73,11 +71,11 @@ export default function TeacherLogin() {
   }
 
   return <form onSubmit={submit} className="form-stack student-login-form">
-    <h2>دخول المعلم</h2>
-    <p>اسم المستخدم هو رقم الجوال المسجل في دليل الهيئة. كلمة المرور الافتراضية: رقم الجوال متبوعًا بـ <b>Aa</b>.</p>
+    <h2>دخول الهيئة التعليمية</h2>
+    <p>للمعلم والوكيل والموجه والمدير. اسم المستخدم هو رقم الجوال المسجل في دليل الهيئة، وكلمة المرور الافتراضية: رقم الجوال متبوعًا بـ <b>Aa</b>.</p>
     <label>رقم الجوال<input inputMode="numeric" autoComplete="username" required value={mobile} onChange={e=>setMobile(e.target.value)} placeholder="05xxxxxxxx"/></label>
     <label>كلمة المرور<input type="password" autoComplete="current-password" required value={password} onChange={e=>setPassword(e.target.value)} placeholder="رقم الجوال + Aa"/></label>
-    <button className="btn primary" disabled={busy}>{busy?"جارٍ الدخول...":"دخول المعلم"}</button>
+    <button className="btn primary" disabled={busy}>{busy?"جارٍ الدخول...":"دخول الهيئة"}</button>
     {message&&<div className="notice">{message}</div>}
   </form>;
 }

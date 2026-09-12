@@ -8,6 +8,7 @@ import "@fontsource/cairo/700.css";
 import "@fontsource/cairo/800.css";
 import "./styles.css";
 import "./premium.css";
+import "./scopes.css";
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>

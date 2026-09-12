@@ -3,6 +3,7 @@ import { readFileSync, writeFileSync } from "node:fs";
 const appPath="src/App.tsx";
 let src=readFileSync(appPath,"utf8");
 if(!src.includes('import BehavioralExcellence from "./BehavioralExcellence";')) src=src.replace('import ReferralCenter from "./ReferralCenter";','import ReferralCenter from "./ReferralCenter";\nimport BehavioralExcellence from "./BehavioralExcellence";');
+if(!src.includes('import StaffBudgetPanel from "./StaffBudgetPanel";')) src=src.replace('import BehavioralExcellence from "./BehavioralExcellence";','import BehavioralExcellence from "./BehavioralExcellence";\nimport StaffBudgetPanel from "./StaffBudgetPanel";');
 src=src.replace('type Student = { id: string; student_no: string; name: string; grade_name: string; class_name: string; points: number; value_sar: number; level: string };','type Student = { id: string; student_no: string; name: string; grade_name: string; class_name: string; class_id?: string; points: number; value_sar: number; level: string };');
 src=src.replace(/type Tab = ([^;]+);/,m=>m.includes('"behavioral"')?m:m.slice(0,-1)+' | "behavioral";');
 src=src.replace('}}>دخول المعلم</button>','}}>دخول الهيئة</button>');
@@ -36,10 +37,29 @@ const shell=`function AppShell({ profile, children, tab, setTab }: { profile: Pr
 `;
 src=src.replace(/function AppShell\([\s\S]*?(?=\nfunction DashboardView)/,shell.trimEnd());
 if(!src.includes('tab==="behavioral"&&<BehavioralExcellence')) src=src.replace('{tab==="referrals"&&<ReferralCenter roles={profile.roles} students={students} profileName={profile.name||""}/>} {tab==="khameesna"&&<KhameesnaCompetition/>}','{tab==="referrals"&&<ReferralCenter roles={profile.roles} students={students} profileName={profile.name||""}/>} {tab==="behavioral"&&<BehavioralExcellence students={students}/>} {tab==="khameesna"&&<KhameesnaCompetition/>}');
+if(!src.includes('<StaffBudgetPanel/>')) src=src.replace('    <StudentExcelImporter onImported={reload}/>','    <StaffBudgetPanel/>\n    <StudentExcelImporter onImported={reload}/>');
+src=src.replace('<td>{u.assigned_classes?.length?u.assigned_classes.join("، "):"—"}</td>','<td><div className="assigned-class-lines">{u.assigned_classes?.length?u.assigned_classes.map((x,i)=><span key={i}>{x}</span>):<span>—</span>}</div></td>');
+src=src.replace('{u.roles.includes("TEACHER")&&<button className="mini-btn" onClick={()=>budget(u)}>تعديل الحد</button>}','<button className="mini-btn" onClick={()=>budget(u)}>تعديل الحد</button>');
 writeFileSync(appPath,src);
 
 const systemPath="src/SystemControlPanel.tsx";
 let sys=readFileSync(systemPath,"utf8");
-if(!sys.includes('import PointConversionPanel from "./PointConversionPanel";')) sys=sys.replace('import { niceError, rpc } from "./client";','import { niceError, rpc } from "./client";\nimport PointConversionPanel from "./PointConversionPanel";\nimport BehavioralCycleAdmin from "./BehavioralCycleAdmin";');
-if(!sys.includes('<PointConversionPanel/>')) sys=sys.replace('<main className="content system-control">','<main className="content system-control">\n    <PointConversionPanel/>\n    <BehavioralCycleAdmin/>');
+if(!sys.includes('import PointConversionPanel from "./PointConversionPanel";')) sys=sys.replace('import { niceError, rpc } from "./client";','import { niceError, rpc } from "./client";\nimport PointConversionPanel from "./PointConversionPanel";\nimport BehavioralCycleAdmin from "./BehavioralCycleAdmin";\nimport CompetitionManagementPanel from "./CompetitionManagementPanel";');
+if(!sys.includes('import CompetitionManagementPanel from "./CompetitionManagementPanel";')) sys=sys.replace('import BehavioralCycleAdmin from "./BehavioralCycleAdmin";','import BehavioralCycleAdmin from "./BehavioralCycleAdmin";\nimport CompetitionManagementPanel from "./CompetitionManagementPanel";');
+if(!sys.includes('<PointConversionPanel/>')) sys=sys.replace('<main className="content system-control">','<main className="content system-control">\n    <PointConversionPanel/>\n    <BehavioralCycleAdmin/>\n    <CompetitionManagementPanel/>');
+else if(!sys.includes('<CompetitionManagementPanel/>')) sys=sys.replace('<BehavioralCycleAdmin/>','<BehavioralCycleAdmin/>\n    <CompetitionManagementPanel/>');
 writeFileSync(systemPath,sys);
+
+const portalPath="src/StudentPortal.tsx";
+let portal=readFileSync(portalPath,"utf8");
+if(!portal.includes('import StudentPrograms from "./StudentPrograms";')) portal=portal.replace('import "./student-account.css";','import "./student-account.css";\nimport StudentPrograms from "./StudentPrograms";');
+portal=portal.replace(/\n\s*\{competitions\.length>0&&<section className="student-competition-banners">[\s\S]*?<\/section>\}\n\n\s*<section className="portal-panel student-account-panel">/,'\n      <StudentPrograms competitions={competitions} student={s}/>\n\n      <section className="portal-panel student-account-panel">');
+writeFileSync(portalPath,portal);
+
+const referralPath="src/ReferralCenter.tsx";
+let ref=readFileSync(referralPath,"utf8");
+if(!ref.includes('const canDeleteArchive=roles.includes("SUPER_ADMIN")')) ref=ref.replace('  const canHandle=roles.includes("VICE_PRINCIPAL")||roles.includes("GUIDANCE_COUNSELOR");','  const canHandle=roles.includes("VICE_PRINCIPAL")||roles.includes("GUIDANCE_COUNSELOR");\n  const canDeleteArchive=roles.includes("SUPER_ADMIN");');
+if(!ref.includes('async function deleteArchived')) ref=ref.replace('\n\n  return <><header className="topbar">','\n  async function deleteArchived(r:Referral){if(!window.confirm(`حذف التحويل ${r.referral_no} من الأرشيف؟ سيختفي من التقرير مع الاحتفاظ بأثر التدقيق الداخلي.`))return;setActionBusy(r.id+"x");setGlobalMsg("");try{await rpc("api_delete_completed_referral",{p_referral_id:r.id});setGlobalMsg(`تم حذف التحويل ${r.referral_no} من الأرشيف.`);await load()}catch(e){setGlobalMsg(niceError(e))}finally{setActionBusy("")}}\n\n  return <><header className="topbar">');
+ref=ref.replace('<th>تاريخ الإنهاء</th></tr>','<th>تاريخ الإنهاء</th>{canDeleteArchive&&<th className="no-print">إجراء</th>}</tr>');
+ref=ref.replace('<td>{fmt(r.completed_at)}</td></tr>','<td>{fmt(r.completed_at)}</td>{canDeleteArchive&&<td className="no-print"><button className="mini-btn danger" disabled={actionBusy===r.id+"x"} onClick={()=>deleteArchived(r)}>{actionBusy===r.id+"x"?"جارٍ الحذف...":"حذف من الأرشيف"}</button></td>}</tr>');
+writeFileSync(referralPath,ref);

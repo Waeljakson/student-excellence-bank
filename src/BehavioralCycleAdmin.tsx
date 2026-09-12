@@ -1,0 +1,19 @@
+import { FormEvent, useEffect, useState } from "react";
+import { niceError, rpc } from "./client";
+import "./engagement.css";
+
+type Cycle={id:string;title_ar:string;description_ar:string;starts_at:string;ends_at:string;status:"SCHEDULED"|"ACTIVE"|"CLOSED";activated_at?:string|null;closed_at?:string|null};
+type Data={cycles:Cycle[]};
+const localValue=(d:Date)=>{const p=(n:number)=>String(n).padStart(2,"0");return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`};
+const addDays=(days:number)=>{const d=new Date();d.setDate(d.getDate()+days);return localValue(d)};
+const fmt=(v:string)=>new Date(v).toLocaleString("ar-SA",{year:"numeric",month:"short",day:"numeric",hour:"numeric",minute:"2-digit"});
+const statusLabel=(s:string)=>s==="ACTIVE"?"مفعلة":s==="SCHEDULED"?"بانتظار تفعيل الموجه":"منتهية";
+
+export default function BehavioralCycleAdmin(){
+ const[data,setData]=useState<Data|null>(null);const[start,setStart]=useState(localValue(new Date()));const[end,setEnd]=useState(addDays(7));const[desc,setDesc]=useState("كل معلم يرشح ثلاثة طلاب من كل فصل مسند له، والطلاب الأكثر ترشيحًا يتصدرون البرنامج.");const[busy,setBusy]=useState(false);const[msg,setMsg]=useState("");
+ async function load(){try{setData(await rpc<Data>("api_behavioral_excellence"))}catch(e){setMsg(niceError(e))}}
+ useEffect(()=>{load()},[]);
+ async function create(e:FormEvent){e.preventDefault();if(new Date(end)<=new Date(start)){setMsg("وقت نهاية الدورة يجب أن يكون بعد وقت البداية.");return}setBusy(true);setMsg("");try{await rpc("api_behavioral_create_cycle",{p_starts_at:new Date(start).toISOString(),p_ends_at:new Date(end).toISOString(),p_description_ar:desc});setMsg("تم تجهيز دورة التميز السلوكي. لن تظهر للمعلمين حتى يفعلها الموجه الطلابي.");setStart(localValue(new Date()));setEnd(addDays(7));await load()}catch(e){setMsg(niceError(e))}finally{setBusy(false)}}
+ async function close(id:string){setBusy(true);setMsg("");try{await rpc("api_behavioral_set_cycle_state",{p_cycle_id:id,p_action:"CLOSE"});setMsg("تم إغلاق الدورة وإيقاف الترشيحات.");await load()}catch(e){setMsg(niceError(e))}finally{setBusy(false)}}
+ return <section className="panel behavioral-admin-panel"><div className="panel-title"><div><h3>برنامج «التميز السلوكي» الدوري</h3><p>مدير النظام يحدد مدة الدورة، ثم الموجه الطلابي هو من يفعل ظهورها للمعلمين.</p></div><span className="counter">دوري</span></div><form className="behavioral-cycle-form" onSubmit={create}><div className="behavioral-cycle-head"><div><span>اسم البرنامج</span><strong>التميز السلوكي</strong></div><div className="behavioral-time-fields"><label>بداية الدورة<input type="datetime-local" required value={start} onChange={e=>setStart(e.target.value)}/></label><label>نهاية الدورة<input type="datetime-local" required value={end} onChange={e=>setEnd(e.target.value)}/></label></div></div><label>وصف الدورة<textarea rows={3} required value={desc} onChange={e=>setDesc(e.target.value)}/></label><div className="behavioral-admin-note"><b>آلية البرنامج:</b><span>3 طلاب من كل فصل لكل معلم · كل ترشيح = صوت واحد · الصدارة للأكثر ترشيحًا · لا يظهر للمعلمين قبل تفعيل الموجه.</span></div><button className="btn primary" disabled={busy}>{busy?"جارٍ تجهيز الدورة...":"تجهيز دورة جديدة"}</button></form>{data?.cycles?.length?<div className="behavioral-cycle-list"><h4>الدورات</h4>{data.cycles.map(c=><article key={c.id}><div><b>{c.title_ar}</b><small>{fmt(c.starts_at)} — {fmt(c.ends_at)}</small><p>{c.description_ar}</p></div><div className="cycle-actions"><span className={`cycle-status ${c.status.toLowerCase()}`}>{statusLabel(c.status)}</span>{c.status!=="CLOSED"&&<button className="btn ghost" disabled={busy} onClick={()=>close(c.id)}>إغلاق الدورة</button>}</div></article>)}</div>:null}{msg&&<div className="notice compact-notice">{msg}</div>}</section>;
+}

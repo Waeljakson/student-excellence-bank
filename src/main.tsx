@@ -14,6 +14,7 @@ import "./ui-polish.css";
 import "./redemption-page-fix.css";
 import "./sidebar-fixed.css";
 import "./sidebar-no-scroll.css";
+import "./behavioral-cycle-admin-fix.css";
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>

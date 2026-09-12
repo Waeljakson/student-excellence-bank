@@ -26,17 +26,22 @@ export async function rpc<T = any>(name: string, args: Record<string, unknown> =
 
 export function niceError(error: unknown) {
   const message = error instanceof Error ? error.message : String(error);
-  if (message.includes("APPROVAL_REQUIRED")) return "الحساب مسجل، لكنه ما زال بانتظار اعتماد الإدارة.";
+  if (message.includes("APPROVAL_REQUIRED")) return "الحساب غير مرتبط بالنظام. استخدم طريقة الدخول المخصصة لك.";
+  if (message.includes("SUPER_ADMIN_REQUIRED")) return "إطلاق المسابقات وإعداداتها متاح لمدير النظام فقط.";
   if (message.includes("ADMIN_REQUIRED")) return "هذه العملية متاحة لإدارة النظام فقط.";
   if (message.includes("ISSUE_PERMISSION_REQUIRED")) return "لا توجد صلاحية إصدار لهذا الحساب.";
   if (message.includes("CLASS_SCOPE_REQUIRED")) return "هذا الفصل غير مسند لحسابك. لا يمكن منح نقاط لطلابه.";
   if (message.includes("MEGA_ONLY_ROLE")) return "مدير المدرسة والوكيل والموجه الطلابي مسموح لهم فقط بشيك التميز العملاق.";
   if (message.includes("MEGA_CHECK_RESTRICTED")) return "الشيك العملاق متاح فقط لمدير المدرسة أو الوكيل أو الموجه الطلابي.";
+  if (message.includes("COMPETITION_CLASSES_REQUIRED")) return "اختر فصلًا واحدًا على الأقل للمسابقة.";
+  if (message.includes("COMPETITION_CRITERIA_REQUIRED") || message.includes("COMPETITION_CRITERIA_INVALID")) return "أضف معيارًا صحيحًا واحدًا على الأقل للمسابقة.";
+  if (message.includes("COMPETITION_DATES_INVALID") || message.includes("COMPETITION_DATE_RANGE_INVALID")) return "مدة المسابقة غير صحيحة. يجب أن يكون تاريخ النهاية بعد البداية.";
+  if (message.includes("COMPETITION_REQUIRED")) return "أدخل اسم المسابقة ووصفها قبل الإطلاق.";
   if (message.includes("KHAMEESNA_DAILY_DUPLICATE") || message.includes("KHAMEESNA_DUPLICATE")) return "تم منح هذا الفصل نقاط خميسنا غير من حسابك اليوم بالفعل. المسموح مرة واحدة يوميًا لكل فصل.";
   if (message.includes("KHAMEESNA_WEEK_CLOSED")) return "خميسنا غير مغلقة يومي الجمعة والسبت. يبدأ أسبوع جديد يوم الأحد.";
   if (message.includes("KHAMEESNA_POINTS_RANGE")) return "نقاط خميسنا غير للإضافة الواحدة من 1 إلى 10 نقاط.";
   if (message.includes("KHAMEESNA_LESSON_RANGE")) return "رقم الحصة يجب أن يكون من 1 إلى 8.";
-  if (message.includes("STAFF_CLASS_REQUIRED") || message.includes("TEACHER_CLASS_REQUIRED")) return "يجب تحديد فصل واحد على الأقل لهذا الموظف قبل اعتماد الصلاحية.";
+  if (message.includes("STAFF_CLASS_REQUIRED") || message.includes("TEACHER_CLASS_REQUIRED")) return "يجب تحديد فصل واحد على الأقل لهذا الموظف.";
   if (message.includes("STAFF_CLASS_ROLE_REQUIRED") || message.includes("TEACHER_ONLY_ASSIGNMENT")) return "تسكين الفصول متاح للمعلم ومدير المدرسة والوكيل والموجه الطلابي.";
   if (message.includes("STAFF_ALREADY_LINKED")) return "هذا الاسم مرتبط بحساب مستخدم آخر بالفعل.";
   if (message.includes("STAFF_NOT_FOUND")) return "لم يتم العثور على الموظف في دليل الهيئة.";

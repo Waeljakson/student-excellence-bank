@@ -27,14 +27,19 @@ export async function rpc<T = any>(name: string, args: Record<string, unknown> =
 export function niceError(error: unknown) {
   const message = error instanceof Error ? error.message : String(error);
   if (message.includes("APPROVAL_REQUIRED")) return "الحساب مسجل، لكنه ما زال بانتظار اعتماد الإدارة.";
-  if (message.includes("ADMIN_REQUIRED")) return "هذه العملية متاحة للإدارة فقط.";
+  if (message.includes("ADMIN_REQUIRED")) return "هذه العملية متاحة لإدارة النظام فقط.";
   if (message.includes("ISSUE_PERMISSION_REQUIRED")) return "لا توجد صلاحية إصدار لهذا الحساب.";
-  if (message.includes("KHAMEESNA_DUPLICATE")) return "تم تسجيل نقاط لهذا الفصل من حسابك في نفس الحصة اليوم بالفعل.";
+  if (message.includes("CLASS_SCOPE_REQUIRED")) return "هذا الفصل غير مسند لهذا المعلم. لا يمكن منح نقاط لطلابه.";
+  if (message.includes("MEGA_CHECK_RESTRICTED")) return "الشيك العملاق متاح فقط لمدير المدرسة أو الوكيل أو الموجه الطلابي المرتبط وظيفيًا بالنظام.";
+  if (message.includes("KHAMEESNA_DAILY_DUPLICATE") || message.includes("KHAMEESNA_DUPLICATE")) return "تم منح هذا الفصل نقاط خميسنا غير من حسابك اليوم بالفعل. المسموح مرة واحدة يوميًا لكل فصل.";
   if (message.includes("KHAMEESNA_WEEK_CLOSED")) return "خميسنا غير مغلقة يومي الجمعة والسبت. يبدأ أسبوع جديد يوم الأحد.";
-  if (message.includes("KHAMEESNA_POINTS_RANGE")) return "نقاط خميسنا غير للحصة الواحدة من 1 إلى 10 نقاط.";
+  if (message.includes("KHAMEESNA_POINTS_RANGE")) return "نقاط خميسنا غير للإضافة الواحدة من 1 إلى 10 نقاط.";
   if (message.includes("KHAMEESNA_LESSON_RANGE")) return "رقم الحصة يجب أن يكون من 1 إلى 8.";
+  if (message.includes("TEACHER_CLASS_REQUIRED")) return "لا يمكن اعتماد المعلم قبل تحديد فصل واحد على الأقل له.";
+  if (message.includes("STAFF_ALREADY_LINKED")) return "هذا الاسم مرتبط بحساب مستخدم آخر بالفعل.";
+  if (message.includes("STAFF_NOT_FOUND")) return "لم يتم العثور على الموظف في دليل الهيئة.";
   if (message.includes("CLASS_NOT_FOUND")) return "الفصل غير موجود أو لا يتبع العام الدراسي الحالي.";
-  if (message.includes("schema cache") || message.includes("Could not find the function")) return "يتم الآن تحديث ربط خميسنا غير بقاعدة البيانات. أعد المحاولة بعد لحظات.";
+  if (message.includes("schema cache") || message.includes("Could not find the function")) return "يتم الآن تحديث ربط النظام بقاعدة البيانات. أعد المحاولة بعد لحظات.";
   if (message.includes("Monthly point budget exceeded")) return "تم استهلاك الحد الشهري المسموح لإصدار النقاط.";
   if (message.includes("Points outside allowed range")) return "عدد النقاط خارج النطاق المسموح لهذه الفئة.";
   return message;

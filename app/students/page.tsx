@@ -1,0 +1,6 @@
+import AppShell from "@/components/AppShell";
+import Header from "@/components/Header";
+import { getStudentsWallets } from "@/lib/data";
+import Link from "next/link";
+export const dynamic='force-dynamic';
+export default async function StudentsPage(){const students=await getStudentsWallets();return <AppShell><Header title="الطلاب والمحافظ" subtitle="الرصيد محسوب من دفتر الحركات ولا يتم تعديله يدويًا"/><main className="content"><section className="panel"><div className="panel-head"><div><h3>محافظ الطلاب</h3><p>كل نقطة مرتبطة بحركة قابلة للتدقيق.</p></div></div>{students.length?<div className="table-wrap"><table><thead><tr><th>الطالب</th><th>الرقم</th><th>الفصل</th><th>المستوى</th><th>الرصيد</th><th>القيمة التقديرية</th></tr></thead><tbody>{students.map((s:any)=><tr key={s.id}><td><b>{s.name}</b></td><td>{s.student_no}</td><td>{s.class_name}</td><td><span className="status">{s.level}</span></td><td><b>{s.points} نقطة</b></td><td>{Number(s.value_sar).toLocaleString('ar-SA')} ر.س</td></tr>)}</tbody></table></div>:<div className="empty-state"><b>لا يوجد طلاب حتى الآن</b><span>سيتم إضافة الاستيراد من Excel في مرحلة التهيئة.</span><Link href="/setup" className="btn ghost">التهيئة</Link></div>}</section></main></AppShell>}

@@ -6,10 +6,11 @@ import "./student-account.css";
 const SCHOOL_LOGO = `${import.meta.env.BASE_URL}school-logo.png`;
 const GUIDANCE_LOGO = `${import.meta.env.BASE_URL}guidance-logo.png`;
 
+type PortalAnnouncement={ id:string; title_ar:string; body_ar:string; starts_at:string; ends_at?:string|null; announcement_type?:string; criteria?:string[]; target_class_ids?:string[] };
 type PortalData = {
   student: { id:string; student_no:string; name:string; grade_name:string; class_name:string; points:number; value_sar:number; avatar?:string|null };
   checks: Array<{ id:string; serial_no:string; points:number; reason:string; status:string; approval_status:string; issued_at:string; rule_name:string; issuer_name:string }>;
-  announcements: Array<{ id:string; title_ar:string; body_ar:string; starts_at:string; ends_at?:string|null }>;
+  announcements: PortalAnnouncement[];
 };
 
 function date(v:string){return new Date(v).toLocaleDateString("ar-SA",{year:"numeric",month:"long",day:"numeric"})}
@@ -51,10 +52,14 @@ export default function StudentPortal(){
   if(error)return <div className="full-center"><div className="pending-card"><h1>تعذر تحميل بوابة الطالب</h1><p>{error}</p><button className="btn ghost" onClick={()=>neon.auth.signOut()}>تسجيل الخروج</button></div></div>;
   if(!data)return <div className="full-center"><div className="loader"/><p>جارٍ تحميل بوابة الطالب...</p></div>;
   const s=data.student;
+  const competitions=data.announcements.filter(a=>a.announcement_type==="TARGETED_COMPETITION");
+  const announcements=data.announcements.filter(a=>a.announcement_type!=="TARGETED_COMPETITION");
   return <div className="student-portal">
     <header className="student-portal-head"><div className="student-brand"><div className="logos"><img src={SCHOOL_LOGO}/><img src={GUIDANCE_LOGO}/></div><div><span>مدارس المشكاة الأهلية</span><h1>بوابة الطالب — بنك التميز</h1></div></div><button className="btn ghost" onClick={()=>neon.auth.signOut()}>تسجيل الخروج</button></header>
     <main className="student-portal-content">
       <section className="student-welcome student-profile-welcome"><div className="student-profile-main"><div className="student-avatar">{s.avatar?<img src={s.avatar} alt="الصورة الشخصية"/>:<span>{s.name?.trim()?.charAt(0)||"ط"}</span>}</div><div><span>أهلًا بك</span><h2>{s.name}</h2><p>{s.grade_name} — فصل {s.class_name} · رقم الطالب {s.student_no}</p></div></div><div className="student-balance"><small>رصيدك الحالي</small><strong>{Number(s.points).toLocaleString("ar-SA")}</strong><span>نقطة · {Number(s.value_sar).toLocaleString("ar-SA")} ر.س</span></div></section>
+
+      {competitions.length>0&&<section className="student-competition-banners">{competitions.map((c,index)=><article className="competition-check-banner" key={c.id}><div className="check-perforation top"/><div className="competition-check-side"><div className="competition-check-logos"><img src={SCHOOL_LOGO}/><img src={GUIDANCE_LOGO}/></div><span>مسابقة مدرسية</span><b>{String(index+1).padStart(2,"0")}</b></div><div className="competition-check-main"><div className="competition-check-kicker"><span>تم إطلاق المسابقة لفصلك</span><em>نشطة الآن</em></div><h2>{c.title_ar}</h2><p>{c.body_ar}</p>{c.criteria?.length?<div className="competition-check-criteria">{c.criteria.map((criterion,i)=><span key={i}><b>{i+1}</b>{criterion}</span>)}</div>:null}<div className="competition-check-footer"><div><small>تبدأ</small><b>{date(c.starts_at)}</b></div><div><small>تنتهي</small><b>{c.ends_at?date(c.ends_at):"حتى إشعار آخر"}</b></div><div><small>الفصل المستهدف</small><b>{s.grade_name} — فصل {s.class_name}</b></div></div></div><div className="check-perforation bottom"/></article>)}</section>}
 
       <section className="portal-panel student-account-panel"><div className="portal-panel-title"><div><h3>إعدادات حسابي</h3><p>الصورة الشخصية وكلمة المرور</p></div><span>⚙</span></div><div className="student-account-grid">
         <div className="student-photo-settings"><div className="student-avatar large">{s.avatar?<img src={s.avatar} alt="الصورة الشخصية"/>:<span>{s.name?.trim()?.charAt(0)||"ط"}</span>}</div><div><h4>صورتي الشخصية</h4><p>اختر صورة واضحة. سيتم قصها وضغطها تلقائيًا.</p><label className={`btn primary upload-avatar-btn ${photoBusy?"disabled":""}`}>{photoBusy?"جارٍ حفظ الصورة...":"اختيار صورة"}<input type="file" accept="image/jpeg,image/png,image/webp" disabled={photoBusy} onChange={uploadPhoto}/></label>{photoMsg&&<div className="notice compact-notice">{photoMsg}</div>}</div></div>
@@ -63,10 +68,10 @@ export default function StudentPortal(){
 
       <section className="student-portal-grid">
         <article className="portal-panel"><div className="portal-panel-title"><h3>شيكات التميز الخاصة بي</h3><span>{data.checks.length}</span></div>{data.checks.length?<div className="student-checks">{data.checks.map(c=><div className="student-check-card" key={c.id}><div><b>{c.rule_name}</b><small>{c.reason}</small><em>{date(c.issued_at)} · {c.issuer_name}</em></div><strong>+{c.points}</strong><span>{c.serial_no}</span></div>)}</div>:<div className="empty">لم يصدر لك أي شيك تميز حتى الآن.</div>}</article>
-        <article className="portal-panel"><div className="portal-panel-title"><h3>المسابقات المعلنة</h3><span>{data.announcements.length}</span></div>{data.announcements.length?<div className="announcement-list">{data.announcements.map(a=><div className="announcement-card" key={a.id}><span>مسابقة</span><h4>{a.title_ar}</h4><p>{a.body_ar}</p><small>تاريخ الإعلان: {date(a.starts_at)}{a.ends_at?` · حتى ${date(a.ends_at)}`:""}</small></div>)}</div>:<div className="empty">لا توجد مسابقات معلنة حاليًا.</div>}</article>
+        <article className="portal-panel"><div className="portal-panel-title"><h3>الإعلانات العامة</h3><span>{announcements.length}</span></div>{announcements.length?<div className="announcement-list">{announcements.map(a=><div className="announcement-card" key={a.id}><span>إعلان</span><h4>{a.title_ar}</h4><p>{a.body_ar}</p><small>تاريخ الإعلان: {date(a.starts_at)}{a.ends_at?` · حتى ${date(a.ends_at)}`:""}</small></div>)}</div>:<div className="empty">لا توجد إعلانات عامة حاليًا.</div>}</article>
       </section>
 
-      <p className="student-security-note">لن تظهر هنا إلا المسابقات التي تنشرها إدارة النظام للطلاب. بيانات الدخول شخصية ولا يجب مشاركتها.</p>
+      <p className="student-security-note">لا تظهر لك إلا المسابقات الموجهة لفصلك خلال فترة إطلاقها. بيانات الدخول شخصية ولا يجب مشاركتها.</p>
     </main>
   </div>;
 }

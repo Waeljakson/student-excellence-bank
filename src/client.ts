@@ -36,6 +36,7 @@ export function niceError(error: unknown) {
   if (message.includes("KHAMEESNA_POINTS_RANGE")) return "نقاط خميسنا غير للإضافة الواحدة من 1 إلى 10 نقاط.";
   if (message.includes("KHAMEESNA_LESSON_RANGE")) return "رقم الحصة يجب أن يكون من 1 إلى 8.";
   if (message.includes("TEACHER_CLASS_REQUIRED")) return "لا يمكن اعتماد المعلم قبل تحديد فصل واحد على الأقل له.";
+  if (message.includes("TEACHER_ONLY_ASSIGNMENT")) return "تسكين الفصول متاح للمعلمين فقط.";
   if (message.includes("STAFF_ALREADY_LINKED")) return "هذا الاسم مرتبط بحساب مستخدم آخر بالفعل.";
   if (message.includes("STAFF_NOT_FOUND")) return "لم يتم العثور على الموظف في دليل الهيئة.";
   if (message.includes("CLASS_NOT_FOUND")) return "الفصل غير موجود أو لا يتبع العام الدراسي الحالي.";

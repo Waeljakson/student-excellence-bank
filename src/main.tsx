@@ -11,6 +11,7 @@ import "./premium.css";
 import "./scopes.css";
 import "./student-tabs.css";
 import "./ui-polish.css";
+import "./redemption-page-fix.css";
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>

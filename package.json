@@ -1,0 +1,27 @@
+{
+  "name": "student-excellence-bank",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
+  },
+  "dependencies": {
+    "@neondatabase/serverless": "latest",
+    "next": "16.3.0",
+    "qrcode": "latest",
+    "react": "19.2.0",
+    "react-dom": "19.2.0",
+    "@neondatabase/auth": "latest",
+    "@neondatabase/auth-ui": "latest"
+  },
+  "devDependencies": {
+    "@types/node": "latest",
+    "@types/qrcode": "latest",
+    "@types/react": "latest",
+    "@types/react-dom": "latest",
+    "typescript": "latest"
+  }
+}

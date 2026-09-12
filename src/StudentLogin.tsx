@@ -18,21 +18,56 @@ export default function StudentLogin() {
     e.preventDefault();
     const no = studentNo.trim();
     if (!/^\d+$/.test(no)) { setMessage("اكتب رقم الطالب كما هو في المدرسة."); return; }
-    const email = `${no}@students.mishkat.sa`;
-    setBusy(true); setMessage("");
-    try {
-      const signed = await neon.auth.signIn.email({ email, password });
-      if (!signed?.error) return;
 
+    const email = `${no}@students.mishkat.sa`;
+    setBusy(true);
+    setMessage("");
+
+    try {
+      // نتحقق من سجل الطالب أولًا بدل محاولة تسجيل دخول لحساب لم يُنشأ بعد.
       const lookup = await rpc<Lookup>("api_student_lookup", { p_student_no: no });
       if (!lookup.exists) throw new Error("رقم الطالب غير موجود في قاعدة المدرسة.");
-      if (lookup.claimed) throw new Error("رقم الطالب أو كلمة المرور غير صحيحة.");
-      if (password !== `${no}Aa`) throw new Error("كلمة المرور الافتراضية غير صحيحة.");
 
-      const created = await neon.auth.signUp.email({ name: `طالب ${no}`, email, password });
-      authError(created);
-      const again = await neon.auth.signIn.email({ email, password });
-      if (again?.error && !created?.data) authError(again);
+      // الطالب المرتبط سابقًا: دخول عادي بنفس رقم الطالب وكلمة المرور.
+      if (lookup.claimed) {
+        try {
+          const signed = await neon.auth.signIn.email({ email, password });
+          authError(signed);
+          return;
+        } catch {
+          throw new Error("رقم الطالب أو كلمة المرور غير صحيحة.");
+        }
+      }
+
+      // أول دخول: كلمة المرور الابتدائية ثابتة حسب طلب المدرسة.
+      if (password !== `${no}Aa`) throw new Error("كلمة المرور الافتراضية غير صحيحة. استخدم رقم الطالب متبوعًا بـ Aa.");
+
+      // إنشاء حساب Neon Auth لأول مرة. إذا وُجد حساب Auth يتيم سابقًا نحاول الدخول به.
+      let createdOk = false;
+      try {
+        const created = await neon.auth.signUp.email({ name: `طالب ${no}`, email, password });
+        authError(created);
+        createdOk = true;
+      } catch (createErr) {
+        try {
+          const signed = await neon.auth.signIn.email({ email, password });
+          authError(signed);
+          createdOk = true;
+        } catch {
+          throw createErr;
+        }
+      }
+
+      if (!createdOk) throw new Error("تعذر إنشاء حساب الطالب.");
+
+      // نتأكد أن جلسة الطالب فعالة ثم نربطها بسجل الطالب الموجود، دون إنشاء طالب جديد.
+      try {
+        const signed = await neon.auth.signIn.email({ email, password });
+        authError(signed);
+      } catch {
+        // signUp في Neon Auth قد يسجل الدخول تلقائيًا؛ نكمل محاولة الربط في هذه الحالة.
+      }
+
       await rpc("api_claim_student_account", { p_student_no: no });
       window.location.reload();
     } catch (err) {

@@ -5,11 +5,13 @@
 // SYSTEM_FEATURES_V2
 // SYSTEM_FEATURES_V2
 // SYSTEM_FEATURES_V2
+// SYSTEM_FEATURES_V2
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import QRCode from "qrcode";
 import { neon, niceError, rpc } from "./client";
 import StudentExcelImporter from "./StudentExcelImporter";
 import StudentLogin from "./StudentLogin";
+import TeacherLogin from "./TeacherLogin";
 import StudentPortal from "./StudentPortal";
 import SystemControlPanel from "./SystemControlPanel";
 import KhameesnaCompetition from "./KhameesnaCompetition";
@@ -66,7 +68,7 @@ function Loading({ text = "جارٍ تحميل بنك التميز..." }: { text
 }
 
 function AuthScreen() {
-  const [mode, setMode] = useState<"otp" | "register" | "password" | "student">("otp");
+  const [mode, setMode] = useState<"otp" | "register" | "password" | "teacher" | "student">("otp");
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -118,7 +120,8 @@ function AuthScreen() {
       <div className="auth-tabs">
         <button className={mode==="otp"?"active":""} onClick={()=>{setMode("otp");setMessage("")}}>دخول برمز البريد</button>
         <button className={mode==="password"?"active":""} onClick={()=>{setMode("password");setMessage("")}}>دخول بكلمة مرور</button>
-        <button className={mode==="register"?"active":""} onClick={()=>{setMode("register");setMessage("")}}>إنشاء حساب معلم</button>
+        <button className={mode==="teacher"?"active":""} onClick={()=>{setMode("teacher");setMessage("")}}>دخول المعلم</button>
+        <button className={mode==="register"?"active":""} onClick={()=>{setMode("register");setMessage("")}}>إنشاء حساب بالبريد</button>
         <button className={mode==="student"?"active":""} onClick={()=>{setMode("student");setMessage("")}}>دخول الطالب</button>
       </div>
       {mode==="otp" && (!otpSent ? <form onSubmit={sendOtp} className="form-stack">
@@ -136,12 +139,13 @@ function AuthScreen() {
         <label>كلمة المرور<input type="password" required value={password} onChange={e=>setPassword(e.target.value)}/></label>
         <button className="btn primary" disabled={busy}>دخول</button>
       </form>}
-      {mode==="register" && <form onSubmit={register} className="form-stack"><h2>إنشاء حساب معلم</h2><p>إنشاء الحساب لا يمنح صلاحية إصدار الشيكات تلقائيًا؛ الإدارة تعتمدها من لوحة الصلاحيات.</p>
+      {mode==="register" && <form onSubmit={register} className="form-stack"><h2>إنشاء حساب بالبريد</h2><p>المعلمون يستخدمون تبويب «دخول المعلم» برقم الجوال. هذا الخيار للحسابات الأخرى التي تعتمدها الإدارة.</p>
         <label>الاسم الكامل<input required value={name} onChange={e=>setName(e.target.value)}/></label>
         <label>البريد الإلكتروني<input type="email" required value={email} onChange={e=>setEmail(e.target.value)}/></label>
         <label>كلمة المرور<input type="password" minLength={8} required value={password} onChange={e=>setPassword(e.target.value)}/></label>
         <button className="btn primary" disabled={busy}>إنشاء الحساب</button>
       </form>}
+      {mode==="teacher"&&<TeacherLogin/>}
       {mode==="student"&&<StudentLogin/>}
       {message && <div className="notice">{message}</div>}
     </div>

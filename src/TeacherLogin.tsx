@@ -22,7 +22,9 @@ export default function TeacherLogin() {
     setBusy(true);
     setMessage("");
     try {
-      const lookup = await rpc<Lookup>("api_teacher_lookup", { p_mobile: phone });
+      // نستخدم RPC قديمًا وموجودًا بالفعل في Data API لتجنب مشكلة schema cache.
+      const teacherKey = `T:${phone}`;
+      const lookup = await rpc<Lookup>("api_student_lookup", { p_student_no: teacherKey });
       if (!lookup.exists) throw new Error("رقم الجوال غير موجود ضمن المعلمين المسجلين في دليل الهيئة.");
 
       if (lookup.claimed) {
@@ -60,7 +62,8 @@ export default function TeacherLogin() {
         // signUp قد ينشئ الجلسة تلقائيًا.
       }
 
-      await rpc("api_claim_teacher_account", { p_mobile: phone });
+      // نفس RPC القديم يقوم بربط حساب المعلم عندما يبدأ المفتاح بـ T:.
+      await rpc("api_claim_student_account", { p_student_no: teacherKey });
       window.location.reload();
     } catch (err) {
       setMessage(niceError(err));

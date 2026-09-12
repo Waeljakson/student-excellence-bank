@@ -28,7 +28,12 @@ export function niceError(error: unknown) {
   const message = error instanceof Error ? error.message : String(error);
   if (message.includes("APPROVAL_REQUIRED")) return "الحساب مسجل، لكنه ما زال بانتظار اعتماد الإدارة.";
   if (message.includes("ADMIN_REQUIRED")) return "هذه العملية متاحة للإدارة فقط.";
-  if (message.includes("ISSUE_PERMISSION_REQUIRED")) return "لا توجد صلاحية لإصدار شيكات لهذا الحساب.";
+  if (message.includes("ISSUE_PERMISSION_REQUIRED")) return "لا توجد صلاحية إصدار لهذا الحساب.";
+  if (message.includes("KHAMEESNA_DUPLICATE")) return "تم تسجيل نقاط لهذا الفصل من حسابك في نفس الحصة اليوم بالفعل.";
+  if (message.includes("KHAMEESNA_WEEK_CLOSED")) return "خميسنا غير مغلقة يومي الجمعة والسبت. يبدأ أسبوع جديد يوم الأحد.";
+  if (message.includes("KHAMEESNA_POINTS_RANGE")) return "نقاط خميسنا غير للحصة الواحدة من 1 إلى 10 نقاط.";
+  if (message.includes("KHAMEESNA_LESSON_RANGE")) return "رقم الحصة يجب أن يكون من 1 إلى 8.";
+  if (message.includes("CLASS_NOT_FOUND")) return "الفصل غير موجود أو لا يتبع العام الدراسي الحالي.";
   if (message.includes("Monthly point budget exceeded")) return "تم استهلاك الحد الشهري المسموح لإصدار النقاط.";
   if (message.includes("Points outside allowed range")) return "عدد النقاط خارج النطاق المسموح لهذه الفئة.";
   return message;

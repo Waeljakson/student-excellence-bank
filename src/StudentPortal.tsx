@@ -9,7 +9,6 @@ type PortalData = {
   student: { id:string; student_no:string; name:string; grade_name:string; class_name:string; points:number; value_sar:number };
   checks: Array<{ id:string; serial_no:string; points:number; reason:string; status:string; approval_status:string; issued_at:string; rule_name:string; issuer_name:string }>;
   announcements: Array<{ id:string; title_ar:string; body_ar:string; starts_at:string; ends_at?:string|null }>;
-  competitions: Array<{ id:string; name_ar:string; description_ar:string; starts_on:string; ends_on:string; reward_text_ar:string; week_no:number; display_status:string; criteria:Array<{key:string;label:string;weight:number;max_score:number}> }>;
 };
 
 function date(v:string){return new Date(v).toLocaleDateString("ar-SA",{year:"numeric",month:"long",day:"numeric"})}
@@ -28,11 +27,10 @@ export default function StudentPortal(){
       <section className="student-portal-grid">
         <article className="portal-panel"><div className="portal-panel-title"><h3>شيكات التميز الخاصة بي</h3><span>{data.checks.length}</span></div>{data.checks.length?<div className="student-checks">{data.checks.map(c=><div className="student-check-card" key={c.id}><div><b>{c.rule_name}</b><small>{c.reason}</small><em>{date(c.issued_at)} · {c.issuer_name}</em></div><strong>+{c.points}</strong><span>{c.serial_no}</span></div>)}</div>:<div className="empty">لم يصدر لك أي شيك تميز حتى الآن.</div>}</article>
 
-        <article className="portal-panel"><div className="portal-panel-title"><h3>إعلانات المسابقات</h3><span>{data.announcements.length}</span></div>{data.announcements.length?<div className="announcement-list">{data.announcements.map(a=><div className="announcement-card" key={a.id}><span>إعلان</span><h4>{a.title_ar}</h4><p>{a.body_ar}</p><small>{date(a.starts_at)}</small></div>)}</div>:<div className="empty">لا توجد إعلانات مسابقات منشورة حاليًا.</div>}</article>
+        <article className="portal-panel"><div className="portal-panel-title"><h3>المسابقات المعلنة</h3><span>{data.announcements.length}</span></div>{data.announcements.length?<div className="announcement-list">{data.announcements.map(a=><div className="announcement-card" key={a.id}><span>مسابقة</span><h4>{a.title_ar}</h4><p>{a.body_ar}</p><small>تاريخ الإعلان: {date(a.starts_at)}{a.ends_at?` · حتى ${date(a.ends_at)}`:""}</small></div>)}</div>:<div className="empty">لا توجد مسابقات معلنة حاليًا.</div>}</article>
       </section>
 
-      <section className="portal-panel competitions-panel"><div className="portal-panel-title"><div><h3>خميسنا غير</h3><p>من الأسبوع الخامس إلى الأسبوع السابع عشر</p></div><span>🏆</span></div><div className="student-competition-weeks">{data.competitions.map(c=><article key={c.id} className={`student-week-card ${c.display_status.toLowerCase()}`}><div className="week-number">الأسبوع {c.week_no}</div><h4>{c.name_ar}</h4><small>{date(c.starts_on)} — {date(c.ends_on)}</small><p>{c.description_ar}</p><div className="criteria-mini">{(c.criteria||[]).map(m=><span key={m.key}>{m.label}</span>)}</div><b>{c.reward_text_ar}</b></article>)}</div></section>
-      <p className="student-security-note">بيانات الدخول شخصية. لا تشارك رقمك وكلمة مرورك مع أي طالب آخر.</p>
+      <p className="student-security-note">لن تظهر هنا إلا المسابقات التي تنشرها إدارة النظام للطلاب. بيانات الدخول شخصية ولا يجب مشاركتها.</p>
     </main>
   </div>;
 }

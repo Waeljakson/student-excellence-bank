@@ -8,12 +8,14 @@
 // SYSTEM_FEATURES_V2
 // SYSTEM_FEATURES_V2
 // SYSTEM_FEATURES_V2
+// SYSTEM_FEATURES_V2
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import QRCode from "qrcode";
 import { neon, niceError, rpc } from "./client";
 import StudentExcelImporter from "./StudentExcelImporter";
 import StudentLogin from "./StudentLogin";
 import TeacherLogin from "./TeacherLogin";
+import AdminPasswordReset from "./AdminPasswordReset";
 import StudentPortal from "./StudentPortal";
 import SystemControlPanel from "./SystemControlPanel";
 import KhameesnaCompetition from "./KhameesnaCompetition";
@@ -129,6 +131,7 @@ function AuthScreen() {
         <label>كلمة المرور<input type="password" required value={password} onChange={e=>setPassword(e.target.value)}/></label>
         <button className="btn primary" disabled={busy}>دخول</button>
       </form>}
+      {mode==="password"&&<AdminPasswordReset/>}
       {mode==="teacher"&&<TeacherLogin/>}
       {mode==="student"&&<StudentLogin/>}
       {message && <div className="notice">{message}</div>}

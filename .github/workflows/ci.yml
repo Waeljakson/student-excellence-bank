@@ -1,0 +1,30 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      DATABASE_URL: postgresql://user:password@localhost:5432/excellence_bank
+      NEON_AUTH_BASE_URL: https://example.neonauth.example.com/excellence_bank/auth
+      NEON_AUTH_COOKIE_SECRET: ci-only-cookie-secret-abcdefghijklmnopqrstuvwxyz-1234567890
+      QR_SIGNING_SECRET: ci-only-qr-signing-secret-abcdefghijklmnopqrstuvwxyz-1234567890
+      NEXT_PUBLIC_APP_URL: http://localhost:3000
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install dependencies
+        run: npm install
+      - name: Build Next.js app
+        run: npm run build

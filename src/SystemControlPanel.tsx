@@ -35,7 +35,7 @@ export default function SystemControlPanel(){
       setCompTitle("");setCompBody("");setCompStart(today());setCompEnd(afterDays(7));setCompCriteria([""]);setSelectedClasses([]);setMsg("تم إطلاق المسابقة. ستظهر فقط لطلاب الفصول المحددة خلال مدة المسابقة.");await load();
     }catch(e){setMsg(niceError(e))}finally{setBusy("")}
   }
-  const d=(v?:string)=>v?new Date(v+(/T/.test(v)?"":"T12:00:00")).toLocaleDateString("ar-SA",{day:"numeric",month:"short"}):"—";
+  const d=(v?:string|null)=>v?new Date(v+(/T/.test(v)?"":"T12:00:00")).toLocaleDateString("ar-SA",{day:"numeric",month:"short"}):"—";
   const targeted=ann.filter(a=>a.announcement_type==="TARGETED_COMPETITION");
   const general=ann.filter(a=>a.announcement_type!=="TARGETED_COMPETITION");
   return <><header className="topbar"><div><h1>إعدادات مدير النظام</h1><p>قيم البطاقات وإطلاق المسابقات — هذه الصفحة متاحة لمدير النظام فقط</p></div></header><main className="content system-control">

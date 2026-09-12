@@ -4,6 +4,10 @@ import "./engagement.css";
 
 type RequestRow = {
   id: string;
+  reward_id: string;
+  reward_name: string;
+  reward_description?: string | null;
+  stock?: number | null;
   points_cost: number;
   status: "PENDING" | "APPROVED" | "FULFILLED" | "REJECTED" | "CANCELLED";
   requested_at: string;
@@ -15,7 +19,6 @@ type RequestRow = {
   grade_name: string;
   class_name: string;
   balance: number;
-  estimated_sar: number;
   processed_by?: string | null;
 };
 
@@ -23,7 +26,6 @@ type Data = {
   is_open: boolean;
   opened_at?: string | null;
   min_points: number;
-  point_value_sar: number;
   requests: RequestRow[];
 };
 
@@ -40,9 +42,9 @@ const fmt = (v?: string | null) =>
 
 const statusLabel = (s: string) =>
   ({
-    PENDING: "طلب جديد",
+    PENDING: "طلب هدية جديد",
     APPROVED: "معتمد",
-    FULFILLED: "تم الاستبدال",
+    FULFILLED: "تم تسليم الهدية",
     REJECTED: "مرفوض",
     CANCELLED: "ملغي",
   } as Record<string, string>)[s] || s;
@@ -79,7 +81,7 @@ export default function GuidanceRedemptionCenter() {
   async function windowAction(action: "OPEN" | "CLOSE") {
     if (
       action === "CLOSE" &&
-      !window.confirm("إغلاق الاستبدال الآن؟ لن يستطيع الطلاب إرسال طلبات جديدة، لكن الطلبات الحالية ستظل موجودة لديك.")
+      !window.confirm("إغلاق متجر الاستبدال الآن؟ لن يستطيع الطلاب إرسال طلبات هدايا جديدة، لكن الطلبات الحالية ستظل موجودة لديك.")
     )
       return;
     setBusy(action);
@@ -88,8 +90,8 @@ export default function GuidanceRedemptionCenter() {
       await rpc("api_guidance_set_redemption_window", { p_action: action });
       setMsg(
         action === "OPEN"
-          ? "تم فتح الاستبدال للطلاب المؤهلين (50 نقطة فأكثر)."
-          : "تم إغلاق نافذة الاستبدال أمام الطلبات الجديدة.",
+          ? `تم فتح متجر الهدايا للطلاب المؤهلين ابتداءً من ${data?.min_points || 50} نقطة.`
+          : "تم إغلاق متجر الهدايا أمام الطلبات الجديدة.",
       );
       await load();
     } catch (e) {
@@ -100,13 +102,13 @@ export default function GuidanceRedemptionCenter() {
   }
 
   async function fulfill(r: RequestRow) {
-    if (!window.confirm(`تأكيد استبدال ${r.points_cost} نقطة للطالب ${r.student_name}؟ سيتم خصم النقاط فورًا من محفظته.`))
+    if (!window.confirm(`تأكيد تسليم «${r.reward_name}» للطالب ${r.student_name} مقابل ${r.points_cost} نقطة؟ سيتم خصم النقاط الآن من محفظته.`))
       return;
     setBusy(r.id);
     setMsg("");
     try {
       const result = await rpc<any>("api_guidance_fulfill_redemption", { p_redemption_id: r.id });
-      setMsg(`تم الاستبدال وخصم ${result.points} نقطة. الرصيد الجديد: ${result.new_balance} نقطة.`);
+      setMsg(`تم تسليم «${result.reward_name || r.reward_name}» وخصم ${result.points} نقطة. الرصيد الجديد: ${result.new_balance} نقطة.`);
       await load();
     } catch (e) {
       setMsg(niceError(e));
@@ -116,13 +118,13 @@ export default function GuidanceRedemptionCenter() {
   }
 
   async function reject(r: RequestRow) {
-    const note = window.prompt("سبب رفض الطلب — اختياري", "");
+    const note = window.prompt(`سبب رفض طلب «${r.reward_name}» — اختياري`, "");
     if (note === null) return;
     setBusy(r.id + "r");
     setMsg("");
     try {
       await rpc("api_guidance_reject_redemption", { p_redemption_id: r.id, p_note: note || null });
-      setMsg("تم رفض الطلب دون خصم أي نقاط.");
+      setMsg("تم رفض طلب الهدية دون خصم أي نقاط.");
       await load();
     } catch (e) {
       setMsg(niceError(e));
@@ -136,7 +138,7 @@ export default function GuidanceRedemptionCenter() {
       <>
         <header className="topbar redemption-topbar">
           <div>
-            <h1>مركز الاستبدال</h1>
+            <h1>طلبات متجر الهدايا</h1>
             <p>جارٍ تحميل الطلبات...</p>
           </div>
         </header>
@@ -152,21 +154,21 @@ export default function GuidanceRedemptionCenter() {
     <>
       <header className="topbar redemption-topbar">
         <div>
-          <h1>استبدال النقاط</h1>
-          <p>فتح وإغلاق الاستبدال ومتابعة طلبات الطلاب وتنفيذ الخصم</p>
+          <h1>استبدال النقاط بالهدايا</h1>
+          <p>فتح وإغلاق متجر الهدايا ومتابعة طلبات الطلاب وتأكيد التسليم</p>
         </div>
         <span className={`redemption-header-state ${data.is_open ? "open" : "closed"}`}>
-          {data.is_open ? "مفتوح الآن" : "مغلق الآن"}
+          {data.is_open ? "المتجر مفتوح" : "المتجر مغلق"}
         </span>
       </header>
 
       <main className="content redemption-guidance-page">
         <section className={`panel redemption-control-hero ${data.is_open ? "open" : "closed"}`}>
           <div className="redemption-control-copy">
-            <span className="eyebrow">التحكم في الإتاحة</span>
-            <h2>{data.is_open ? "الطلاب المؤهلون يستطيعون إرسال الطلبات" : "إرسال الطلبات متوقف حاليًا"}</h2>
+            <span className="eyebrow">التحكم في متجر الهدايا</span>
+            <h2>{data.is_open ? "الطلاب يستطيعون طلب الهدايا المتاحة" : "طلبات الهدايا متوقفة حاليًا"}</h2>
             <p>
-              الحد الأدنى {data.min_points || 50} نقطة. فتح الخدمة لا يخصم أي نقاط؛ الخصم يتم فقط عند تنفيذ طلب الطالب من هذه الصفحة.
+              أقل هدية تبدأ من {data.min_points || 50} نقطة. فتح المتجر لا يخصم أي نقاط؛ الخصم والمخزون يتغيران فقط عند تأكيد تسليم الهدية للطالب.
             </p>
             {data.opened_at && data.is_open && <small>تم الفتح: {fmt(data.opened_at)}</small>}
           </div>
@@ -174,26 +176,26 @@ export default function GuidanceRedemptionCenter() {
           <div className="redemption-control-actions">
             {data.is_open ? (
               <button className="btn danger" disabled={!!busy} onClick={() => windowAction("CLOSE")}>
-                إغلاق الاستبدال
+                إغلاق متجر الهدايا
               </button>
             ) : (
               <button className="btn primary" disabled={!!busy} onClick={() => windowAction("OPEN")}>
-                فتح الاستبدال
+                فتح متجر الهدايا
               </button>
             )}
             <div className="redemption-pending-count">
               <b>{pending.length}</b>
-              <span>طلب بانتظار التنفيذ</span>
+              <span>طلب هدية بانتظار التسليم</span>
             </div>
           </div>
         </section>
 
-        <section className="redemption-tabs" aria-label="تصفية طلبات الاستبدال">
+        <section className="redemption-tabs" aria-label="تصفية طلبات الهدايا">
           <button className={filter === "PENDING" ? "active" : ""} onClick={() => setFilter("PENDING")}>
             الطلبات الحالية <span>{pending.length}</span>
           </button>
           <button className={filter === "HISTORY" ? "active" : ""} onClick={() => setFilter("HISTORY")}>
-            السجل السابق <span>{history.length}</span>
+            سجل الهدايا <span>{history.length}</span>
           </button>
         </section>
 
@@ -205,65 +207,44 @@ export default function GuidanceRedemptionCenter() {
                   <div>
                     <span className={`redemption-status ${r.status.toLowerCase()}`}>{statusLabel(r.status)}</span>
                     <h3>{r.student_name}</h3>
-                    <p>
-                      {r.grade_name} — فصل {r.class_name} · رقم الطالب {r.student_no}
-                    </p>
+                    <p>{r.grade_name} — فصل {r.class_name} · رقم الطالب {r.student_no}</p>
+                    <p><b>الهدية المطلوبة: {r.reward_name}</b>{r.reward_description ? ` — ${r.reward_description}` : ""}</p>
                   </div>
                   <div className="guidance-redemption-amount">
-                    <small>النقاط المطلوبة</small>
+                    <small>تكلفة الهدية</small>
                     <strong>{r.points_cost}</strong>
-                    <span>≈ {Number(r.estimated_sar).toLocaleString("ar-SA", { maximumFractionDigits: 2 })} ر.س</span>
+                    <span>نقطة</span>
                   </div>
                 </div>
 
                 <div className="guidance-redemption-meta">
-                  <span>
-                    <small>الرصيد الحالي</small>
-                    <b>{r.balance} نقطة</b>
-                  </span>
-                  <span>
-                    <small>تاريخ الطلب</small>
-                    <b>{fmt(r.requested_at)}</b>
-                  </span>
-                  {r.fulfilled_at && (
-                    <span>
-                      <small>تاريخ التنفيذ</small>
-                      <b>{fmt(r.fulfilled_at)}</b>
-                    </span>
-                  )}
+                  <span><small>الرصيد الحالي</small><b>{r.balance} نقطة</b></span>
+                  <span><small>مخزون الهدية</small><b>{r.stock == null ? "غير محدود" : `${r.stock} متاح`}</b></span>
+                  <span><small>تاريخ الطلب</small><b>{fmt(r.requested_at)}</b></span>
+                  {r.fulfilled_at && <span><small>تاريخ التسليم</small><b>{fmt(r.fulfilled_at)}</b></span>}
                 </div>
 
                 {(r.status === "PENDING" || r.status === "APPROVED") && (
                   <div className="guidance-redemption-actions">
-                    <button
-                      className="btn primary"
-                      disabled={busy === r.id || r.balance < r.points_cost}
-                      onClick={() => fulfill(r)}
-                    >
-                      {busy === r.id ? "جارٍ الخصم..." : "تنفيذ الاستبدال وخصم النقاط"}
+                    <button className="btn primary" disabled={busy === r.id || r.balance < r.points_cost || r.stock === 0} onClick={() => fulfill(r)}>
+                      {busy === r.id ? "جارٍ الخصم..." : "تم تسليم الهدية — خصم النقاط"}
                     </button>
-                    <button className="btn ghost" disabled={busy === r.id + "r"} onClick={() => reject(r)}>
-                      رفض الطلب
-                    </button>
-                    {r.balance < r.points_cost && <small>الرصيد الحالي أقل من النقاط المطلوبة، لذلك لا يمكن التنفيذ.</small>}
+                    <button className="btn ghost" disabled={busy === r.id + "r"} onClick={() => reject(r)}>رفض الطلب</button>
+                    {r.balance < r.points_cost && <small>رصيد الطالب الحالي أقل من تكلفة الهدية.</small>}
+                    {r.stock === 0 && <small>نفد مخزون هذه الهدية؛ لا يمكن تأكيد التسليم.</small>}
                   </div>
                 )}
 
                 {r.status !== "PENDING" && r.status !== "APPROVED" && (
                   <div className="redemption-history-note">
-                    <b>{statusLabel(r.status)}</b>
-                    <span>
-                      {r.notes || "—"}
-                      {r.processed_by && r.processed_by !== "—" ? ` · ${r.processed_by}` : ""}
-                    </span>
+                    <b>{statusLabel(r.status)} — {r.reward_name}</b>
+                    <span>{r.notes || "—"}{r.processed_by && r.processed_by !== "—" ? ` · ${r.processed_by}` : ""}</span>
                   </div>
                 )}
               </article>
             ))
           ) : (
-            <div className="panel empty">
-              {filter === "PENDING" ? "لا توجد طلبات معلقة حاليًا." : "لا يوجد سجل سابق حتى الآن."}
-            </div>
+            <div className="panel empty">{filter === "PENDING" ? "لا توجد طلبات هدايا معلقة حاليًا." : "لا يوجد سجل هدايا سابق حتى الآن."}</div>
           )}
         </section>
 

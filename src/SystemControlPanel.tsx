@@ -1,6 +1,7 @@
 import { FormEvent, useEffect, useState } from "react";
 import { niceError, rpc } from "./client";
 import "./feature-upgrade.css";
+import "./targeted-competitions.css";
 
 type Rule = { id:string; name_ar:string; description_ar?:string|null; points:number; is_mega:boolean; is_active:boolean };
 type AdminClass = { id:string; grade_name:string; class_name:string };

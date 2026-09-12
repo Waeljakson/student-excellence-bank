@@ -1,6 +1,7 @@
 import { FormEvent, useEffect, useState } from "react";
 import { neon, niceError, rpc } from "./client";
 import "./feature-upgrade.css";
+import "./student-account.css";
 
 const SCHOOL_LOGO = `${import.meta.env.BASE_URL}school-logo.png`;
 const GUIDANCE_LOGO = `${import.meta.env.BASE_URL}guidance-logo.png`;

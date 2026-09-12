@@ -40,6 +40,10 @@ export function niceError(error: unknown) {
   if (message.includes("STAFF_ALREADY_LINKED")) return "هذا الاسم مرتبط بحساب مستخدم آخر بالفعل.";
   if (message.includes("STAFF_NOT_FOUND")) return "لم يتم العثور على الموظف في دليل الهيئة.";
   if (message.includes("CLASS_NOT_FOUND")) return "الفصل غير موجود أو لا يتبع العام الدراسي الحالي.";
+  if (message.includes("DEPARTMENT_NOT_FOUND")) return "القسم المختار غير موجود أو غير متاح لهذه المدرسة.";
+  if (message.includes("CURRENT_ACADEMIC_YEAR_NOT_FOUND")) return "لا يوجد عام دراسي حالي مضبوط في النظام.";
+  if (message.includes("IMPORT_ROWS_EMPTY") || message.includes("IMPORT_ROWS_REQUIRED")) return "لا توجد صفوف طلاب صالحة للاستيراد.";
+  if (message.includes("IMPORT_CHUNK_TOO_LARGE")) return "عدد الطلاب في دفعة الاستيراد كبير جدًا. سيتم تقسيم الملف إلى دفعات تلقائيًا.";
   if (message.includes("schema cache") || message.includes("Could not find the function")) return "يتم الآن تحديث ربط النظام بقاعدة البيانات. أعد المحاولة بعد لحظات.";
   if (message.includes("Monthly point budget exceeded")) return "تم استهلاك الحد الشهري المسموح لإصدار النقاط.";
   if (message.includes("Points outside allowed range")) return "عدد النقاط خارج النطاق المسموح لهذه الفئة.";

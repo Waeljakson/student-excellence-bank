@@ -11,6 +11,7 @@
 // SYSTEM_FEATURES_V2
 // SYSTEM_FEATURES_V2
 // SYSTEM_FEATURES_V2
+// SYSTEM_FEATURES_V2
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import QRCode from "qrcode";
 import { neon, niceError, rpc } from "./client";
@@ -126,7 +127,7 @@ function AuthScreen() {
     <div className="auth-card">
       <div className="auth-tabs">
         <button className={mode==="password"?"active":""} onClick={()=>{setMode("password");setMessage("")}}>دخول الإدارة</button>
-        <button className={mode==="teacher"?"active":""} onClick={()=>{setMode("teacher");setMessage("")}}>دخول المعلم</button>
+        <button className={mode==="teacher"?"active":""} onClick={()=>{setMode("teacher");setMessage("")}}>دخول الهيئة</button>
         <button className={mode==="student"?"active":""} onClick={()=>{setMode("student");setMessage("")}}>دخول الطالب</button>
       </div>
       {mode==="password" && <form onSubmit={passwordLogin} className="form-stack"><h2>دخول الإدارة</h2><p>دخول مدير النظام والإدارة بالبريد الإلكتروني وكلمة المرور.</p>

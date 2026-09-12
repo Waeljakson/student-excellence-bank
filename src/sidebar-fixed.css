@@ -1,0 +1,64 @@
+/* FIXED_DESKTOP_SIDEBAR_V1
+   Keep the desktop navigation anchored to the viewport while only the main content scrolls. */
+
+@media (min-width: 761px){
+  :root{--app-sidebar-width:260px}
+
+  .app-shell{
+    display:block !important;
+    min-height:100vh;
+    width:100%;
+  }
+
+  .sidebar{
+    position:fixed !important;
+    top:0 !important;
+    right:0 !important;
+    bottom:0 !important;
+    left:auto !important;
+    width:var(--app-sidebar-width) !important;
+    height:100vh !important;
+    height:100dvh !important;
+    max-height:100dvh !important;
+    z-index:100 !important;
+    overflow-y:auto !important;
+    overflow-x:hidden !important;
+    overscroll-behavior:contain;
+  }
+
+  .main-area{
+    width:calc(100% - var(--app-sidebar-width)) !important;
+    margin-right:var(--app-sidebar-width) !important;
+    margin-left:0 !important;
+    min-width:0 !important;
+  }
+
+  .topbar{
+    right:auto !important;
+    left:auto !important;
+    width:100%;
+  }
+}
+
+@media (min-width:761px) and (max-width:1050px){
+  :root{--app-sidebar-width:220px}
+}
+
+@media (max-width:760px){
+  .app-shell{display:block !important}
+  .sidebar{
+    position:relative !important;
+    top:auto !important;
+    right:auto !important;
+    bottom:auto !important;
+    left:auto !important;
+    width:100% !important;
+    height:auto !important;
+    max-height:none !important;
+    overflow:visible !important;
+  }
+  .main-area{
+    width:100% !important;
+    margin:0 !important;
+  }
+}

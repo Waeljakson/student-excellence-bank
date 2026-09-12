@@ -46,11 +46,13 @@ export function niceError(error: unknown) {
   if (message.includes("BEHAVIORAL_THREE_REQUIRED") || message.includes("BEHAVIORAL_THREE_UNIQUE_REQUIRED")) return "يجب اختيار 3 طلاب مختلفين بالضبط من الفصل.";
   if (message.includes("BEHAVIORAL_STUDENT_SCOPE_INVALID")) return "أحد الطلاب المختارين لا يتبع هذا الفصل.";
   if (message.includes("REDEMPTION_MIN_50")) return "الحد الأدنى لطلب استبدال النقاط هو 50 نقطة.";
-  if (message.includes("REDEMPTION_WINDOW_CLOSED")) return "الاستبدال مغلق حاليًا. انتظر حتى يفتحه الموجه الطلابي.";
-  if (message.includes("REDEMPTION_PENDING_EXISTS")) return "لديك طلب استبدال قائم بالفعل. انتظر تنفيذه قبل إرسال طلب جديد.";
-  if (message.includes("REDEMPTION_NOT_FOUND")) return "طلب الاستبدال غير موجود.";
+  if (message.includes("REDEMPTION_WINDOW_CLOSED")) return "متجر الهدايا مغلق حاليًا. انتظر حتى يفتحه الموجه الطلابي.";
+  if (message.includes("REDEMPTION_PENDING_EXISTS")) return "لديك طلب هدية قائم بالفعل. انتظر تسليمه أو رفضه قبل طلب هدية جديدة.";
+  if (message.includes("REDEMPTION_NOT_FOUND")) return "طلب الهدية غير موجود.";
   if (message.includes("REDEMPTION_NOT_PENDING")) return "تم التعامل مع هذا الطلب بالفعل ولا يمكن تنفيذه مرة أخرى.";
-  if (message.includes("INSUFFICIENT_STUDENT_POINTS")) return "رصيد الطالب الحالي لا يكفي لتنفيذ هذه العملية.";
+  if (message.includes("REWARD_NOT_FOUND")) return "هذه الهدية غير متاحة حاليًا في متجر المكافآت.";
+  if (message.includes("REWARD_OUT_OF_STOCK")) return "نفدت كمية هذه الهدية حاليًا. اختر هدية أخرى أو انتظر تجديد المخزون.";
+  if (message.includes("INSUFFICIENT_STUDENT_POINTS")) return "رصيد الطالب الحالي لا يكفي للحصول على هذه الهدية.";
   if (message.includes("CHECK_NOT_OWNED_BY_TEACHER")) return "لا يمكنك إيقاف هذا الشيك لأنه لم يصدر من حسابك.";
   if (message.includes("CHECK_CANNOT_BE_STOPPED")) return "هذا الشيك ليس في حالة تسمح بإيقافه الآن.";
   if (message.includes("CHECK_REVERSE_BALANCE_TOO_LOW")) return "لا يمكن إيقاف الشيك لأن رصيد الطالب الحالي أقل من نقاط الشيك بعد عمليات لاحقة. راجع الموجه الطلابي.";

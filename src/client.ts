@@ -34,6 +34,7 @@ export function niceError(error: unknown) {
   if (message.includes("KHAMEESNA_POINTS_RANGE")) return "نقاط خميسنا غير للحصة الواحدة من 1 إلى 10 نقاط.";
   if (message.includes("KHAMEESNA_LESSON_RANGE")) return "رقم الحصة يجب أن يكون من 1 إلى 8.";
   if (message.includes("CLASS_NOT_FOUND")) return "الفصل غير موجود أو لا يتبع العام الدراسي الحالي.";
+  if (message.includes("schema cache") || message.includes("Could not find the function")) return "يتم الآن تحديث ربط خميسنا غير بقاعدة البيانات. أعد المحاولة بعد لحظات.";
   if (message.includes("Monthly point budget exceeded")) return "تم استهلاك الحد الشهري المسموح لإصدار النقاط.";
   if (message.includes("Points outside allowed range")) return "عدد النقاط خارج النطاق المسموح لهذه الفئة.";
   return message;

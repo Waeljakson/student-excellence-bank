@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "prebuild": "node scripts/upgrade-app.mjs && node scripts/scope-upgrade.mjs && node scripts/staff-direct-assign.mjs && node scripts/excel-import-upgrade.mjs && node scripts/secondary-grade-code-fix.mjs && node scripts/management-role-scope.mjs && node scripts/student-class-tabs.mjs && node scripts/student-stage-rows.mjs && node scripts/system-v2-upgrade.mjs && node scripts/all-user-account.mjs && node scripts/referrals-upgrade.mjs && node scripts/teacher-mobile-login.mjs && node scripts/approval-free-auth.mjs && node scripts/engagement-upgrade.mjs && node scripts/pending-auto-link.mjs",
+    "prebuild": "node scripts/upgrade-app.mjs && node scripts/scope-upgrade.mjs && node scripts/staff-direct-assign.mjs && node scripts/excel-import-upgrade.mjs && node scripts/secondary-grade-code-fix.mjs && node scripts/management-role-scope.mjs && node scripts/student-class-tabs.mjs && node scripts/student-stage-rows.mjs && node scripts/system-v2-upgrade.mjs && node scripts/all-user-account.mjs && node scripts/referrals-upgrade.mjs && node scripts/teacher-mobile-login.mjs && node scripts/approval-free-auth.mjs && node scripts/engagement-upgrade.mjs && node scripts/pending-auto-link.mjs && node scripts/redemption-nav-fix.mjs",
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview"

@@ -27,12 +27,24 @@ export async function rpc<T = any>(name: string, args: Record<string, unknown> =
 export function niceError(error: unknown) {
   const message = error instanceof Error ? error.message : String(error);
   if (message.includes("APPROVAL_REQUIRED")) return "الحساب غير مرتبط بالنظام. استخدم طريقة الدخول المخصصة لك.";
-  if (message.includes("SUPER_ADMIN_REQUIRED")) return "إطلاق المسابقات وإعداداتها متاح لمدير النظام فقط.";
+  if (message.includes("SUPER_ADMIN_REQUIRED")) return "هذه الإعدادات متاحة لمدير النظام فقط.";
   if (message.includes("ADMIN_REQUIRED")) return "هذه العملية متاحة لإدارة النظام فقط.";
   if (message.includes("ISSUE_PERMISSION_REQUIRED")) return "لا توجد صلاحية إصدار لهذا الحساب.";
-  if (message.includes("CLASS_SCOPE_REQUIRED")) return "هذا الفصل غير مسند لحسابك. لا يمكن منح نقاط لطلابه.";
+  if (message.includes("CLASS_SCOPE_REQUIRED")) return "هذا الفصل غير مسند لحسابك.";
   if (message.includes("MEGA_ONLY_ROLE")) return "مدير المدرسة والوكيل والموجه الطلابي مسموح لهم فقط بشيك التميز العملاق.";
   if (message.includes("MEGA_CHECK_RESTRICTED")) return "الشيك العملاق متاح فقط لمدير المدرسة أو الوكيل أو الموجه الطلابي.";
+  if (message.includes("POINT_CONVERSION_INVALID")) return "عدد النقاط مقابل الريال يجب أن يكون من 1 إلى 100.";
+  if (message.includes("BEHAVIORAL_PERIOD_INVALID")) return "مدة دورة التميز السلوكي غير صحيحة. يجب أن تكون النهاية بعد البداية.";
+  if (message.includes("BEHAVIORAL_PERIOD_OVERLAP")) return "توجد دورة تميز سلوكي أخرى متداخلة مع هذه المدة.";
+  if (message.includes("BEHAVIORAL_CYCLE_NOT_FOUND")) return "دورة التميز السلوكي غير موجودة.";
+  if (message.includes("GUIDANCE_REQUIRED")) return "تفعيل التميز السلوكي متاح للموجه الطلابي فقط.";
+  if (message.includes("BEHAVIORAL_NOT_SCHEDULED")) return "هذه الدورة ليست في حالة انتظار التفعيل.";
+  if (message.includes("BEHAVIORAL_PERIOD_ENDED")) return "انتهت مدة هذه الدورة ولا يمكن تفعيلها.";
+  if (message.includes("BEHAVIORAL_ALREADY_CLOSED")) return "هذه الدورة مغلقة بالفعل.";
+  if (message.includes("BEHAVIORAL_NOT_ACTIVE")) return "التميز السلوكي غير مفتوح للترشيح الآن.";
+  if (message.includes("BEHAVIORAL_THREE_REQUIRED") || message.includes("BEHAVIORAL_THREE_UNIQUE_REQUIRED")) return "يجب اختيار 3 طلاب مختلفين بالضبط من الفصل.";
+  if (message.includes("BEHAVIORAL_STUDENT_SCOPE_INVALID")) return "أحد الطلاب المختارين لا يتبع هذا الفصل.";
+  if (message.includes("STAFF_ALREADY_CLAIMED")) return "هذا الموظف مرتبط بحساب آخر بالفعل.";
   if (message.includes("COMPETITION_CLASSES_REQUIRED")) return "اختر فصلًا واحدًا على الأقل للمسابقة.";
   if (message.includes("COMPETITION_CRITERIA_REQUIRED") || message.includes("COMPETITION_CRITERIA_INVALID")) return "أضف معيارًا صحيحًا واحدًا على الأقل للمسابقة.";
   if (message.includes("COMPETITION_DATES_INVALID") || message.includes("COMPETITION_DATE_RANGE_INVALID")) return "مدة المسابقة غير صحيحة. يجب أن يكون تاريخ النهاية بعد البداية.";

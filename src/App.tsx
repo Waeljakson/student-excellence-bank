@@ -1,7 +1,12 @@
+// SYSTEM_FEATURES_V2
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import QRCode from "qrcode";
 import { neon, niceError, rpc } from "./client";
 import StudentExcelImporter from "./StudentExcelImporter";
+import StudentLogin from "./StudentLogin";
+import StudentPortal from "./StudentPortal";
+import SystemControlPanel from "./SystemControlPanel";
+import KhameesnaCompetition from "./KhameesnaCompetition";
 
 type Profile = {
   status: "PENDING" | "APPROVED" | "DISABLED";
@@ -32,7 +37,7 @@ type KhameesnaRecent = { id: string; points: number; lesson_no: number; subject_
 type KhameesnaHistory = { week_start: string; class_id: string; grade_name: string; class_name: string; total_points: number };
 type KhameesnaBoard = { week_start: string; week_end: string; status: "IN_PROGRESS" | "THURSDAY" | "CLOSED"; reward: string; max_points: number; leader_count: number; allowed_classes: Array<{class_id:string;grade_name:string;class_name:string}>; standings: KhameesnaStanding[]; recent: KhameesnaRecent[]; history: KhameesnaHistory[] };
 
-type Tab = "dashboard" | "checks" | "khameesna" | "students" | "rankings" | "rewards" | "admin";
+type Tab = "dashboard" | "checks" | "khameesna" | "students" | "rankings" | "rewards" | "admin" | "system";
 
 const BASE_URL = new URL(import.meta.env.BASE_URL, window.location.origin).toString();
 const SCHOOL_LOGO = `${import.meta.env.BASE_URL}school-logo.png`;
@@ -52,7 +57,7 @@ function Loading({ text = "جارٍ تحميل بنك التميز..." }: { text
 }
 
 function AuthScreen() {
-  const [mode, setMode] = useState<"otp" | "register" | "password">("otp");
+  const [mode, setMode] = useState<"otp" | "register" | "password" | "student">("otp");
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -105,6 +110,7 @@ function AuthScreen() {
         <button className={mode==="otp"?"active":""} onClick={()=>{setMode("otp");setMessage("")}}>دخول برمز البريد</button>
         <button className={mode==="password"?"active":""} onClick={()=>{setMode("password");setMessage("")}}>دخول بكلمة مرور</button>
         <button className={mode==="register"?"active":""} onClick={()=>{setMode("register");setMessage("")}}>إنشاء حساب معلم</button>
+        <button className={mode==="student"?"active":""} onClick={()=>{setMode("student");setMessage("")}}>دخول الطالب</button>
       </div>
       {mode==="otp" && (!otpSent ? <form onSubmit={sendOtp} className="form-stack">
         <h2>تسجيل الدخول</h2><p>مناسب أيضًا لحساب مدير النظام.</p>
@@ -127,6 +133,7 @@ function AuthScreen() {
         <label>كلمة المرور<input type="password" minLength={8} required value={password} onChange={e=>setPassword(e.target.value)}/></label>
         <button className="btn primary" disabled={busy}>إنشاء الحساب</button>
       </form>}
+      {mode==="student"&&<StudentLogin/>}
       {message && <div className="notice">{message}</div>}
     </div>
   </div>;
@@ -151,6 +158,7 @@ function AppShell({ profile, children, tab, setTab }: { profile: Profile; childr
   const isAdmin=profile.roles?.some(r=>["SUPER_ADMIN","SCHOOL_ADMIN","PRINCIPAL"].includes(r));
   const nav:Array<[Tab,string,string]>=[["dashboard","الرئيسية","⌂"],["checks","شيكات التميز","▣"],["khameesna","خميسنا غير","🏆"],["students","الطلاب والمحافظ","◎"],["rankings","لوحة الترتيب","★"],["rewards","المكافآت","◇"]];
   if(isAdmin) nav.push(["admin","الهيئة والصلاحيات","⚙"]);
+  if(profile.roles?.includes("SUPER_ADMIN")) nav.push(["system","إعدادات النظام","◆"]);
   return <div className="app-shell"><aside className="sidebar"><div className="brand"><div className="brand-logos"><img src={SCHOOL_LOGO}/><img src={GUIDANCE_LOGO}/></div><div><b>بنك التميز</b><span>مدارس المشكاة الأهلية</span></div></div><nav>{nav.map(([id,label,icon])=><button key={id} className={tab===id?"active":""} onClick={()=>setTab(id)}><span>{icon}</span>{label}</button>)}</nav><div className="issuer-card"><small>المستخدم</small><b>{profile.name}</b><span>{profile.roles?.includes("TEACHER")?"معلم معتمد":"إدارة"}</span>{profile.can_issue && <><small>المتاح هذا الشهر</small><strong>{profile.is_unlimited?"غير محدود":profile.remaining ?? "—"} نقطة</strong></>}</div><button className="signout" onClick={()=>neon.auth.signOut()}>تسجيل الخروج</button></aside><div className="main-area">{children}<footer><span>برمجة وتنفيذ: محمد صلاح الدين محمد الجمل</span><span>جميع الحقوق محفوظة © مدارس المشكاة الأهلية</span></footer></div></div>;
 }
 
@@ -168,7 +176,7 @@ function ChecksView({students,rules,onIssued}:{students:Student[];rules:Rule[];o
   const filtered=useMemo(()=>students.filter(s=>`${s.name} ${s.student_no} ${s.grade_name} ${s.class_name}`.includes(query.trim())).slice(0,60),[students,query]);
   function chooseRule(id:string){setRuleId(id);const r=rules.find(x=>x.id===id);if(r){setPoints(r.default_points);setReason(r.name_ar)}}
   async function submit(e:FormEvent){e.preventDefault();if(!studentId||!ruleId)return;setBusy(true);setMessage("");try{const result=await rpc<Check>("api_issue_check",{p_student_id:studentId,p_rule_id:ruleId,p_points:points,p_reason_ar:reason,p_notes:notes||null});setIssued(result);setQr(await QRCode.toDataURL(`${BASE_URL}?verify=${result.qr_nonce}`,{width:280,margin:1,errorCorrectionLevel:"M"}));setMessage("تم إصدار شيك التميز وتحديث محفظة الطالب.");await onIssued();}catch(e){setMessage(niceError(e))}finally{setBusy(false)}}
-  return <><Header title="إصدار شيك تميز" subtitle="المعلم لا يستطيع الإصدار إلا بعد اعتماد الإدارة لصلاحيته"/><main className="content"><section className="grid-2"><form className="panel form-stack" onSubmit={submit}><h3>بيانات الشيك</h3><label>ابحث عن الطالب<input value={query} onChange={e=>setQuery(e.target.value)} placeholder="الاسم أو رقم الطالب"/></label><label>الطالب<select required value={studentId} onChange={e=>setStudentId(e.target.value)}><option value="">اختر الطالب</option>{filtered.map(s=><option key={s.id} value={s.id}>{s.name} — {s.grade_name} / {s.class_name}</option>)}</select></label><label>فئة التميز<select required value={ruleId} onChange={e=>chooseRule(e.target.value)}><option value="">اختر الفئة</option>{rules.map(r=><option key={r.id} value={r.id}>{r.name_ar} ({r.default_points} نقاط){r.is_mega?" — شيك عملاق":""}</option>)}</select></label><div className="form-row"><label>النقاط<input type="number" required value={points} onChange={e=>setPoints(Number(e.target.value))}/></label><label>سبب الشيك<input required value={reason} onChange={e=>setReason(e.target.value)}/></label></div><label>ملاحظات<textarea value={notes} onChange={e=>setNotes(e.target.value)} rows={3}/></label><button className="btn primary" disabled={busy}>{busy?"جارٍ الإصدار...":"إصدار شيك التميز"}</button>{message&&<div className="notice">{message}</div>}</form><section className="panel rule-panel"><h3>الفئات المتاحة لحسابك</h3>{rules.length?<div className="rules">{rules.map(r=><button key={r.id} className={ruleId===r.id?"rule active":"rule"} onClick={()=>chooseRule(r.id)}><b>{r.name_ar}</b><span>{r.default_points} نقاط</span>{r.is_mega&&<small>خاص بالإدارة والتوجيه</small>}</button>)}</div>:<Empty text="لا توجد فئات إصدار متاحة لهذه الصلاحية."/>}</section></section>{issued&&<section className="check-print panel"><div className="check-head"><div className="logos"><img src={SCHOOL_LOGO}/><img src={GUIDANCE_LOGO}/></div><div><span>بنك التميز الطلابي</span><h2>شيك تميز</h2></div><b>{issued.serial_no}</b></div><div className="check-body"><div><small>الطالب</small><h2>{issued.student_name}</h2><small>سبب التميز</small><h3>{issued.reason}</h3><div className="big-points">+{issued.points} نقطة</div></div>{qr&&<div className="qr"><img src={qr}/><small>امسح للتحقق من الشيك</small></div>}</div><button className="btn ghost no-print" onClick={()=>window.print()}>طباعة الشيك</button></section>}</main></>;
+  return <><Header title="إصدار شيك تميز" subtitle="اختر الطالب والبطاقة فقط — قيمة النقاط محددة مركزيًا من مدير النظام"/><main className="content"><section className="grid-2"><form className="panel form-stack" onSubmit={submit}><h3>بيانات الشيك</h3><label>ابحث عن الطالب<input value={query} onChange={e=>setQuery(e.target.value)} placeholder="الاسم أو رقم الطالب"/></label><label>الطالب<select required value={studentId} onChange={e=>setStudentId(e.target.value)}><option value="">اختر الطالب</option>{filtered.map(s=><option key={s.id} value={s.id}>{s.name} — {s.grade_name} / {s.class_name}</option>)}</select></label><label>فئة التميز<select required value={ruleId} onChange={e=>chooseRule(e.target.value)}><option value="">اختر الفئة</option>{rules.map(r=><option key={r.id} value={r.id}>{r.name_ar} ({r.default_points} نقاط){r.is_mega?" — شيك عملاق":""}</option>)}</select></label><div className="form-row"><div className="fixed-point-value"><span>نقاط البطاقة</span><strong>{points}</strong><small>يحددها مدير النظام فقط</small></div><label>سبب الشيك<input required value={reason} onChange={e=>setReason(e.target.value)}/></label></div><label>ملاحظات<textarea value={notes} onChange={e=>setNotes(e.target.value)} rows={3}/></label><button className="btn primary" disabled={busy}>{busy?"جارٍ الإصدار...":"إصدار شيك التميز"}</button>{message&&<div className="notice">{message}</div>}</form><section className="panel rule-panel"><h3>الفئات المتاحة لحسابك</h3>{rules.length?<div className="rules">{rules.map(r=><button key={r.id} className={ruleId===r.id?"rule active":"rule"} onClick={()=>chooseRule(r.id)}><b>{r.name_ar}</b><span>{r.default_points} نقاط</span>{r.is_mega&&<small>خاص بالإدارة والتوجيه</small>}</button>)}</div>:<Empty text="لا توجد فئات إصدار متاحة لهذه الصلاحية."/>}</section></section>{issued&&<section className="check-print panel"><div className="check-head"><div className="logos"><img src={SCHOOL_LOGO}/><img src={GUIDANCE_LOGO}/></div><div><span>بنك التميز الطلابي</span><h2>شيك تميز</h2></div><b>{issued.serial_no}</b></div><div className="check-body"><div><small>الطالب</small><h2>{issued.student_name}</h2><small>سبب التميز</small><h3>{issued.reason}</h3><div className="big-points">+{issued.points} نقطة</div></div>{qr&&<div className="qr"><img src={qr}/><small>امسح للتحقق من الشيك</small></div>}</div><button className="btn ghost no-print" onClick={()=>window.print()}>طباعة الشيك</button></section>}</main></>;
 }
 
 function StudentsView({students}:{students:Student[]}){
@@ -268,7 +276,7 @@ function BankApp({ profile, refreshProfile }: { profile: Profile; refreshProfile
   async function loadAll(){setLoading(true);setError("");try{const [d,s,ru,c,ra,rw,kh]=await Promise.all([rpc<Dashboard>("api_dashboard"),rpc<Student[]>("api_students"),rpc<Rule[]>("api_point_rules"),rpc<Check[]>("api_recent_checks"),rpc<Rankings>("api_rankings"),rpc<Reward[]>("api_rewards"),rpc<KhameesnaBoard>("api_khameesna_board")]);setDashboard(d);setStudents(s);setRules(ru);setChecks(c);setRankings(ra);setRewards(rw);setKhameesna(kh);if(isAdmin){const[p,u,st,cl]=await Promise.all([rpc<PendingUser[]>("api_pending_users"),rpc<ManagedUser[]>("api_managed_users"),rpc<StaffMember[]>("api_staff_directory"),rpc<AdminClass[]>("api_admin_classes")]);setPending(p);setUsers(u);setStaff(st);setAdminClasses(cl)}}catch(e){setError(niceError(e))}finally{setLoading(false)}}
   useEffect(()=>{loadAll()},[profile.app_user_id]);
   async function afterIssued(){await Promise.all([loadAll(),refreshProfile()])}
-  return <AppShell profile={profile} tab={tab} setTab={setTab}>{loading&&!dashboard?<Loading/>:<>{error&&<div className="notice error global-error">{error}</div>}{tab==="dashboard"&&<DashboardView data={dashboard} checks={checks}/>} {tab==="checks"&&<ChecksView students={students} rules={rules} onIssued={afterIssued}/>} {tab==="students"&&<StudentsView students={students}/>} {tab==="rankings"&&<RankingsView data={rankings}/>} {tab==="rewards"&&<RewardsView rewards={rewards}/>} {tab==="khameesna"&&<KhameesnaView data={khameesna} reload={loadAll}/>} {tab==="admin"&&isAdmin&&<AdminView pending={pending} users={users} staff={staff} classes={adminClasses} reload={loadAll}/>}</>}</AppShell>;
+  return <AppShell profile={profile} tab={tab} setTab={setTab}>{loading&&!dashboard?<Loading/>:<>{error&&<div className="notice error global-error">{error}</div>}{tab==="dashboard"&&<DashboardView data={dashboard} checks={checks}/>} {tab==="checks"&&<ChecksView students={students} rules={rules} onIssued={afterIssued}/>} {tab==="students"&&<StudentsView students={students}/>} {tab==="rankings"&&<RankingsView data={rankings}/>} {tab==="rewards"&&<RewardsView rewards={rewards}/>} {tab==="khameesna"&&<KhameesnaCompetition/>} {tab==="system"&&profile.roles?.includes("SUPER_ADMIN")&&<SystemControlPanel/>} {tab==="admin"&&isAdmin&&<AdminView pending={pending} users={users} staff={staff} classes={adminClasses} reload={loadAll}/>}</>}</AppShell>;
 }
 
 export default function App(){
@@ -284,5 +292,6 @@ export default function App(){
   if(profileError&&!profile)return <div className="full-center"><div className="pending-card"><h1>تعذر تحميل الصلاحيات</h1><p>{profileError}</p><button className="btn primary" onClick={refreshProfile}>إعادة المحاولة</button><button className="btn ghost" onClick={()=>neon.auth.signOut()}>تسجيل الخروج</button></div></div>;
   if(!profile)return <Loading/>;
   if(profile.status!=="APPROVED")return <PendingAccount profile={profile} onRefresh={refreshProfile}/>;
+  if(profile.roles?.includes("STUDENT"))return <StudentPortal/>;
   return <BankApp profile={profile} refreshProfile={refreshProfile}/>;
 }

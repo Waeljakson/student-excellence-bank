@@ -5,6 +5,7 @@ let src=readFileSync(appPath,"utf8");
 if(!src.includes('import BehavioralExcellence from "./BehavioralExcellence";')) src=src.replace('import ReferralCenter from "./ReferralCenter";','import ReferralCenter from "./ReferralCenter";\nimport BehavioralExcellence from "./BehavioralExcellence";');
 src=src.replace('type Student = { id: string; student_no: string; name: string; grade_name: string; class_name: string; points: number; value_sar: number; level: string };','type Student = { id: string; student_no: string; name: string; grade_name: string; class_name: string; class_id?: string; points: number; value_sar: number; level: string };');
 src=src.replace(/type Tab = ([^;]+);/,m=>m.includes('"behavioral"')?m:m.slice(0,-1)+' | "behavioral";');
+src=src.replace('}}>دخول المعلم</button>','}}>دخول الهيئة</button>');
 
 const shell=`function AppShell({ profile, children, tab, setTab }: { profile: Profile; children: any; tab: Tab; setTab:(t:Tab)=>void }) {
   const isAdmin=profile.roles?.some(r=>["SUPER_ADMIN","SCHOOL_ADMIN","PRINCIPAL"].includes(r));

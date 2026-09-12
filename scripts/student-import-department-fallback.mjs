@@ -27,10 +27,10 @@ if (src.includes(setHintMarker)) {
   src = src.replace(setHintMarker, `${setHintMarker}\n      if (kind) {\n        const autoDepartment = (options?.departments?.length ? options.departments : MISHKAT_DEPARTMENTS).find(d =>\n          kind === "secondary" ? /ثان/.test(d.name) : /متوسط/.test(d.name)\n        );\n        if (autoDepartment) setDepartmentId(autoDepartment.id);\n      }`);
 }
 
-// Resolve against fallback list during import as well.
+// Resolve against fallback list during import as well, even before a React re-render.
 src = src.replace(
-  /let resolvedDepartmentId = effectiveDepartmentId;/,
-  'let resolvedDepartmentId = effectiveDepartmentId || (departmentHint ? MISHKAT_DEPARTMENTS.find(d => departmentHint === "secondary" ? /ثان/.test(d.name) : /متوسط/.test(d.name))?.id || "" : "");'
+  '    let importDepartmentId = effectiveDepartmentId;',
+  '    let importDepartmentId = effectiveDepartmentId || (departmentHint ? MISHKAT_DEPARTMENTS.find(d => departmentHint === "secondary" ? /ثان/.test(d.name) : /متوسط/.test(d.name))?.id || "" : "");'
 );
 
 writeFileSync(path, src);

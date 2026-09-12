@@ -4,6 +4,7 @@ const items = [
   ["/", "الرئيسية", "⌂"],
   ["/checks", "شيكات التميز", "▣"],
   ["/students", "الطلاب والمحافظ", "◎"],
+  ["/rankings", "لوحة الترتيب", "▲"],
   ["/rewards", "متجر المكافآت", "◇"],
   ["/competitions/khameesna", "خميسنا غير", "★"],
   ["/setup", "تهيئة النظام", "◆"],
@@ -25,9 +26,9 @@ export default function Sidebar() {
         ))}
       </nav>
       <div className="sidebar-box">
-        <b>رصيد إصدارك</b>
-        <strong>63 نقطة</strong>
-        <span>متبقية هذا الشهر</span>
+        <b>مصدر البيانات</b>
+        <strong>Neon</strong>
+        <span>بيانات فعلية ومباشرة</span>
       </div>
     </aside>
   );

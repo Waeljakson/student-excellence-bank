@@ -3,6 +3,10 @@ import { readFileSync, writeFileSync } from "node:fs";
 const appPath="src/App.tsx";
 let src=readFileSync(appPath,"utf8");
 
+if(!src.includes('import AdminPasswordReset from "./AdminPasswordReset";')){
+  src=src.replace('import TeacherLogin from "./TeacherLogin";','import TeacherLogin from "./TeacherLogin";\nimport AdminPasswordReset from "./AdminPasswordReset";');
+}
+
 src=src.replace('useState<"otp" | "register" | "password" | "teacher" | "student">("otp")','useState<"otp" | "register" | "password" | "teacher" | "student">("password")');
 src=src.replace('        <button className={mode==="otp"?"active":""} onClick={()=>{setMode("otp");setMessage("")}}>دخول برمز البريد</button>\n','');
 src=src.replace('        <button className={mode==="register"?"active":""} onClick={()=>{setMode("register");setMessage("")}}>إنشاء حساب بالبريد</button>\n','');
@@ -16,6 +20,10 @@ if(otpStart>=0&&passwordStart>otpStart) src=src.slice(0,otpStart)+src.slice(pass
 const registerStart=src.indexOf('      {mode==="register" &&');
 const teacherStart=src.indexOf('      {mode==="teacher"&&',registerStart);
 if(registerStart>=0&&teacherStart>registerStart) src=src.slice(0,registerStart)+src.slice(teacherStart);
+
+if(!src.includes('{mode==="password"&&<AdminPasswordReset/>}')){
+  src=src.replace('      {mode==="teacher"&&<TeacherLogin/>}','      {mode==="password"&&<AdminPasswordReset/>}\n      {mode==="teacher"&&<TeacherLogin/>}');
+}
 
 const pendingOld='function PendingAccount({ profile, onRefresh }: { profile: Profile; onRefresh: ()=>void }) {\n  return <div className="full-center"><div className="pending-card"><div className="logos"><img src={SCHOOL_LOGO}/><img src={GUIDANCE_LOGO}/></div><span className="pending-icon">⏳</span><h1>الحساب بانتظار الصلاحية</h1><p>أهلًا {profile.name || profile.email}. تم تسجيل حسابك بنجاح، لكن إصدار شيكات التميز لن يعمل حتى تعتمد الإدارة حسابك كمعلم.</p><button className="btn primary" onClick={onRefresh}>تحديث حالة الحساب</button><button className="btn ghost" onClick={()=>neon.auth.signOut()}>تسجيل الخروج</button></div></div>;\n}';
 const pendingNew='function PendingAccount({ profile }: { profile: Profile; onRefresh: ()=>void }) {\n  return <div className="full-center"><div className="pending-card"><div className="logos"><img src={SCHOOL_LOGO}/><img src={GUIDANCE_LOGO}/></div><span className="pending-icon">!</span><h1>الحساب غير مرتبط بالنظام</h1><p>{profile.name || profile.email} — استخدم طريقة الدخول المخصصة لك. المعلم يدخل برقم الجوال، والطالب برقم الطالب.</p><button className="btn ghost" onClick={()=>neon.auth.signOut()}>تسجيل الخروج</button></div></div>;\n}';

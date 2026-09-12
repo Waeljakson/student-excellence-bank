@@ -1,0 +1,15 @@
+import { FormEvent, useEffect, useState } from "react";
+import { niceError, rpc } from "./client";
+import "./engagement.css";
+
+type BudgetUser={staff_id:string;name:string;job_title_ar:string;mobile?:string|null;app_user_id?:string|null;account_active:boolean;monthly_limit:number;is_unlimited:boolean;used_this_month:number;remaining?:number|null};
+
+export default function StaffBudgetPanel(){
+  const[rows,setRows]=useState<BudgetUser[]>([]);const[draft,setDraft]=useState<Record<string,string>>({});const[unlimited,setUnlimited]=useState<Record<string,boolean>>({});const[busy,setBusy]=useState("");const[msg,setMsg]=useState("");
+  async function load(){try{const data=await rpc<BudgetUser[]>("api_staff_budget_users");setRows(data||[]);setDraft(Object.fromEntries((data||[]).map(x=>[x.staff_id,String(x.monthly_limit||100)])));setUnlimited(Object.fromEntries((data||[]).map(x=>[x.staff_id,!!x.is_unlimited])))}catch(e){setMsg(niceError(e))}}
+  useEffect(()=>{load()},[]);
+  async function save(e:FormEvent,id:string){e.preventDefault();const n=Number(draft[id]);if(!Number.isFinite(n)||n<1){setMsg("الحد الشهري يجب أن يكون نقطة واحدة على الأقل.");return}setBusy(id);setMsg("");try{await rpc("api_set_staff_monthly_budget",{p_staff_id:id,p_monthly_limit:n,p_unlimited:!!unlimited[id]});setMsg("تم حفظ الحد الشهري لهذا المستخدم.");await load()}catch(err){setMsg(niceError(err))}finally{setBusy("")}}
+  return <section className="panel staff-budget-panel"><div className="panel-title"><div><h3>حدود إنفاق النقاط الشهرية</h3><p>كل المعلمين ومدير المدرسة والوكيل والموجه الطلابي. يمكن تحديد الحد حتى قبل أول دخول للموظف.</p></div><span className="counter">{rows.length}</span></div>
+    <div className="staff-budget-grid">{rows.map(x=><form key={x.staff_id} onSubmit={e=>save(e,x.staff_id)} className="staff-budget-card"><div className="budget-person"><div><b>{x.name}</b><span>{x.job_title_ar}{x.mobile?` · ${x.mobile}`:""}</span></div><em className={x.account_active?"active":"pending"}>{x.account_active?"الحساب مفعل":"لم يسجل الدخول بعد"}</em></div><div className="budget-stats"><span><small>المستخدم هذا الشهر</small><b>{Number(x.used_this_month||0).toLocaleString("ar-SA")}</b></span><span><small>المتبقي</small><b>{x.is_unlimited?"∞":Number(x.remaining??x.monthly_limit).toLocaleString("ar-SA")}</b></span></div><div className="budget-edit"><label><span>الحد الشهري</span><input type="number" min="1" step="1" value={draft[x.staff_id]??100} disabled={!!unlimited[x.staff_id]} onChange={e=>setDraft(v=>({...v,[x.staff_id]:e.target.value}))}/></label><label className="unlimited-switch"><input type="checkbox" checked={!!unlimited[x.staff_id]} onChange={e=>setUnlimited(v=>({...v,[x.staff_id]:e.target.checked}))}/><span>غير محدود</span></label><button className="btn primary" disabled={busy===x.staff_id}>{busy===x.staff_id?"جارٍ الحفظ...":"حفظ"}</button></div></form>)}</div>{msg&&<div className="notice compact-notice">{msg}</div>}
+  </section>;
+}

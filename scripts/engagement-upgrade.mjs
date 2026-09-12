@@ -4,8 +4,10 @@ const appPath="src/App.tsx";
 let src=readFileSync(appPath,"utf8");
 if(!src.includes('import BehavioralExcellence from "./BehavioralExcellence";')) src=src.replace('import ReferralCenter from "./ReferralCenter";','import ReferralCenter from "./ReferralCenter";\nimport BehavioralExcellence from "./BehavioralExcellence";');
 if(!src.includes('import StaffBudgetPanel from "./StaffBudgetPanel";')) src=src.replace('import BehavioralExcellence from "./BehavioralExcellence";','import BehavioralExcellence from "./BehavioralExcellence";\nimport StaffBudgetPanel from "./StaffBudgetPanel";');
+if(!src.includes('import GuidanceRedemptionCenter from "./GuidanceRedemptionCenter";')) src=src.replace('import StaffBudgetPanel from "./StaffBudgetPanel";','import StaffBudgetPanel from "./StaffBudgetPanel";\nimport GuidanceRedemptionCenter from "./GuidanceRedemptionCenter";\nimport TeacherCheckManager from "./TeacherCheckManager";\nimport "./redemption.css";');
 src=src.replace('type Student = { id: string; student_no: string; name: string; grade_name: string; class_name: string; points: number; value_sar: number; level: string };','type Student = { id: string; student_no: string; name: string; grade_name: string; class_name: string; class_id?: string; points: number; value_sar: number; level: string };');
 src=src.replace(/type Tab = ([^;]+);/,m=>m.includes('"behavioral"')?m:m.slice(0,-1)+' | "behavioral";');
+src=src.replace(/type Tab = ([^;]+);/,m=>m.includes('"redemption"')?m:m.slice(0,-1)+' | "redemption";');
 src=src.replace('}}>دخول المعلم</button>','}}>دخول الهيئة</button>');
 
 const shell=`function AppShell({ profile, children, tab, setTab }: { profile: Profile; children: any; tab: Tab; setTab:(t:Tab)=>void }) {
@@ -27,8 +29,9 @@ const shell=`function AppShell({ profile, children, tab, setTab }: { profile: Pr
   },[handlesReferrals,canWatchBehavior]);
   const nav:Array<[Tab,string,string]>=[["dashboard","الرئيسية","⌂"],["checks","شيكات التميز","▣"],["khameesna","خميسنا غير","🏆"],["students","الطلاب والمحافظ","◎"],["rankings","لوحة الترتيب","★"],["rewards","المكافآت","◇"]];
   if(profile.roles?.some(r=>["TEACHER","VICE_PRINCIPAL","GUIDANCE_COUNSELOR"].includes(r))) nav.splice(Math.min(3,nav.length),0,["referrals","تحويلات الطلاب","↗"]);
+  if(profile.roles?.includes("GUIDANCE_COUNSELOR")) nav.splice(Math.min(4,nav.length),0,["redemption","استبدال النقاط","⇄"]);
   const showBehavior=profile.roles?.some(r=>["GUIDANCE_COUNSELOR","SUPER_ADMIN"].includes(r))||(profile.roles?.includes("TEACHER")&&behaviorStatus?.visible_to_teacher===true);
-  if(showBehavior) nav.splice(Math.min(4,nav.length),0,["behavioral","التميز السلوكي","✦"]);
+  if(showBehavior) nav.splice(Math.min(5,nav.length),0,["behavioral","التميز السلوكي","✦"]);
   nav.push(["account","حسابي","◉"]);
   if(isAdmin) nav.push(["admin","الهيئة والصلاحيات","⚙"]);
   if(profile.roles?.includes("SUPER_ADMIN")) nav.push(["system","إعدادات النظام","◆"]);
@@ -37,6 +40,8 @@ const shell=`function AppShell({ profile, children, tab, setTab }: { profile: Pr
 `;
 src=src.replace(/function AppShell\([\s\S]*?(?=\nfunction DashboardView)/,shell.trimEnd());
 if(!src.includes('tab==="behavioral"&&<BehavioralExcellence')) src=src.replace('{tab==="referrals"&&<ReferralCenter roles={profile.roles} students={students} profileName={profile.name||""}/>} {tab==="khameesna"&&<KhameesnaCompetition/>}','{tab==="referrals"&&<ReferralCenter roles={profile.roles} students={students} profileName={profile.name||""}/>} {tab==="behavioral"&&<BehavioralExcellence students={students}/>} {tab==="khameesna"&&<KhameesnaCompetition/>}');
+if(!src.includes('tab==="redemption"&&<GuidanceRedemptionCenter')) src=src.replace('{tab==="referrals"&&<ReferralCenter roles={profile.roles} students={students} profileName={profile.name||""}/>}','{tab==="referrals"&&<ReferralCenter roles={profile.roles} students={students} profileName={profile.name||""}/>} {tab==="redemption"&&profile.roles?.includes("GUIDANCE_COUNSELOR")&&<GuidanceRedemptionCenter/>}');
+if(!src.includes('<TeacherCheckManager onChanged={afterIssued}/>')) src=src.replace('{tab==="checks"&&<ChecksView students={students} rules={rules} onIssued={afterIssued}/>}','{tab==="checks"&&<><ChecksView students={students} rules={rules} onIssued={afterIssued}/>{profile.roles?.includes("TEACHER")&&<main className="content teacher-check-manager-wrap"><TeacherCheckManager onChanged={afterIssued}/></main>}</>}');
 if(!src.includes('<StaffBudgetPanel/>')) src=src.replace('    <StudentExcelImporter onImported={reload}/>','    <StaffBudgetPanel/>\n    <StudentExcelImporter onImported={reload}/>');
 src=src.replace('<td>{u.assigned_classes?.length?u.assigned_classes.join("، "):"—"}</td>','<td><div className="assigned-class-lines">{u.assigned_classes?.length?u.assigned_classes.map((x,i)=><span key={i}>{x}</span>):<span>—</span>}</div></td>');
 src=src.replace('{u.roles.includes("TEACHER")&&<button className="mini-btn" onClick={()=>budget(u)}>تعديل الحد</button>}','<button className="mini-btn" onClick={()=>budget(u)}>تعديل الحد</button>');
@@ -53,7 +58,14 @@ writeFileSync(systemPath,sys);
 const portalPath="src/StudentPortal.tsx";
 let portal=readFileSync(portalPath,"utf8");
 if(!portal.includes('import StudentPrograms from "./StudentPrograms";')) portal=portal.replace('import "./student-account.css";','import "./student-account.css";\nimport StudentPrograms from "./StudentPrograms";');
-portal=portal.replace(/\n\s*\{competitions\.length>0&&<section className="student-competition-banners">[\s\S]*?<\/section>\}\n\n\s*<section className="portal-panel student-account-panel">/,'\n      <StudentPrograms competitions={competitions} student={s}/>\n\n      <section className="portal-panel student-account-panel">');
+if(!portal.includes('import StudentRedemptionPanel from "./StudentRedemptionPanel";')) portal=portal.replace('import StudentPrograms from "./StudentPrograms";','import StudentPrograms from "./StudentPrograms";\nimport StudentRedemptionPanel from "./StudentRedemptionPanel";\nimport "./redemption.css";');
+portal=portal.replace('issuer_name:string }>;','issuer_name:string; reversed_at?:string|null; reversal_reason?:string|null }>;');
+portal=portal.replace('function date(v:string){return new Date(v).toLocaleDateString("ar-SA",{year:"numeric",month:"long",day:"numeric"})}','function date(v?:string|null){return v?new Date(v).toLocaleDateString("ar-SA",{year:"numeric",month:"long",day:"numeric"}):"—"}');
+portal=portal.replace(/\n\s*\{competitions\.length>0&&<section className="student-competition-banners">[\s\S]*?<\/section>\}\n\n\s*<section className="portal-panel student-account-panel">/,'\n      <StudentPrograms competitions={competitions} student={s}/>\n      <StudentRedemptionPanel/>\n\n      <section className="portal-panel student-account-panel">');
+if(portal.includes('<StudentPrograms competitions={competitions} student={s}/>')&&!portal.includes('<StudentRedemptionPanel/>')) portal=portal.replace('<StudentPrograms competitions={competitions} student={s}/>','<StudentPrograms competitions={competitions} student={s}/>\n      <StudentRedemptionPanel/>');
+const oldChecks='{data.checks.length?<div className="student-checks">{data.checks.map(c=><div className="student-check-card" key={c.id}><div><b>{c.rule_name}</b><small>{c.reason}</small><em>{date(c.issued_at)} · {c.issuer_name}</em></div><strong>+{c.points}</strong><span>{c.serial_no}</span></div>)}</div>:<div className="empty">لم يصدر لك أي شيك تميز حتى الآن.</div>}';
+const newChecks='{data.checks.length?<div className="student-checks">{data.checks.map(c=><div className={c.status==="REVERSED"?"student-check-card reversed":"student-check-card"} key={c.id}><div><b>{c.rule_name}</b><small>{c.reason}</small><em>{date(c.issued_at)} · {c.issuer_name}</em>{c.status==="REVERSED"&&<div className="student-check-reversed-note"><b>تم إيقاف الشيك بواسطة المعلم: {c.issuer_name}</b><span>{c.reversal_reason||"تم إيقاف الشيك بواسطة المعلم المصدر"} · {date(c.reversed_at)}</span></div>}</div><strong>{c.status==="REVERSED"?"−":"+"}{c.points}</strong><span>{c.serial_no}</span></div>)}</div>:<div className="empty">لم يصدر لك أي شيك تميز حتى الآن.</div>}';
+portal=portal.replace(oldChecks,newChecks);
 writeFileSync(portalPath,portal);
 
 const referralPath="src/ReferralCenter.tsx";

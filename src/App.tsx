@@ -28,6 +28,7 @@
 // SYSTEM_FEATURES_V2
 // SYSTEM_FEATURES_V2
 // SYSTEM_FEATURES_V2
+// SYSTEM_FEATURES_V2
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import QRCode from "qrcode";
 import { neon, niceError, rpc } from "./client";
@@ -47,6 +48,7 @@ import TeacherCheckManager from "./TeacherCheckManager";
 import "./redemption.css";
 import RewardPermissionPanel from "./RewardPermissionPanel";
 import RewardManagementPanel from "./RewardManagementPanel";
+import AddTeacherPanel from "./AddTeacherPanel";
 
 type Profile = {
   status: "PENDING" | "APPROVED" | "DISABLED";
@@ -315,6 +317,7 @@ function AdminView({pending,users,staff,classes,reload}:{pending:PendingUser[];u
   const freeStaff=staff.filter(s=>!s.linked);
   return <><Header title="الهيئة والصلاحيات" subtitle="ربط حساب الموظف بوظيفته وتحديد الفصول التي يستطيع التعامل معها"/><main className="content">
     <section className="permission-policy"><div><b>الصلاحيات مقيدة بالفصول</b><span>المعلم والمدير والوكيل والموجه الطلابي يرون طلاب الفصول المسندة لهم فقط، ويعمل خميسنا غير داخل نفس النطاق.</span></div><div><b>خميسنا غير: مرة واحدة يوميًا</b><span>لا يستطيع نفس المستخدم إضافة نقاط لنفس الفصل أكثر من مرة في اليوم.</span></div><div><b>نوع الشيك حسب الوظيفة</b><span>المعلم: الشيكات العادية فقط. مدير المدرسة والوكيل والموجه الطلابي: شيك التميز العملاق فقط.</span></div></section>
+    <AddTeacherPanel classes={classes} reload={reload}/>
     <RewardPermissionPanel users={users} reload={reload}/>
     <StaffBudgetPanel/>
     <StudentExcelImporter onImported={reload}/>
@@ -330,7 +333,7 @@ function BankApp({ profile, refreshProfile }: { profile: Profile; refreshProfile
   async function loadAll(){setLoading(true);setError("");try{const [d,s,ru,c,ra,rw,kh]=await Promise.all([rpc<Dashboard>("api_dashboard"),rpc<Student[]>("api_students"),rpc<Rule[]>("api_point_rules"),rpc<Check[]>("api_recent_checks"),rpc<Rankings>("api_rankings"),rpc<Reward[]>("api_rewards"),rpc<KhameesnaBoard>("api_khameesna_board")]);setDashboard(d);setStudents(s);setRules(ru);setChecks(c);setRankings(ra);setRewards(rw);setKhameesna(kh);if(isAdmin){const[u,st,cl]=await Promise.all([rpc<ManagedUser[]>("api_managed_users"),rpc<StaffMember[]>("api_staff_directory"),rpc<AdminClass[]>("api_admin_classes")]);setPending([]);setUsers(u);setStaff(st);setAdminClasses(cl)}}catch(e){setError(niceError(e))}finally{setLoading(false)}}
   useEffect(()=>{loadAll()},[profile.app_user_id]);
   async function afterIssued(){await Promise.all([loadAll(),refreshProfile()])}
-  return <AppShell profile={profile} tab={tab} setTab={setTab}>{loading&&!dashboard?<Loading/>:<>{error&&<div className="notice error global-error">{error}</div>}{tab==="dashboard"&&<DashboardView data={dashboard} checks={checks}/>} {tab==="checks"&&<><ChecksView students={students} rules={rules} onIssued={afterIssued}/>{profile.roles?.includes("TEACHER")&&<main className="content teacher-check-manager-wrap"><TeacherCheckManager onChanged={afterIssued}/></main>}</>} {tab==="students"&&<StudentsView students={students}/>} {tab==="rankings"&&<RankingsView data={rankings}/>} {tab==="rewards"&&<><RewardsView rewards={rewards}/>{profile.roles?.some(r=>["SUPER_ADMIN","SCHOOL_ADMIN","PRINCIPAL","REWARD_OFFICER"].includes(r))&&<main className="content reward-admin-wrap"><RewardManagementPanel onChanged={loadAll}/></main>}</>} {tab==="referrals"&&<ReferralCenter roles={profile.roles} students={students} profileName={profile.name||""}/>} {tab==="redemption"&&profile.roles?.includes("GUIDANCE_COUNSELOR")&&<GuidanceRedemptionCenter/>}                        {tab==="behavioral"&&<BehavioralExcellence students={students}/>} {tab==="khameesna"&&<KhameesnaCompetition/>} {tab==="account"&&<UserAccount profile={profile} onProfileChanged={refreshProfile}/>} {tab==="system"&&profile.roles?.includes("SUPER_ADMIN")&&<SystemControlPanel/>} {tab==="admin"&&isAdmin&&<AdminView pending={pending} users={users} staff={staff} classes={adminClasses} reload={loadAll}/>}</>}</AppShell>;
+  return <AppShell profile={profile} tab={tab} setTab={setTab}>{loading&&!dashboard?<Loading/>:<>{error&&<div className="notice error global-error">{error}</div>}{tab==="dashboard"&&<DashboardView data={dashboard} checks={checks}/>} {tab==="checks"&&<><ChecksView students={students} rules={rules} onIssued={afterIssued}/>{profile.roles?.includes("TEACHER")&&<main className="content teacher-check-manager-wrap"><TeacherCheckManager onChanged={afterIssued}/></main>}</>} {tab==="students"&&<StudentsView students={students}/>} {tab==="rankings"&&<RankingsView data={rankings}/>} {tab==="rewards"&&<><RewardsView rewards={rewards}/>{profile.roles?.some(r=>["SUPER_ADMIN","SCHOOL_ADMIN","PRINCIPAL","REWARD_OFFICER"].includes(r))&&<main className="content reward-admin-wrap"><RewardManagementPanel onChanged={loadAll}/></main>}</>} {tab==="referrals"&&<ReferralCenter roles={profile.roles} students={students} profileName={profile.name||""}/>} {tab==="redemption"&&profile.roles?.includes("GUIDANCE_COUNSELOR")&&<GuidanceRedemptionCenter/>}                          {tab==="behavioral"&&<BehavioralExcellence students={students}/>} {tab==="khameesna"&&<KhameesnaCompetition/>} {tab==="account"&&<UserAccount profile={profile} onProfileChanged={refreshProfile}/>} {tab==="system"&&profile.roles?.includes("SUPER_ADMIN")&&<SystemControlPanel/>} {tab==="admin"&&isAdmin&&<AdminView pending={pending} users={users} staff={staff} classes={adminClasses} reload={loadAll}/>}</>}</AppShell>;
 }
 
 export default function App(){

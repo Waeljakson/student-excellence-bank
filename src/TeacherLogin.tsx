@@ -61,7 +61,11 @@ export default function TeacherLogin() {
         // signUp قد ينشئ الجلسة تلقائيًا.
       }
 
-      await rpc("api_claim_student_account", { p_student_no: staffKey });
+      if (lookup.job_title === "معلم") {
+        await rpc("api_claim_teacher_account", { p_mobile: phone });
+      } else {
+        await rpc("api_claim_student_account", { p_student_no: staffKey });
+      }
       window.location.reload();
     } catch (err) {
       setMessage(niceError(err));

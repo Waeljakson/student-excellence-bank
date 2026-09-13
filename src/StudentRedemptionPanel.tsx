@@ -11,10 +11,32 @@ const statusLabel=(s:string)=>({PENDING:"قيد انتظار الموجه",APPRO
 const fmt=(v?:string|null)=>v?new Date(v).toLocaleString("ar-SA",{year:"numeric",month:"short",day:"numeric",hour:"numeric",minute:"2-digit"}):"—";
 function giftIcon(name:string){if(name.includes("قلم"))return "✒️";if(name.includes("دفتر")||name.includes("كتاب"))return "📘";if(name.includes("مقلمة")||name.includes("أدوات"))return "✏️";if(name.includes("قارورة"))return "🥤";if(name.includes("كرة"))return "⚽";if(name.includes("حقيبة"))return "🎒";if(name.includes("صندوق"))return "🎁";return "🎁"}
 
+function rewardLoadError(error:unknown){
+  const raw=error instanceof Error?error.message:String(error);
+  if(/STUDENT_ACCOUNT_REQUIRED|AUTH_REQUIRED/i.test(raw))return "يتم استكمال التحقق من حساب الطالب. اضغط إعادة المحاولة إذا لم يظهر المتجر خلال لحظات.";
+  return niceError(error);
+}
+
 export default function StudentRedemptionPanel(){
-  const[data,setData]=useState<Data|null>(null);const[busy,setBusy]=useState("");const[msg,setMsg]=useState("");
-  async function load(){try{setData(await rpc<Data>("api_student_redemption_portal"))}catch(e){setMsg(niceError(e))}}
-  useEffect(()=>{load()},[]);
+  const[data,setData]=useState<Data|null>(null);const[busy,setBusy]=useState("");const[msg,setMsg]=useState("");const[loading,setLoading]=useState(true);
+  async function load(){
+    setLoading(true);setMsg("");
+    let lastError:unknown=null;
+    for(let attempt=0;attempt<5;attempt++){
+      try{
+        const next=await rpc<Data>("api_student_redemption_portal");
+        setData(next);setMsg("");setLoading(false);return;
+      }catch(e){
+        lastError=e;
+        const raw=e instanceof Error?e.message:String(e);
+        const transient=/AUTH_REQUIRED|STUDENT_ACCOUNT_REQUIRED|JWT expired|jwt expired|token.*expired|Failed to fetch|NetworkError|network/i.test(raw);
+        if(!transient||attempt===4)break;
+        await new Promise(resolve=>setTimeout(resolve,350*(attempt+1)));
+      }
+    }
+    setData(null);setMsg(rewardLoadError(lastError));setLoading(false);
+  }
+  useEffect(()=>{void load()},[]);
   async function requestGift(reward:RewardItem){
     if(!data||busy)return;
     if(!window.confirm(`طلب هدية «${reward.name_ar}» مقابل ${reward.cost_points} نقطة؟ لن تُخصم النقاط إلا عند تسليم الهدية لك.`))return;
@@ -22,7 +44,7 @@ export default function StudentRedemptionPanel(){
     try{await rpc("api_student_request_reward",{p_reward_id:reward.id});setMsg(`تم إرسال طلب «${reward.name_ar}» للموجه الطلابي. سيتم خصم ${reward.cost_points} نقطة فقط عند تسليم الهدية.`);await load()}
     catch(err){setMsg(niceError(err))}finally{setBusy("")}
   }
-  if(!data)return <section className="portal-panel reward-store-panel"><div className="empty">جارٍ تحميل متجر الهدايا...</div></section>;
+  if(!data)return <section className="portal-panel reward-store-panel"><div className="empty">{loading?<><div>جارٍ تحميل متجر الهدايا...</div><small>يتم التحقق من رصيدك والهدايا المتاحة</small></>:<><div>{msg||"تعذر تحميل متجر الهدايا."}</div><button type="button" className="btn ghost" onClick={()=>void load()}>إعادة المحاولة</button></>}</div></section>;
   const pending=data.requests.find(x=>x.status==="PENDING"||x.status==="APPROVED");
   const available=data.rewards.filter(r=>r.stock==null||r.stock>0).length;
   const progress=Math.min(100,Math.max(0,(data.balance/Math.max(1,data.min_points))*100));

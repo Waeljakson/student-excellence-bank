@@ -8,9 +8,21 @@ const oldRefresh = `async function refreshProfile(){setProfileLoading(true);setP
 const newRefresh = `async function refreshProfile(){setProfileLoading(true);setProfileError("");try{let next:Profile|null=null;for(let attempt=0;attempt<4;attempt++){next=await rpc<Profile>("api_profile");if(next?.status!=="PENDING")break;if(attempt<3)await new Promise(resolve=>setTimeout(resolve,300*(attempt+1)))}setProfile(next)}catch(e){setProfileError(niceError(e))}finally{setProfileLoading(false)}}`;
 if (app.includes(oldRefresh)) app = app.replace(oldRefresh, newRefresh);
 
+// Do NOT initialize busy=true here. repair() itself guards on busy; starting true would deadlock auto-link forever.
 const oldPendingHead = `  const [busy,setBusy]=useState(false);const[message,setMessage]=useState("");\n  const email=String(profile.email||"").trim().toLowerCase();\n  const staffSuffix="@staff.mishkat.sa";const studentSuffix="@students.mishkat.sa";\n  const portalKey=email.endsWith(staffSuffix)?"T:"+email.slice(0,-staffSuffix.length):email.endsWith(studentSuffix)?email.slice(0,-studentSuffix.length):"";`;
-const newPendingHead = `  const email=String(profile.email||"").trim().toLowerCase();\n  const staffSuffix="@staff.mishkat.sa";const studentSuffix="@students.mishkat.sa";\n  const portalKey=email.endsWith(staffSuffix)?"T:"+email.slice(0,-staffSuffix.length):email.endsWith(studentSuffix)?email.slice(0,-studentSuffix.length):"";\n  const [busy,setBusy]=useState(Boolean(portalKey));const[message,setMessage]=useState("");`;
-if (app.includes(oldPendingHead)) app = app.replace(oldPendingHead, newPendingHead);
+const stablePendingHead = `  const [busy,setBusy]=useState(false);const[message,setMessage]=useState("");\n  const email=String(profile.email||"").trim().toLowerCase();\n  const staffSuffix="@staff.mishkat.sa";const studentSuffix="@students.mishkat.sa";\n  const portalKey=email.endsWith(staffSuffix)?"T:"+email.slice(0,-staffSuffix.length):email.endsWith(studentSuffix)?email.slice(0,-studentSuffix.length):"";`;
+if (app.includes(oldPendingHead)) app = app.replace(oldPendingHead, stablePendingHead);
+
+// If a previous build introduced the deadlocking Boolean(portalKey) initializer, always neutralize it.
+app = app.replace(
+  `const [busy,setBusy]=useState(Boolean(portalKey));const[message,setMessage]=useState("");`,
+  `const [busy,setBusy]=useState(false);const[message,setMessage]=useState("");`
+);
+
+// Show a linking state immediately for portal accounts without blocking repair().
+const oldReturn = `  return <div className="full-center"><div className="pending-card"><div className="logos"><img src={SCHOOL_LOGO}/><img src={GUIDANCE_LOGO}/></div><span className="pending-icon">{busy?"⏳":"!"}</span><h1>{busy?"جارٍ ربط الحساب بالنظام":"الحساب غير مرتبط بالنظام"}</h1><p>{busy?"يتم الآن إكمال ربط حسابك تلقائيًا ببيانات المدرسة.":profile.name||profile.email}</p>{message&&<div className="notice error">{message}</div>}{portalKey&&<button className="btn primary" disabled={busy} onClick={repair}>{busy?"جارٍ الربط...":"إعادة محاولة ربط الحساب"}</button>}<button className="btn ghost" onClick={()=>neon.auth.signOut()}>تسجيل الخروج</button></div></div>;`;
+const newReturn = `  const linking=Boolean(portalKey)&&!message;\n  return <div className="full-center"><div className="pending-card"><div className="logos"><img src={SCHOOL_LOGO}/><img src={GUIDANCE_LOGO}/></div><span className="pending-icon">{linking?"⏳":"!"}</span><h1>{linking?"جارٍ ربط الحساب بالنظام":"تعذر إكمال ربط الحساب"}</h1><p>{linking?"يتم الآن التحقق من بيانات حسابك وربطه تلقائيًا بالمدرسة.":profile.name||profile.email}</p>{message&&<div className="notice error">{message}</div>}{portalKey&&message&&<button className="btn primary" disabled={busy} onClick={repair}>{busy?"جارٍ الربط...":"إعادة محاولة ربط الحساب"}</button>}<button className="btn ghost" onClick={()=>neon.auth.signOut()}>تسجيل الخروج</button></div></div>;`;
+if (app.includes(oldReturn)) app = app.replace(oldReturn, newReturn);
 
 writeFileSync(appPath, app);
 

@@ -39,12 +39,16 @@ export default function AddTeacherPanel({ classes, reload }: { classes: AdminCla
     if (!classIds.length) { setMessage("اختر فصلًا واحدًا على الأقل للمعلم."); return; }
     setBusy(true);
     try {
-      const data = await rpc<Result>("api_admin_create_teacher", {
-        p_full_name_ar: name.trim(),
-        p_mobile: mobile.trim(),
-        p_class_ids: classIds,
-        p_employee_no: employeeNo.trim() || null,
-        p_teaching_subject_ar: subject.trim() || null,
+      const data = await rpc<Result>("api_set_staff_classes", {
+        p_staff_id: null,
+        p_class_ids: {
+          action: "CREATE_TEACHER",
+          full_name_ar: name.trim(),
+          mobile: mobile.trim(),
+          employee_no: employeeNo.trim() || null,
+          teaching_subject_ar: subject.trim() || null,
+          class_ids: classIds,
+        },
       });
       setResult(data);
       setName("");

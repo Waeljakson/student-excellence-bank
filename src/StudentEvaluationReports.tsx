@@ -2,64 +2,664 @@ import { FormEvent, useEffect, useMemo, useState } from "react";
 import { niceError, rpc } from "./client";
 import "./student-evaluation-reports.css";
 
-type Student={id:string;student_no:string;name:string;grade_name:string;class_name:string};
-type Rating="EXCELLENT"|"VERY_GOOD"|"GOOD"|"WEAK";
-type TeacherRequest={response_id:string;report_id:string;report_no:string;report_status:string;requested_at:string;student_id:string;student_no:string;student_name:string;grade_name:string;class_name:string;subject_ar:string;academic_rating?:Rating|null;behavior_rating?:Rating|null;notes?:string|null;responded_at?:string|null;requested_by_name:string;message_ar:string};
-type ReportRow={id:string;report_no:string;status:string;requested_at:string;finalized_at?:string|null;student_id:string;student_no:string;student_name:string;grade_name:string;class_name:string;requested_by_name:string;vice_principal_opinion?:string|null;guidance_opinion?:string|null;teacher_count:number;responded_count:number;pending_count:number};
-type ReportResponse={id:string;teacher_user_id:string;teacher_name:string;subject_ar:string;academic_rating?:Rating|null;behavior_rating?:Rating|null;notes?:string|null;responded_at?:string|null};
-type ReportDetail=ReportRow&{vice_principal_by_name?:string|null;vice_principal_at?:string|null;guidance_by_name?:string|null;guidance_at?:string|null;responses:ReportResponse[]};
-type Draft={academic:Rating|"";behavior:Rating|"";notes:string};
+type Student = {
+  id: string;
+  student_no: string;
+  name: string;
+  grade_name: string;
+  class_name: string;
+};
 
-const ratings:[Rating,string][]=[["EXCELLENT","ممتاز"],["VERY_GOOD","جيد جدًا"],["GOOD","جيد"],["WEAK","ضعيف"]];
-const ratingLabel=(v?:string|null)=>ratings.find(x=>x[0]===v)?.[1]||"لم يقيّم";
-const statusLabel=(v:string)=>({PENDING:"بانتظار الردود",IN_PROGRESS:"قيد التقييم",READY:"اكتملت تقييمات المعلمين",COMPLETED:"مكتمل ومحفوظ"} as Record<string,string>)[v]||v;
-const fmt=(v?:string|null)=>v?new Date(v).toLocaleDateString("ar-SA",{year:"numeric",month:"short",day:"numeric"}):"—";
-const esc=(v:unknown)=>String(v??"—").replace(/[&<>"']/g,ch=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#039;"}[ch]||ch));
-const subjectLabel=(v:string)=>v==="E"?"لغة إنجليزية":v==="بدنية"?"التربية البدنية":v==="فنية"?"التربية الفنية":v;
+type Rating = "EXCELLENT" | "VERY_GOOD" | "GOOD" | "WEAK";
 
-export default function StudentEvaluationReports({roles,students}:{roles:string[];students:Student[]}){
-  const isTeacher=roles.includes("TEACHER");
-  const canVice=roles.includes("VICE_PRINCIPAL")||roles.includes("SUPER_ADMIN");
-  const canGuidance=roles.includes("GUIDANCE_COUNSELOR")||roles.includes("SUPER_ADMIN");
-  const canAdmin=canVice||canGuidance;
-  const[tab,setTab]=useState<"NEW"|"REQUESTS"|"REPORTS">(isTeacher&&!canAdmin?"REQUESTS":canVice?"NEW":"REPORTS");
-  const[requests,setRequests]=useState<TeacherRequest[]>([]);const[reports,setReports]=useState<ReportRow[]>([]);const[detail,setDetail]=useState<ReportDetail|null>(null);
-  const[loading,setLoading]=useState(false);const[msg,setMsg]=useState("");const[busy,setBusy]=useState("");
-  const[q,setQ]=useState("");const[studentId,setStudentId]=useState("");const[drafts,setDrafts]=useState<Record<string,Draft>>({});
-  const[viceOpinion,setViceOpinion]=useState("");const[guidanceOpinion,setGuidanceOpinion]=useState("");
+type TeacherRequest = {
+  response_id: string;
+  report_id: string;
+  report_no: string;
+  report_status: string;
+  requested_at: string;
+  student_id: string;
+  student_no: string;
+  student_name: string;
+  grade_name: string;
+  class_name: string;
+  subject_ar: string;
+  academic_rating?: Rating | null;
+  behavior_rating?: Rating | null;
+  notes?: string | null;
+  responded_at?: string | null;
+  requested_by_name: string;
+  message_ar: string;
+};
 
-  const filteredStudents=useMemo(()=>{const t=q.trim();return students.filter(s=>!t||`${s.name} ${s.student_no} ${s.grade_name} ${s.class_name}`.includes(t)).slice(0,150)},[students,q]);
-  const pendingRequests=requests.filter(r=>!r.responded_at);const completedRequests=requests.filter(r=>!!r.responded_at);
+type ReportRow = {
+  id: string;
+  report_no: string;
+  status: string;
+  requested_at: string;
+  finalized_at?: string | null;
+  student_id: string;
+  student_no: string;
+  student_name: string;
+  grade_name: string;
+  class_name: string;
+  requested_by_name: string;
+  vice_principal_opinion?: string | null;
+  guidance_opinion?: string | null;
+  teacher_count: number;
+  responded_count: number;
+  pending_count: number;
+};
 
-  async function loadRequests(){if(!isTeacher)return;try{const data=await rpc<TeacherRequest[]>("api_my_student_evaluation_requests",{p_status:"ALL"});const list=Array.isArray(data)?data:[];setRequests(list);setDrafts(Object.fromEntries(list.map(r=>[r.response_id,{academic:r.academic_rating||"",behavior:r.behavior_rating||"",notes:r.notes||""}])))}catch(e){setMsg(niceError(e))}}
-  async function loadReports(){if(!canAdmin)return;try{const data=await rpc<ReportRow[]>("api_student_evaluation_reports",{p_status:"ALL"});setReports(Array.isArray(data)?data:[])}catch(e){setMsg(niceError(e))}}
-  useEffect(()=>{loadRequests();loadReports()},[]);
+type ReportResponse = {
+  id: string;
+  teacher_user_id: string;
+  teacher_name: string;
+  subject_ar: string;
+  academic_rating?: Rating | null;
+  behavior_rating?: Rating | null;
+  notes?: string | null;
+  responded_at?: string | null;
+};
 
-  async function createReport(e:FormEvent){e.preventDefault();if(!studentId)return;setBusy("create");setMsg("");try{const r=await rpc<any>("api_create_student_evaluation_report",{p_student_id:studentId});setMsg(`تم إنشاء التقرير ${r.report_no} وإرسال طلب التقييم إلى ${r.teacher_count} معلم/معلمين ملحقين بفصل الطالب.`);setStudentId("");setQ("");await loadReports();setTab("REPORTS")}catch(e){setMsg(niceError(e))}finally{setBusy("")}}
-  async function submitRequest(r:TeacherRequest){const d=drafts[r.response_id];if(!d?.academic||!d?.behavior){setMsg("اختر التقييم التحصيلي والسلوكي أولًا.");return}setBusy(r.response_id);setMsg("");try{await rpc("api_submit_student_evaluation",{p_response_id:r.response_id,p_academic_rating:d.academic,p_behavior_rating:d.behavior,p_notes:d.notes||null});setMsg(`تم حفظ تقييم الطالب ${r.student_name}.`);await loadRequests()}catch(e){setMsg(niceError(e))}finally{setBusy("")}}
-  async function openReport(id:string){setBusy("open:"+id);setMsg("");try{const d=await rpc<ReportDetail>("api_student_evaluation_report",{p_report_id:id});setDetail(d);setViceOpinion(d.vice_principal_opinion||"");setGuidanceOpinion(d.guidance_opinion||"")}catch(e){setMsg(niceError(e))}finally{setBusy("")}}
-  async function saveOpinion(kind:"VICE_PRINCIPAL"|"GUIDANCE_COUNSELOR"){if(!detail)return;const value=kind==="VICE_PRINCIPAL"?viceOpinion:guidanceOpinion;if(!value.trim()){setMsg("اكتب الرأي قبل الحفظ.");return}setBusy("opinion:"+kind);setMsg("");try{await rpc("api_set_student_evaluation_opinion",{p_report_id:detail.id,p_kind:kind,p_opinion:value});setMsg("تم حفظ الرأي في التقرير.");await openReport(detail.id);await loadReports()}catch(e){setMsg(niceError(e))}finally{setBusy("")}}
+type ReportDetail = ReportRow & {
+  vice_principal_by_name?: string | null;
+  vice_principal_at?: string | null;
+  guidance_by_name?: string | null;
+  guidance_at?: string | null;
+  responses: ReportResponse[];
+};
 
-  function printReport(d:ReportDetail){
-    const win=window.open("","_blank","width=1150,height=850");if(!win){window.alert("اسمح بالنوافذ المنبثقة ثم أعد المحاولة.");return}
-    const rows=d.responses.map(r=>`<tr><td>${esc(subjectLabel(r.subject_ar))}</td><td>${esc(ratingLabel(r.academic_rating))}</td><td>${esc(ratingLabel(r.behavior_rating))}</td><td>${esc(r.notes||"—")}</td><td>${esc(r.teacher_name)}</td></tr>`).join("");
-    win.document.open();win.document.write(`<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><title>${esc(d.report_no)}</title><style>@page{size:A4 landscape;margin:12mm}*{box-sizing:border-box}body{font-family:Cairo,Tahoma,Arial,sans-serif;margin:0;color:#111;direction:rtl}h1{text-align:center;font-size:24px;margin:0 0 4px;color:#0b3a65}.school{text-align:center;font-weight:700;margin-bottom:14px}.info{display:grid;grid-template-columns:2fr 1fr 1fr 1fr;border:1px solid #777;margin-bottom:12px}.info div{padding:8px;border-left:1px solid #999}.info div:last-child{border-left:0}.label{font-size:10px;color:#666;display:block}.value{font-weight:800;margin-top:3px}table{width:100%;border-collapse:collapse;table-layout:fixed;font-size:11px}th,td{border:1px solid #777;padding:8px;text-align:right;vertical-align:top}th{background:#eef3f7;color:#0b3a65;-webkit-print-color-adjust:exact;print-color-adjust:exact}.opinions{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:14px}.op{border:1px solid #777;min-height:95px;padding:10px}.op b{display:block;color:#0b3a65;margin-bottom:8px}.meta{font-size:9px;color:#666;margin-top:12px}.screen{margin:12px 0;text-align:left}.screen button{padding:8px 18px;font-family:inherit}@media print{.screen{display:none}}</style></head><body><h1>تقرير عن المستوى السلوكي والتحصيلي</h1><div class="school">متوسطة وثانوية مشكاة الشعلة</div><div class="info"><div><span class="label">الطالب</span><div class="value">${esc(d.student_name)} — ${esc(d.student_no)}</div></div><div><span class="label">الصف</span><div class="value">${esc(d.grade_name)}</div></div><div><span class="label">الفصل</span><div class="value">${esc(d.class_name)}</div></div><div><span class="label">رقم التقرير / التاريخ</span><div class="value">${esc(d.report_no)}<br>${esc(fmt(d.requested_at))}</div></div></div><table><thead><tr><th>المادة</th><th>تحصيليًا</th><th>سلوكيًا</th><th>ملاحظات</th><th>اسم المعلم</th></tr></thead><tbody>${rows}</tbody></table><div class="opinions"><div class="op"><b>رأي الموجه الطلابي:</b>${esc(d.guidance_opinion||"—")}</div><div class="op"><b>رأي وكيل المدرسة:</b>${esc(d.vice_principal_opinion||"—")}</div></div><div class="meta">حالة التقرير: ${esc(statusLabel(d.status))} — تم حفظ التقرير إلكترونيًا في نظام بنك التميز الطلابي.</div><div class="screen"><button onclick="window.print()">طباعة التقرير</button></div></body></html>`);win.document.close();
+type Draft = {
+  academic: Rating | "";
+  behavior: Rating | "";
+  notes: string;
+};
+
+const ratings: Array<[Rating, string]> = [
+  ["EXCELLENT", "ممتاز"],
+  ["VERY_GOOD", "جيد جدًا"],
+  ["GOOD", "جيد"],
+  ["WEAK", "ضعيف"],
+];
+
+const ratingLabel = (value?: string | null) =>
+  ratings.find(([key]) => key === value)?.[1] || "لم يقيّم";
+
+const statusLabel = (value: string) =>
+  ({
+    PENDING: "بانتظار الردود",
+    IN_PROGRESS: "قيد التقييم",
+    READY: "اكتملت تقييمات المعلمين",
+    COMPLETED: "مكتمل ومحفوظ",
+  } as Record<string, string>)[value] || value;
+
+const fmt = (value?: string | null) =>
+  value
+    ? new Date(value).toLocaleDateString("ar-SA", {
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+      })
+    : "—";
+
+const esc = (value: unknown) =>
+  String(value ?? "—").replace(/[&<>"']/g, (ch) =>
+    ({
+      "&": "&amp;",
+      "<": "&lt;",
+      ">": "&gt;",
+      '"': "&quot;",
+      "'": "&#039;",
+    } as Record<string, string>)[ch] || ch,
+  );
+
+const subjectLabel = (value: string) => {
+  if (value === "E") return "لغة إنجليزية";
+  if (value === "بدنية") return "التربية البدنية";
+  if (value === "فنية") return "التربية الفنية";
+  return value;
+};
+
+export default function StudentEvaluationReports({
+  roles,
+  students,
+}: {
+  roles: string[];
+  students: Student[];
+}) {
+  const isTeacher = roles.includes("TEACHER");
+  const canVice = roles.includes("VICE_PRINCIPAL") || roles.includes("SUPER_ADMIN");
+  const canGuidance = roles.includes("GUIDANCE_COUNSELOR") || roles.includes("SUPER_ADMIN");
+  const canAdmin = canVice || canGuidance;
+
+  const [tab, setTab] = useState<"NEW" | "REQUESTS" | "REPORTS">(
+    isTeacher && !canAdmin ? "REQUESTS" : canVice ? "NEW" : "REPORTS",
+  );
+  const [requests, setRequests] = useState<TeacherRequest[]>([]);
+  const [reports, setReports] = useState<ReportRow[]>([]);
+  const [detail, setDetail] = useState<ReportDetail | null>(null);
+  const [msg, setMsg] = useState("");
+  const [busy, setBusy] = useState("");
+  const [q, setQ] = useState("");
+  const [studentId, setStudentId] = useState("");
+  const [drafts, setDrafts] = useState<Record<string, Draft>>({});
+  const [viceOpinion, setViceOpinion] = useState("");
+  const [guidanceOpinion, setGuidanceOpinion] = useState("");
+
+  const filteredStudents = useMemo(() => {
+    const term = q.trim();
+    return students
+      .filter(
+        (s) =>
+          !term ||
+          `${s.name} ${s.student_no} ${s.grade_name} ${s.class_name}`.includes(term),
+      )
+      .slice(0, 150);
+  }, [students, q]);
+
+  const pendingRequests = requests.filter((r) => !r.responded_at);
+  const completedRequests = requests.filter((r) => !!r.responded_at);
+
+  async function loadRequests() {
+    if (!isTeacher) return;
+    try {
+      const data = await rpc<TeacherRequest[]>("api_my_student_evaluation_requests", {
+        p_status: "ALL",
+      });
+      const list = Array.isArray(data) ? data : [];
+      setRequests(list);
+      setDrafts(
+        Object.fromEntries(
+          list.map((r) => [
+            r.response_id,
+            {
+              academic: r.academic_rating || "",
+              behavior: r.behavior_rating || "",
+              notes: r.notes || "",
+            },
+          ]),
+        ),
+      );
+    } catch (error) {
+      setMsg(niceError(error));
+    }
   }
 
-  return <><header className="topbar"><div><h1>تقارير المستوى السلوكي والتحصيلي</h1><p>طلب تقييم المعلمين وتجميعه في تقرير إلكتروني محفوظ وقابل للطباعة</p></div></header><main className="content evaluation-page">
-    <section className="evaluation-tabs">
-      {canVice&&<button className={tab==="NEW"?"active":""} onClick={()=>setTab("NEW")}>طلب تقرير جديد</button>}
-      {isTeacher&&<button className={tab==="REQUESTS"?"active":""} onClick={()=>setTab("REQUESTS")}>طلبات التقييم {pendingRequests.length>0&&<span>{pendingRequests.length}</span>}</button>}
-      {canAdmin&&<button className={tab==="REPORTS"?"active":""} onClick={()=>setTab("REPORTS")}>جدول التقارير</button>}
-    </section>
-    {msg&&<div className="notice">{msg}</div>}
+  async function loadReports() {
+    if (!canAdmin) return;
+    try {
+      const data = await rpc<ReportRow[]>("api_student_evaluation_reports", {
+        p_status: "ALL",
+      });
+      setReports(Array.isArray(data) ? data : []);
+    } catch (error) {
+      setMsg(niceError(error));
+    }
+  }
 
-    {tab==="NEW"&&canVice&&<form className="panel evaluation-new" onSubmit={createReport}><div className="panel-title"><div><h3>إرسال طلب تقييم طالب</h3><p>سيصل الطلب تلقائيًا إلى جميع المعلمين الملحقين بفصل الطالب ولديهم حساب مفعل.</p></div></div><div className="evaluation-select-grid"><label>بحث عن الطالب<input value={q} onChange={e=>setQ(e.target.value)} placeholder="الاسم أو رقم الطالب أو الصف"/></label><label>الطالب<select required value={studentId} onChange={e=>setStudentId(e.target.value)}><option value="">اختر الطالب</option>{filteredStudents.map(s=><option key={s.id} value={s.id}>{s.name} — {s.grade_name} / فصل {s.class_name}</option>)}</select></label></div><div className="evaluation-message-preview"><b>نص الطلب للمعلم</b><p>برجاء التكرم بتقييم الطالب [اسم الطالب] فصل [الفصل] سلوكيًا وتحصيليًا وفق البنود المحددة في نموذج التقييم.</p></div><button className="btn primary" disabled={busy==="create"}>{busy==="create"?"جارٍ إرسال الطلبات...":"إرسال طلب التقييم"}</button></form>}
+  useEffect(() => {
+    void loadRequests();
+    void loadReports();
+  }, []);
 
-    {tab==="REQUESTS"&&isTeacher&&<section className="evaluation-request-list"><div className="evaluation-section-title"><h3>طلبات تحتاج تقييمك</h3><span>{pendingRequests.length}</span></div>{pendingRequests.length?pendingRequests.map(r=>{const d=drafts[r.response_id]||{academic:"",behavior:"",notes:""};return <article className="panel evaluation-request" key={r.response_id}><div className="evaluation-request-head"><div><b>{r.student_name}</b><span>{r.grade_name} / فصل {r.class_name} — {subjectLabel(r.subject_ar)}</span></div><small>{fmt(r.requested_at)}</small></div><div className="evaluation-request-message">{r.message_ar}</div><div className="evaluation-rating-grid"><label>التقييم التحصيلي<select value={d.academic} onChange={e=>setDrafts(x=>({...x,[r.response_id]:{...d,academic:e.target.value as Rating}}))}><option value="">اختر</option>{ratings.map(([v,l])=><option key={v} value={v}>{l}</option>)}</select></label><label>التقييم السلوكي<select value={d.behavior} onChange={e=>setDrafts(x=>({...x,[r.response_id]:{...d,behavior:e.target.value as Rating}}))}><option value="">اختر</option>{ratings.map(([v,l])=><option key={v} value={v}>{l}</option>)}</select></label></div><label>ملاحظات<textarea rows={3} value={d.notes} onChange={e=>setDrafts(x=>({...x,[r.response_id]:{...d,notes:e.target.value}))} placeholder="ملاحظات المعلم عن الطالب — اختياري"/></label><button className="btn primary" onClick={()=>submitRequest(r)} disabled={busy===r.response_id}>{busy===r.response_id?"جارٍ الحفظ...":"حفظ التقييم"}</button></article>}):<div className="panel empty">لا توجد طلبات تقييم معلقة عليك.</div>}{completedRequests.length>0&&<><div className="evaluation-section-title done"><h3>تقييمات أرسلتها سابقًا</h3><span>{completedRequests.length}</span></div><div className="panel table-wrap"><table className="evaluation-history"><thead><tr><th>الطالب</th><th>الفصل</th><th>المادة</th><th>تحصيليًا</th><th>سلوكيًا</th><th>تاريخ الرد</th></tr></thead><tbody>{completedRequests.map(r=><tr key={r.response_id}><td>{r.student_name}</td><td>{r.grade_name} / {r.class_name}</td><td>{subjectLabel(r.subject_ar)}</td><td>{ratingLabel(r.academic_rating)}</td><td>{ratingLabel(r.behavior_rating)}</td><td>{fmt(r.responded_at)}</td></tr>)}</tbody></table></div></>}</section>}
+  async function createReport(event: FormEvent) {
+    event.preventDefault();
+    if (!studentId) return;
+    setBusy("create");
+    setMsg("");
+    try {
+      const result = await rpc<{ report_no: string; teacher_count: number }>(
+        "api_create_student_evaluation_report",
+        { p_student_id: studentId },
+      );
+      setMsg(
+        `تم إنشاء التقرير ${result.report_no} وإرسال طلب التقييم إلى ${result.teacher_count} معلم/معلمين ملحقين بفصل الطالب.`,
+      );
+      setStudentId("");
+      setQ("");
+      await loadReports();
+      setTab("REPORTS");
+    } catch (error) {
+      setMsg(niceError(error));
+    } finally {
+      setBusy("");
+    }
+  }
 
-    {tab==="REPORTS"&&canAdmin&&<section className="panel"><div className="panel-title"><div><h3>جدول التقارير المحفوظة</h3><p>جميع طلبات التقييم محفوظة هنا مع حالة اكتمال ردود المعلمين.</p></div><span className="counter">{reports.length}</span></div>{reports.length?<div className="table-wrap"><table className="evaluation-reports-table"><thead><tr><th>رقم التقرير</th><th>الطالب</th><th>الفصل</th><th>التقييمات</th><th>الحالة</th><th>التاريخ</th><th></th></tr></thead><tbody>{reports.map(r=><tr key={r.id}><td><b>{r.report_no}</b></td><td>{r.student_name}<small>{r.student_no}</small></td><td>{r.grade_name} / {r.class_name}</td><td>{r.responded_count} من {r.teacher_count}{r.pending_count>0&&<small>{r.pending_count} لم يردوا بعد</small>}</td><td><span className={`evaluation-status ${r.status.toLowerCase()}`}>{statusLabel(r.status)}</span></td><td>{fmt(r.requested_at)}</td><td><button className="btn ghost compact" disabled={busy==="open:"+r.id} onClick={()=>openReport(r.id)}>فتح التقرير</button></td></tr>)}</tbody></table></div>:<div className="empty">لا توجد تقارير حتى الآن.</div>}</section>}
+  async function submitRequest(request: TeacherRequest) {
+    const draft = drafts[request.response_id];
+    if (!draft?.academic || !draft?.behavior) {
+      setMsg("اختر التقييم التحصيلي والسلوكي أولًا.");
+      return;
+    }
+    setBusy(request.response_id);
+    setMsg("");
+    try {
+      await rpc("api_submit_student_evaluation", {
+        p_response_id: request.response_id,
+        p_academic_rating: draft.academic,
+        p_behavior_rating: draft.behavior,
+        p_notes: draft.notes || null,
+      });
+      setMsg(`تم حفظ تقييم الطالب ${request.student_name}.`);
+      await loadRequests();
+    } catch (error) {
+      setMsg(niceError(error));
+    } finally {
+      setBusy("");
+    }
+  }
 
-    {detail&&canAdmin&&<div className="evaluation-modal-backdrop" onClick={()=>setDetail(null)}><section className="evaluation-modal panel" onClick={e=>e.stopPropagation()}><div className="evaluation-modal-head"><div><h2>تقرير المستوى السلوكي والتحصيلي</h2><p>{detail.student_name} — {detail.grade_name} / فصل {detail.class_name} — {detail.report_no}</p></div><button className="btn ghost" onClick={()=>setDetail(null)}>إغلاق</button></div><div className="evaluation-progress"><b>استجابة المعلمين</b><span>{detail.responses.filter(x=>x.responded_at).length} من {detail.responses.length}</span></div><div className="table-wrap"><table className="evaluation-detail-table"><thead><tr><th>المادة</th><th>اسم المعلم</th><th>تحصيليًا</th><th>سلوكيًا</th><th>ملاحظات</th><th>الحالة</th></tr></thead><tbody>{detail.responses.map(r=><tr key={r.id}><td>{subjectLabel(r.subject_ar)}</td><td>{r.teacher_name}</td><td>{ratingLabel(r.academic_rating)}</td><td>{ratingLabel(r.behavior_rating)}</td><td>{r.notes||"—"}</td><td>{r.responded_at?"تم الرد":"بانتظار المعلم"}</td></tr>)}</tbody></table></div><div className="evaluation-opinions">{canGuidance&&<div><label>رأي الموجه الطلابي<textarea rows={4} value={guidanceOpinion} onChange={e=>setGuidanceOpinion(e.target.value)} placeholder="اكتب رأي الموجه الطلابي"/></label><button className="btn primary" disabled={busy==="opinion:GUIDANCE_COUNSELOR"} onClick={()=>saveOpinion("GUIDANCE_COUNSELOR")}>حفظ رأي الموجه</button></div>}{canVice&&<div><label>رأي وكيل المدرسة<textarea rows={4} value={viceOpinion} onChange={e=>setViceOpinion(e.target.value)} placeholder="اكتب رأي وكيل المدرسة"/></label><button className="btn primary" disabled={busy==="opinion:VICE_PRINCIPAL"} onClick={()=>saveOpinion("VICE_PRINCIPAL")}>حفظ رأي الوكيل</button></div>}</div><div className="evaluation-modal-actions"><span className={`evaluation-status ${detail.status.toLowerCase()}`}>{statusLabel(detail.status)}</span><button className="btn ghost" onClick={()=>printReport(detail)}>طباعة التقرير</button></div></section></div>}
-  </main></>;
+  async function openReport(id: string) {
+    setBusy(`open:${id}`);
+    setMsg("");
+    try {
+      const report = await rpc<ReportDetail>("api_student_evaluation_report", {
+        p_report_id: id,
+      });
+      setDetail(report);
+      setViceOpinion(report.vice_principal_opinion || "");
+      setGuidanceOpinion(report.guidance_opinion || "");
+    } catch (error) {
+      setMsg(niceError(error));
+    } finally {
+      setBusy("");
+    }
+  }
+
+  async function saveOpinion(kind: "VICE_PRINCIPAL" | "GUIDANCE_COUNSELOR") {
+    if (!detail) return;
+    const value = kind === "VICE_PRINCIPAL" ? viceOpinion : guidanceOpinion;
+    if (!value.trim()) {
+      setMsg("اكتب الرأي قبل الحفظ.");
+      return;
+    }
+    setBusy(`opinion:${kind}`);
+    setMsg("");
+    try {
+      await rpc("api_set_student_evaluation_opinion", {
+        p_report_id: detail.id,
+        p_kind: kind,
+        p_opinion: value,
+      });
+      setMsg("تم حفظ الرأي في التقرير.");
+      await openReport(detail.id);
+      await loadReports();
+    } catch (error) {
+      setMsg(niceError(error));
+    } finally {
+      setBusy("");
+    }
+  }
+
+  function printReport(report: ReportDetail) {
+    const win = window.open("", "_blank", "width=1150,height=850");
+    if (!win) {
+      window.alert("اسمح بالنوافذ المنبثقة ثم أعد المحاولة.");
+      return;
+    }
+
+    const rows = report.responses
+      .map(
+        (r) => `<tr>
+          <td>${esc(subjectLabel(r.subject_ar))}</td>
+          <td>${esc(ratingLabel(r.academic_rating))}</td>
+          <td>${esc(ratingLabel(r.behavior_rating))}</td>
+          <td>${esc(r.notes || "—")}</td>
+          <td>${esc(r.teacher_name)}</td>
+        </tr>`,
+      )
+      .join("");
+
+    win.document.open();
+    win.document.write(`<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<title>${esc(report.report_no)}</title>
+<style>
+@page{size:A4 landscape;margin:12mm}
+*{box-sizing:border-box}
+body{font-family:Cairo,Tahoma,Arial,sans-serif;margin:0;color:#111;direction:rtl}
+h1{text-align:center;font-size:24px;margin:0 0 4px;color:#0b3a65}
+.school{text-align:center;font-weight:700;margin-bottom:14px}
+.info{display:grid;grid-template-columns:2fr 1fr 1fr 1fr;border:1px solid #777;margin-bottom:12px}
+.info div{padding:8px;border-left:1px solid #999}.info div:last-child{border-left:0}
+.label{font-size:10px;color:#666;display:block}.value{font-weight:800;margin-top:3px}
+table{width:100%;border-collapse:collapse;table-layout:fixed;font-size:11px}
+th,td{border:1px solid #777;padding:8px;text-align:right;vertical-align:top}
+th{background:#eef3f7;color:#0b3a65;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.opinions{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:14px}
+.op{border:1px solid #777;min-height:95px;padding:10px}.op b{display:block;color:#0b3a65;margin-bottom:8px}
+.meta{font-size:9px;color:#666;margin-top:12px}.screen{margin:12px 0;text-align:left}.screen button{padding:8px 18px;font-family:inherit}
+@media print{.screen{display:none}}
+</style>
+</head>
+<body>
+<h1>تقرير عن المستوى السلوكي والتحصيلي</h1>
+<div class="school">متوسطة وثانوية مشكاة الشعلة</div>
+<div class="info">
+  <div><span class="label">الطالب</span><div class="value">${esc(report.student_name)} — ${esc(report.student_no)}</div></div>
+  <div><span class="label">الصف</span><div class="value">${esc(report.grade_name)}</div></div>
+  <div><span class="label">الفصل</span><div class="value">${esc(report.class_name)}</div></div>
+  <div><span class="label">رقم التقرير / التاريخ</span><div class="value">${esc(report.report_no)}<br>${esc(fmt(report.requested_at))}</div></div>
+</div>
+<table><thead><tr><th>المادة</th><th>تحصيليًا</th><th>سلوكيًا</th><th>ملاحظات</th><th>اسم المعلم</th></tr></thead><tbody>${rows}</tbody></table>
+<div class="opinions">
+  <div class="op"><b>رأي الموجه الطلابي:</b>${esc(report.guidance_opinion || "—")}</div>
+  <div class="op"><b>رأي وكيل المدرسة:</b>${esc(report.vice_principal_opinion || "—")}</div>
+</div>
+<div class="meta">حالة التقرير: ${esc(statusLabel(report.status))} — تم حفظ التقرير إلكترونيًا في نظام بنك التميز الطلابي.</div>
+<div class="screen"><button onclick="window.print()">طباعة التقرير</button></div>
+</body>
+</html>`);
+    win.document.close();
+  }
+
+  return (
+    <>
+      <header className="topbar">
+        <div>
+          <h1>تقارير المستوى السلوكي والتحصيلي</h1>
+          <p>طلب تقييم المعلمين وتجميعه في تقرير إلكتروني محفوظ وقابل للطباعة</p>
+        </div>
+      </header>
+
+      <main className="content evaluation-page">
+        <section className="evaluation-tabs">
+          {canVice && (
+            <button className={tab === "NEW" ? "active" : ""} onClick={() => setTab("NEW")}>
+              طلب تقرير جديد
+            </button>
+          )}
+          {isTeacher && (
+            <button className={tab === "REQUESTS" ? "active" : ""} onClick={() => setTab("REQUESTS")}>
+              طلبات التقييم {pendingRequests.length > 0 && <span>{pendingRequests.length}</span>}
+            </button>
+          )}
+          {canAdmin && (
+            <button className={tab === "REPORTS" ? "active" : ""} onClick={() => setTab("REPORTS")}>
+              جدول التقارير
+            </button>
+          )}
+        </section>
+
+        {msg && <div className="notice">{msg}</div>}
+
+        {tab === "NEW" && canVice && (
+          <form className="panel evaluation-new" onSubmit={createReport}>
+            <div className="panel-title">
+              <div>
+                <h3>إرسال طلب تقييم طالب</h3>
+                <p>سيصل الطلب تلقائيًا إلى جميع المعلمين الملحقين بفصل الطالب ولديهم حساب مفعل.</p>
+              </div>
+            </div>
+            <div className="evaluation-select-grid">
+              <label>
+                بحث عن الطالب
+                <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="الاسم أو رقم الطالب أو الصف" />
+              </label>
+              <label>
+                الطالب
+                <select required value={studentId} onChange={(e) => setStudentId(e.target.value)}>
+                  <option value="">اختر الطالب</option>
+                  {filteredStudents.map((s) => (
+                    <option key={s.id} value={s.id}>
+                      {s.name} — {s.grade_name} / فصل {s.class_name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </div>
+            <div className="evaluation-message-preview">
+              <b>نص الطلب للمعلم</b>
+              <p>برجاء التكرم بتقييم الطالب [اسم الطالب] فصل [الفصل] سلوكيًا وتحصيليًا وفق البنود المحددة في نموذج التقييم.</p>
+            </div>
+            <button className="btn primary" disabled={busy === "create"}>
+              {busy === "create" ? "جارٍ إرسال الطلبات..." : "إرسال طلب التقييم"}
+            </button>
+          </form>
+        )}
+
+        {tab === "REQUESTS" && isTeacher && (
+          <section className="evaluation-request-list">
+            <div className="evaluation-section-title">
+              <h3>طلبات تحتاج تقييمك</h3>
+              <span>{pendingRequests.length}</span>
+            </div>
+
+            {pendingRequests.length ? (
+              pendingRequests.map((request) => {
+                const draft = drafts[request.response_id] || { academic: "", behavior: "", notes: "" };
+                return (
+                  <article className="panel evaluation-request" key={request.response_id}>
+                    <div className="evaluation-request-head">
+                      <div>
+                        <b>{request.student_name}</b>
+                        <span>
+                          {request.grade_name} / فصل {request.class_name} — {subjectLabel(request.subject_ar)}
+                        </span>
+                      </div>
+                      <small>{fmt(request.requested_at)}</small>
+                    </div>
+                    <div className="evaluation-request-message">{request.message_ar}</div>
+                    <div className="evaluation-rating-grid">
+                      <label>
+                        التقييم التحصيلي
+                        <select
+                          value={draft.academic}
+                          onChange={(e) =>
+                            setDrafts((prev) => ({
+                              ...prev,
+                              [request.response_id]: {
+                                ...draft,
+                                academic: e.target.value as Rating | "",
+                              },
+                            }))
+                          }
+                        >
+                          <option value="">اختر</option>
+                          {ratings.map(([value, label]) => (
+                            <option key={value} value={value}>{label}</option>
+                          ))}
+                        </select>
+                      </label>
+                      <label>
+                        التقييم السلوكي
+                        <select
+                          value={draft.behavior}
+                          onChange={(e) =>
+                            setDrafts((prev) => ({
+                              ...prev,
+                              [request.response_id]: {
+                                ...draft,
+                                behavior: e.target.value as Rating | "",
+                              },
+                            }))
+                          }
+                        >
+                          <option value="">اختر</option>
+                          {ratings.map(([value, label]) => (
+                            <option key={value} value={value}>{label}</option>
+                          ))}
+                        </select>
+                      </label>
+                    </div>
+                    <label>
+                      ملاحظات
+                      <textarea
+                        rows={3}
+                        value={draft.notes}
+                        onChange={(e) =>
+                          setDrafts((prev) => ({
+                            ...prev,
+                            [request.response_id]: { ...draft, notes: e.target.value },
+                          }))
+                        }
+                        placeholder="ملاحظات المعلم عن الطالب — اختياري"
+                      />
+                    </label>
+                    <button
+                      className="btn primary"
+                      onClick={() => submitRequest(request)}
+                      disabled={busy === request.response_id}
+                    >
+                      {busy === request.response_id ? "جارٍ الحفظ..." : "حفظ التقييم"}
+                    </button>
+                  </article>
+                );
+              })
+            ) : (
+              <div className="panel empty">لا توجد طلبات تقييم معلقة عليك.</div>
+            )}
+
+            {completedRequests.length > 0 && (
+              <>
+                <div className="evaluation-section-title done">
+                  <h3>تقييمات أرسلتها سابقًا</h3>
+                  <span>{completedRequests.length}</span>
+                </div>
+                <div className="panel table-wrap">
+                  <table className="evaluation-history">
+                    <thead>
+                      <tr><th>الطالب</th><th>الفصل</th><th>المادة</th><th>تحصيليًا</th><th>سلوكيًا</th><th>تاريخ الرد</th></tr>
+                    </thead>
+                    <tbody>
+                      {completedRequests.map((request) => (
+                        <tr key={request.response_id}>
+                          <td>{request.student_name}</td>
+                          <td>{request.grade_name} / {request.class_name}</td>
+                          <td>{subjectLabel(request.subject_ar)}</td>
+                          <td>{ratingLabel(request.academic_rating)}</td>
+                          <td>{ratingLabel(request.behavior_rating)}</td>
+                          <td>{fmt(request.responded_at)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </>
+            )}
+          </section>
+        )}
+
+        {tab === "REPORTS" && canAdmin && (
+          <section className="panel">
+            <div className="panel-title">
+              <div>
+                <h3>جدول التقارير المحفوظة</h3>
+                <p>جميع طلبات التقييم محفوظة هنا مع حالة اكتمال ردود المعلمين.</p>
+              </div>
+              <span className="counter">{reports.length}</span>
+            </div>
+            {reports.length ? (
+              <div className="table-wrap">
+                <table className="evaluation-reports-table">
+                  <thead>
+                    <tr><th>رقم التقرير</th><th>الطالب</th><th>الفصل</th><th>التقييمات</th><th>الحالة</th><th>التاريخ</th><th></th></tr>
+                  </thead>
+                  <tbody>
+                    {reports.map((report) => (
+                      <tr key={report.id}>
+                        <td><b>{report.report_no}</b></td>
+                        <td>{report.student_name}<small>{report.student_no}</small></td>
+                        <td>{report.grade_name} / {report.class_name}</td>
+                        <td>
+                          {report.responded_count} من {report.teacher_count}
+                          {report.pending_count > 0 && <small>{report.pending_count} لم يردوا بعد</small>}
+                        </td>
+                        <td><span className={`evaluation-status ${report.status.toLowerCase()}`}>{statusLabel(report.status)}</span></td>
+                        <td>{fmt(report.requested_at)}</td>
+                        <td>
+                          <button
+                            className="btn ghost compact"
+                            disabled={busy === `open:${report.id}`}
+                            onClick={() => openReport(report.id)}
+                          >
+                            فتح التقرير
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <div className="empty">لا توجد تقارير حتى الآن.</div>
+            )}
+          </section>
+        )}
+
+        {detail && canAdmin && (
+          <div className="evaluation-modal-backdrop" onClick={() => setDetail(null)}>
+            <section className="evaluation-modal panel" onClick={(e) => e.stopPropagation()}>
+              <div className="evaluation-modal-head">
+                <div>
+                  <h2>تقرير المستوى السلوكي والتحصيلي</h2>
+                  <p>{detail.student_name} — {detail.grade_name} / فصل {detail.class_name} — {detail.report_no}</p>
+                </div>
+                <button className="btn ghost" onClick={() => setDetail(null)}>إغلاق</button>
+              </div>
+
+              <div className="evaluation-progress">
+                <b>استجابة المعلمين</b>
+                <span>{detail.responses.filter((x) => x.responded_at).length} من {detail.responses.length}</span>
+              </div>
+
+              <div className="table-wrap">
+                <table className="evaluation-detail-table">
+                  <thead>
+                    <tr><th>المادة</th><th>اسم المعلم</th><th>تحصيليًا</th><th>سلوكيًا</th><th>ملاحظات</th><th>الحالة</th></tr>
+                  </thead>
+                  <tbody>
+                    {detail.responses.map((response) => (
+                      <tr key={response.id}>
+                        <td>{subjectLabel(response.subject_ar)}</td>
+                        <td>{response.teacher_name}</td>
+                        <td>{ratingLabel(response.academic_rating)}</td>
+                        <td>{ratingLabel(response.behavior_rating)}</td>
+                        <td>{response.notes || "—"}</td>
+                        <td>{response.responded_at ? "تم الرد" : "بانتظار المعلم"}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              <div className="evaluation-opinions">
+                {canGuidance && (
+                  <div>
+                    <label>
+                      رأي الموجه الطلابي
+                      <textarea rows={4} value={guidanceOpinion} onChange={(e) => setGuidanceOpinion(e.target.value)} placeholder="اكتب رأي الموجه الطلابي" />
+                    </label>
+                    <button className="btn primary" disabled={busy === "opinion:GUIDANCE_COUNSELOR"} onClick={() => saveOpinion("GUIDANCE_COUNSELOR")}>
+                      حفظ رأي الموجه
+                    </button>
+                  </div>
+                )}
+                {canVice && (
+                  <div>
+                    <label>
+                      رأي وكيل المدرسة
+                      <textarea rows={4} value={viceOpinion} onChange={(e) => setViceOpinion(e.target.value)} placeholder="اكتب رأي وكيل المدرسة" />
+                    </label>
+                    <button className="btn primary" disabled={busy === "opinion:VICE_PRINCIPAL"} onClick={() => saveOpinion("VICE_PRINCIPAL")}>
+                      حفظ رأي الوكيل
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              <div className="evaluation-modal-actions">
+                <span className={`evaluation-status ${detail.status.toLowerCase()}`}>{statusLabel(detail.status)}</span>
+                <button className="btn ghost" onClick={() => printReport(detail)}>طباعة التقرير</button>
+              </div>
+            </section>
+          </div>
+        )}
+      </main>
+    </>
+  );
 }

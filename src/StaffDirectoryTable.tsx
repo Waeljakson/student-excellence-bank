@@ -42,6 +42,15 @@ function administration(s: StaffMember) {
   return "غير محدد";
 }
 
+function escapeHtml(value: unknown) {
+  return String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
 export default function StaffDirectoryTable({ staff }: { staff: StaffMember[] }) {
   const [query, setQuery] = useState("");
   const rows = useMemo(() => {
@@ -55,7 +64,67 @@ export default function StaffDirectoryTable({ staff }: { staff: StaffMember[] })
   }, [staff, query]);
 
   function printTable() {
-    window.print();
+    const printWindow = window.open("", "staff-directory-print", "width=1100,height=800");
+    if (!printWindow) {
+      window.alert("تعذر فتح نافذة الطباعة. اسمح بالنوافذ المنبثقة لهذا الموقع ثم أعد المحاولة.");
+      return;
+    }
+
+    const tableRows = rows.map((s) => `
+      <tr>
+        <td>${escapeHtml(s.full_name_ar)}</td>
+        <td class="mobile">${escapeHtml(s.mobile || "—")}</td>
+        <td>${escapeHtml(subjectOrTitle(s))}</td>
+        <td>${escapeHtml(administration(s))}</td>
+      </tr>`).join("");
+
+    const html = `<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8" />
+<title>جدول بيانات الهيئة الإدارية والتعليمية</title>
+<style>
+  @page{size:A4 landscape;margin:10mm}
+  *{box-sizing:border-box}
+  body{margin:0;background:#fff;color:#111;font-family:Cairo,Tahoma,Arial,sans-serif;direction:rtl}
+  .print-head{text-align:center;margin:0 0 14px}
+  .print-head h1{font-size:20px;margin:0 0 5px;color:#0b3a65}
+  .print-head p{font-size:11px;margin:0;color:#444}
+  .count{font-size:11px;margin-top:5px}
+  table{width:100%;border-collapse:collapse;table-layout:fixed;font-size:11px}
+  thead{display:table-header-group}
+  th{background:#eaf1f7;color:#0b3a65;font-weight:800}
+  th,td{border:1px solid #777;padding:7px 8px;text-align:right;vertical-align:middle;word-break:break-word}
+  tr{break-inside:avoid;page-break-inside:avoid}
+  th:nth-child(1),td:nth-child(1){width:31%}
+  th:nth-child(2),td:nth-child(2){width:17%}
+  th:nth-child(3),td:nth-child(3){width:22%}
+  th:nth-child(4),td:nth-child(4){width:30%}
+  td.mobile{direction:ltr;text-align:center;white-space:nowrap;font-variant-numeric:tabular-nums}
+  @media print{body{-webkit-print-color-adjust:exact;print-color-adjust:exact}}
+</style>
+</head>
+<body>
+  <div class="print-head">
+    <h1>جدول بيانات الهيئة الإدارية والتعليمية</h1>
+    <p>متوسطة وثانوية مشكاة الشعلة</p>
+    <div class="count">عدد السجلات: ${rows.length}</div>
+  </div>
+  <table>
+    <thead><tr><th>الاسم</th><th>رقم الجوال</th><th>المادة / المسمى</th><th>الإدارة</th></tr></thead>
+    <tbody>${tableRows}</tbody>
+  </table>
+<script>
+  window.addEventListener('load', function(){
+    setTimeout(function(){ window.focus(); window.print(); }, 120);
+  });
+<\/script>
+</body>
+</html>`;
+
+    printWindow.document.open();
+    printWindow.document.write(html);
+    printWindow.document.close();
   }
 
   return (

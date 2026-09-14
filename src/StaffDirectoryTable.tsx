@@ -54,6 +54,10 @@ export default function StaffDirectoryTable({ staff }: { staff: StaffMember[] })
     });
   }, [staff, query]);
 
+  function printTable() {
+    window.print();
+  }
+
   return (
     <section className="panel staff-directory-table-panel">
       <div className="panel-title staff-directory-table-head">
@@ -71,6 +75,7 @@ export default function StaffDirectoryTable({ staff }: { staff: StaffMember[] })
           placeholder="بحث بالاسم أو الجوال أو المادة أو الإدارة"
           aria-label="بحث في بيانات الهيئة"
         />
+        <button type="button" className="btn ghost staff-directory-print" onClick={printTable}>طباعة الجدول</button>
       </div>
       <div className="table-wrap staff-directory-table-wrap">
         <table className="staff-directory-table">

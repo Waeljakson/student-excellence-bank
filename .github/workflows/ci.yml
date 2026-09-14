@@ -20,6 +20,6 @@ jobs:
       - name: Restore Vite source index
         run: cp source-index.html index.html
       - name: Install dependencies
-        run: npm install
+        run: npm install --include=dev
       - name: Type-check and build SPA
         run: npm run build

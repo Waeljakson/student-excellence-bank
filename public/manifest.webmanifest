@@ -1,0 +1,27 @@
+{
+  "name": "بنك التميز الطلابي - مدارس المشكاة الأهلية",
+  "short_name": "بنك التميز",
+  "description": "منصة بنك التميز الطلابي بمدارس المشكاة الأهلية",
+  "lang": "ar",
+  "dir": "rtl",
+  "start_url": "/student-excellence-bank/",
+  "scope": "/student-excellence-bank/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#ffffff",
+  "theme_color": "#0b3a65",
+  "icons": [
+    {
+      "src": "/student-excellence-bank/school-logo.png",
+      "sizes": "any",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/student-excellence-bank/school-logo.png",
+      "sizes": "any",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}

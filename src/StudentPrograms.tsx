@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { niceError, rpc } from "./client";
 import "./engagement.css";
+import "./student-programs-enhanced.css";
 
 const SCHOOL_LOGO=`${import.meta.env.BASE_URL}school-logo.png`;
 const GUIDANCE_LOGO=`${import.meta.env.BASE_URL}guidance-logo.png`;

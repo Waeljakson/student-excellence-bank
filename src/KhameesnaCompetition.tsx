@@ -2,23 +2,33 @@ import { FormEvent, useEffect, useState } from "react";
 import { niceError, rpc } from "./client";
 import "./feature-upgrade.css";
 
-type Board={available:boolean;competition_id?:string;name_ar?:string;week_no?:number;starts_on?:string;ends_on?:string;reward?:string;status?:"UPCOMING"|"ACTIVE"|"ENDED";criteria?:Array<{key:string;label:string;weight:number;max_score:number}>;allowed_classes?:Array<{class_id:string;grade_name:string;class_name:string}>;standings?:Array<{class_id:string;grade_name:string;class_name:string;score:number;evaluations:number}>;recent?:Array<{id:string;evaluation_date:string;total_score:number;cleanliness_score:number;attendance_score:number;discipline_score:number;homework_score:number;behavior_score:number;note?:string;created_at:string;class_name:string;grade_name:string;evaluator_name:string}>;weeks?:Array<{id:string;week_no:number;name_ar:string;starts_on:string;ends_on:string;status:string}>};
+type Board={available:boolean;can_manage?:boolean;competition_running?:boolean;competition_id?:string;name_ar?:string;week_no?:number;starts_on?:string;ends_on?:string;reward?:string;status?:"UPCOMING"|"ACTIVE"|"ENDED"|"PAUSED";criteria?:Array<{key:string;label:string;weight:number;max_score:number;sort_order?:number}>;allowed_classes?:Array<{class_id:string;grade_name:string;class_name:string}>;standings?:Array<{class_id:string;grade_name:string;class_name:string;score:number;evaluations:number}>;recent?:Array<{id:string;evaluation_date:string;total_score:number;cleanliness_score:number;attendance_score:number;discipline_score:number;homework_score:number;behavior_score:number;note?:string;created_at:string;class_name:string;grade_name:string;evaluator_name:string}>;weeks?:Array<{id:string;week_no:number;name_ar:string;starts_on:string;ends_on:string;status:string}>};
 
 const labels={cleanliness:"نظافة الفصل",attendance:"الحضور وعدم التأخر",discipline:"الانضباط",homework:"إنجاز الواجبات",behavior:"السلوك"};
 function date(v?:string){return v?new Date(v+(/T/.test(v)?"":"T12:00:00")).toLocaleDateString("ar-SA",{day:"numeric",month:"long"}):"—"}
 
 export default function KhameesnaCompetition(){
-  const[data,setData]=useState<Board|null>(null);const[error,setError]=useState("");const[msg,setMsg]=useState("");const[busy,setBusy]=useState(false);const[classId,setClassId]=useState("");const[note,setNote]=useState("");const[scores,setScores]=useState({cleanliness:10,attendance:10,discipline:10,homework:10,behavior:10});
+  const[data,setData]=useState<Board|null>(null);const[error,setError]=useState("");const[msg,setMsg]=useState("");const[busy,setBusy]=useState(false);const[controlBusy,setControlBusy]=useState(false);const[classId,setClassId]=useState("");const[note,setNote]=useState("");const[scores,setScores]=useState({cleanliness:10,attendance:10,discipline:10,homework:10,behavior:10});
   async function load(){setError("");try{setData(await rpc<Board>("api_khameesna_competition_board"))}catch(e){setError(niceError(e))}}
   useEffect(()=>{load()},[]);
   function score(name:keyof typeof scores,value:string){setScores(v=>({...v,[name]:Math.max(0,Math.min(10,Number(value)||0))}))}
   async function submit(e:FormEvent){e.preventDefault();if(!classId)return;setBusy(true);setMsg("");try{const r:any=await rpc("api_submit_khameesna_evaluation",{p_class_id:classId,p_cleanliness:scores.cleanliness,p_attendance:scores.attendance,p_discipline:scores.discipline,p_homework:scores.homework,p_behavior:scores.behavior,p_note:note||null});setMsg(`تم تسجيل تقييم الفصل للأسبوع ${r.week_no}. الدرجة: ${r.score} من 100.`);setNote("");await load()}catch(e){setMsg(niceError(e))}finally{setBusy(false)}}
+  async function setRunning(action:"START"|"STOP"){
+    if(controlBusy)return;
+    const text=action==="START"?"إطلاق":"إيقاف";
+    if(!window.confirm(`تأكيد ${text} مسابقة خميسنا غير؟`))return;
+    setControlBusy(true);setMsg("");
+    try{const r:any=await rpc("api_set_khameesna_running",{p_action:action});setMsg(action==="START"?`تم إطلاق مسابقة خميسنا غير. تم تفعيل ${r.affected_weeks||0} أسبوعًا.`:"تم إيقاف مسابقة خميسنا غير. لن يتم قبول أي تقييمات حتى إعادة إطلاقها.");await load()}catch(e){setMsg(niceError(e))}finally{setControlBusy(false)}
+  }
   if(error)return <><header className="topbar"><div><h1>خميسنا غير</h1></div></header><main className="content"><div className="notice error">{error}</div></main></>;
   if(!data)return <div className="full-center"><div className="loader"/><p>جارٍ تحميل خميسنا غير...</p></div>;
   if(!data.available)return <><header className="topbar"><div><h1>خميسنا غير</h1><p>مسابقة الفصول الأسبوعية</p></div></header><main className="content"><div className="panel empty">لم يتم إصدار أسابيع المسابقة بعد.</div></main></>;
   const total=scores.cleanliness+scores.attendance+scores.discipline+scores.homework+scores.behavior;
+  const statusText=data.status==="ACTIVE"?"الأسبوع مفتوح للتقييم":data.status==="PAUSED"?"المسابقة متوقفة يدويًا":data.status==="UPCOMING"?"الأسبوع القادم":"انتهى الأسبوع";
   return <><header className="topbar"><div><h1>🏆 خميسنا غير</h1><p>الفصل المثالي — من الأسبوع الخامس إلى الأسبوع السابع عشر</p></div></header><main className="content khameesna-v2">
-    <section className="kh-v2-hero panel"><div><span className={`kh-status ${data.status?.toLowerCase()}`}>{data.status==="ACTIVE"?"الأسبوع مفتوح للتقييم":data.status==="UPCOMING"?"الأسبوع القادم":"انتهى الأسبوع"}</span><h2>{data.name_ar}</h2><p>{date(data.starts_on)} — {date(data.ends_on)}</p><b>{data.reward}</b></div><div className="kh-score-ring"><strong>{data.week_no}</strong><span>رقم الأسبوع</span></div></section>
+    <section className="kh-v2-hero panel"><div><span className={`kh-status ${data.status?.toLowerCase()}`}>{statusText}</span><h2>{data.name_ar}</h2><p>{date(data.starts_on)} — {date(data.ends_on)}</p><b>{data.reward}</b>{data.can_manage&&<div className="kh-admin-controls no-print"><span>تحكم مدير النظام</span>{data.competition_running?<button type="button" className="btn ghost" disabled={controlBusy} onClick={()=>setRunning("STOP")}>{controlBusy?"جارٍ التنفيذ...":"إيقاف المسابقة"}</button>:<button type="button" className="btn primary" disabled={controlBusy} onClick={()=>setRunning("START")}>{controlBusy?"جارٍ التنفيذ...":"إطلاق المسابقة"}</button>}</div>}</div><div className="kh-score-ring"><strong>{data.week_no}</strong><span>رقم الأسبوع</span></div></section>
+
+    {data.status==="PAUSED"&&<section className="panel"><div className="notice error">المسابقة متوقفة حاليًا بقرار مدير النظام. لا يمكن للمعلمين تسجيل تقييمات حتى إعادة إطلاقها.</div></section>}
 
     <section className="panel"><div className="panel-title"><div><h3>معايير التقييم</h3><p>خمسة معايير متساوية. كل معيار من 10 درجات، والنتيجة النهائية من 100.</p></div></div><div className="kh-criteria-grid">{data.criteria?.map(c=><article key={c.key}><span>{c.sort_order}</span><b>{c.label}</b><small>{c.weight}% من النتيجة</small>{c.key==="ATTENDANCE"&&<em>10/10 عند عدم وجود غياب أو تأخر</em>}</article>)}</div></section>
 

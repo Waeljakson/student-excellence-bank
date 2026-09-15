@@ -44,13 +44,15 @@ jobs:
           cp -R dist/assets assets
           cp dist/school-logo.png school-logo.png
           cp dist/guidance-logo.png guidance-logo.png
+          cp dist/manifest.webmanifest manifest.webmanifest
+          cp dist/sw.js sw.js
           touch .nojekyll
 
       - name: Commit compiled Pages files
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add index.html assets .nojekyll school-logo.png guidance-logo.png src/App.tsx
+          git add index.html assets .nojekyll school-logo.png guidance-logo.png manifest.webmanifest sw.js src/App.tsx
           if ! git diff --cached --quiet; then
             git commit -m "Publish compiled GitHub Pages"
             git push origin HEAD:main

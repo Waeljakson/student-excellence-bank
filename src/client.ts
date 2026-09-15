@@ -33,6 +33,7 @@ export function niceError(error: unknown) {
   if (message.includes("CLASS_SCOPE_REQUIRED")) return "هذا الفصل غير مسند لحسابك.";
   if (message.includes("MEGA_ONLY_ROLE")) return "مدير المدرسة والوكيل والموجه الطلابي مسموح لهم فقط بشيك التميز العملاق.";
   if (message.includes("MEGA_CHECK_RESTRICTED")) return "الشيك العملاق متاح فقط لمدير المدرسة أو الوكيل أو الموجه الطلابي.";
+  if (message.includes("TEACHER_MONTHLY_LIMIT_100")) return "تم استهلاك رصيد المعلم الشهري البالغ 100 نقطة. سيتجدد الرصيد تلقائيًا مع بداية الشهر القادم.";
   if (message.includes("POINT_CONVERSION_INVALID")) return "عدد النقاط مقابل الريال يجب أن يكون من 1 إلى 100.";
   if (message.includes("BEHAVIORAL_PERIOD_INVALID")) return "مدة دورة التميز السلوكي غير صحيحة. يجب أن تكون النهاية بعد البداية.";
   if (message.includes("BEHAVIORAL_PERIOD_OVERLAP")) return "توجد دورة تميز سلوكي أخرى متداخلة مع هذه المدة.";

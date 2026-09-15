@@ -36,7 +36,7 @@ export default function TeacherLogin() {
         }
       }
 
-      if (password !== `${phone}Aa`) throw new Error("كلمة المرور الافتراضية غير صحيحة. استخدم رقم الجوال متبوعًا بـ Aa.");
+      if (password !== `${phone}Aa`) throw new Error("كلمة المرور غير صحيحة. يرجى مراجعة إدارة النظام.");
 
       let ready = false;
       try {
@@ -76,9 +76,9 @@ export default function TeacherLogin() {
 
   return <form onSubmit={submit} className="form-stack student-login-form">
     <h2>دخول الهيئة التعليمية</h2>
-    <p>للمعلم والوكيل والموجه والمدير. اسم المستخدم هو رقم الجوال المسجل في دليل الهيئة، وكلمة المرور الافتراضية: رقم الجوال متبوعًا بـ <b>Aa</b>.</p>
-    <label>رقم الجوال<input inputMode="numeric" autoComplete="username" required value={mobile} onChange={e=>setMobile(e.target.value)} placeholder="05xxxxxxxx"/></label>
-    <label>كلمة المرور<input type="password" autoComplete="current-password" required value={password} onChange={e=>setPassword(e.target.value)} placeholder="رقم الجوال + Aa"/></label>
+    <p>للمعلم والوكيل والموجه والمدير. استخدم بيانات الدخول الخاصة بك.</p>
+    <label>رقم الجوال<input inputMode="numeric" autoComplete="username" required value={mobile} onChange={e=>setMobile(e.target.value)} placeholder="رقم الجوال المسجل"/></label>
+    <label>كلمة المرور<input type="password" autoComplete="current-password" required value={password} onChange={e=>setPassword(e.target.value)} placeholder="كلمة المرور"/></label>
     <button className="btn primary" disabled={busy}>{busy?"جارٍ الدخول...":"دخول الهيئة"}</button>
     {message&&<div className="notice">{message}</div>}
   </form>;

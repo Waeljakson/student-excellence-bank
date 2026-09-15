@@ -13,13 +13,13 @@
   "icons": [
     {
       "src": "/student-excellence-bank/school-logo.png",
-      "sizes": "any",
+      "sizes": "1000x1000",
       "type": "image/png",
       "purpose": "any"
     },
     {
       "src": "/student-excellence-bank/school-logo.png",
-      "sizes": "any",
+      "sizes": "1000x1000",
       "type": "image/png",
       "purpose": "maskable"
     }

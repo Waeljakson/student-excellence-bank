@@ -29,11 +29,13 @@ export function niceError(error: unknown) {
   if (message.includes("APPROVAL_REQUIRED")) return "الحساب غير مرتبط بالنظام. استخدم طريقة الدخول المخصصة لك.";
   if (message.includes("SUPER_ADMIN_REQUIRED")) return "هذه الإعدادات متاحة لمدير النظام فقط.";
   if (message.includes("ADMIN_REQUIRED")) return "هذه العملية متاحة لإدارة النظام فقط.";
+  if (message.includes("TEACHER_BUDGET_SUPER_ADMIN_REQUIRED")) return "تعديل الحد الشهري للمعلم متاح لمدير النظام فقط.";
   if (message.includes("ISSUE_PERMISSION_REQUIRED")) return "لا توجد صلاحية إصدار لهذا الحساب.";
   if (message.includes("CLASS_SCOPE_REQUIRED")) return "هذا الفصل غير مسند لحسابك.";
   if (message.includes("MEGA_ONLY_ROLE")) return "مدير المدرسة والوكيل والموجه الطلابي مسموح لهم فقط بشيك التميز العملاق.";
   if (message.includes("MEGA_CHECK_RESTRICTED")) return "الشيك العملاق متاح فقط لمدير المدرسة أو الوكيل أو الموجه الطلابي.";
-  if (message.includes("TEACHER_MONTHLY_LIMIT_100")) return "تم استهلاك رصيد المعلم الشهري البالغ 100 نقطة. سيتجدد الرصيد تلقائيًا مع بداية الشهر القادم.";
+  if (message.includes("MONTHLY_POINT_LIMIT_EXCEEDED")) return "تم استهلاك الحد الشهري المسموح لإصدار النقاط. سيتجدد الرصيد تلقائيًا مع بداية الشهر القادم.";
+  if (message.includes("TEACHER_MONTHLY_LIMIT_100")) return "تم استهلاك الحد الشهري المسموح للمعلم. سيتجدد الرصيد تلقائيًا مع بداية الشهر القادم.";
   if (message.includes("POINT_CONVERSION_INVALID")) return "عدد النقاط مقابل الريال يجب أن يكون من 1 إلى 100.";
   if (message.includes("BEHAVIORAL_PERIOD_INVALID")) return "مدة دورة التميز السلوكي غير صحيحة. يجب أن تكون النهاية بعد البداية.";
   if (message.includes("BEHAVIORAL_PERIOD_OVERLAP")) return "توجد دورة تميز سلوكي أخرى متداخلة مع هذه المدة.";

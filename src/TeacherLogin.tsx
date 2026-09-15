@@ -17,14 +17,14 @@ export default function TeacherLogin() {
   async function submit(e: FormEvent) {
     e.preventDefault();
     const phone = mobile.trim();
-    if (!/^\d+$/.test(phone)) { setMessage("اكتب رقم الجوال المسجل في دليل الهيئة."); return; }
+    if (!/^\d+$/.test(phone)) { setMessage("اكتب رقم المستخدم."); return; }
     const email = `${phone}@staff.mishkat.sa`;
     setBusy(true);
     setMessage("");
     try {
       const staffKey = `T:${phone}`;
       const lookup = await rpc<Lookup>("api_student_lookup", { p_student_no: staffKey });
-      if (!lookup.exists) throw new Error("رقم الجوال غير موجود ضمن الهيئة المسجلة في النظام.");
+      if (!lookup.exists) throw new Error("رقم المستخدم غير موجود ضمن الهيئة المسجلة في النظام.");
 
       if (lookup.claimed) {
         try {
@@ -32,7 +32,7 @@ export default function TeacherLogin() {
           authError(signed);
           return;
         } catch {
-          throw new Error("رقم الجوال أو كلمة المرور غير صحيحة، أو أن هذا الموظف مرتبط بحساب إدارة مختلف.");
+          throw new Error("رقم المستخدم أو كلمة المرور غير صحيحة، أو أن هذا الموظف مرتبط بحساب إدارة مختلف.");
         }
       }
 
@@ -77,7 +77,7 @@ export default function TeacherLogin() {
   return <form onSubmit={submit} className="form-stack student-login-form">
     <h2>دخول الهيئة التعليمية</h2>
     <p>للمعلم والوكيل والموجه والمدير. استخدم بيانات الدخول الخاصة بك.</p>
-    <label>رقم الجوال<input inputMode="numeric" autoComplete="username" required value={mobile} onChange={e=>setMobile(e.target.value)} placeholder="رقم الجوال المسجل"/></label>
+    <label>رقم المستخدم<input inputMode="numeric" autoComplete="username" required value={mobile} onChange={e=>setMobile(e.target.value)} placeholder="أدخل رقم المستخدم"/></label>
     <label>كلمة المرور<input type="password" autoComplete="current-password" required value={password} onChange={e=>setPassword(e.target.value)} placeholder="كلمة المرور"/></label>
     <button className="btn primary" disabled={busy}>{busy?"جارٍ الدخول...":"دخول الهيئة"}</button>
     {message&&<div className="notice">{message}</div>}

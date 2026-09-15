@@ -56,6 +56,7 @@
 // SYSTEM_FEATURES_V2
 // SYSTEM_FEATURES_V2
 // SYSTEM_FEATURES_V2
+// SYSTEM_FEATURES_V2
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import QRCode from "qrcode";
 import { AUTH_URL, neon, niceError, rpc } from "./client";
@@ -168,6 +169,9 @@ function AuthScreen() {
     try {
       const result = await neon.auth.signIn.email({ email: email.trim(), password });
       unwrapError(result);
+      // AUTH_DEVICE_SESSION_FIX_APP: reload once after a successful password sign-in so session state is re-read from storage.
+      sessionStorage.setItem("mishkat-login-succeeded", "1");
+      window.location.replace(window.location.href);
     } catch (e) { setMessage(niceError(e)); } finally { setBusy(false); }
   }
 
@@ -398,7 +402,7 @@ function BankApp({ profile, refreshProfile }: { profile: Profile; refreshProfile
   async function loadAll(){setLoading(true);setError("");try{const [d,s,ru,c,ra,rw,kh]=await Promise.all([rpc<Dashboard>("api_dashboard"),rpc<Student[]>("api_students"),rpc<Rule[]>("api_point_rules"),rpc<Check[]>("api_recent_checks"),rpc<Rankings>("api_rankings"),rpc<Reward[]>("api_rewards"),rpc<KhameesnaBoard>("api_khameesna_board")]);setDashboard(d);setStudents(s);setRules(ru);setChecks(c);setRankings(ra);setRewards(rw);setKhameesna(kh);if(isAdmin){const[u,st,cl]=await Promise.all([rpc<ManagedUser[]>("api_managed_users"),rpc<StaffMember[]>("api_staff_directory"),rpc<AdminClass[]>("api_admin_classes")]);setPending([]);setUsers(u);setStaff(st);setAdminClasses(cl)}}catch(e){setError(niceError(e))}finally{setLoading(false)}}
   useEffect(()=>{loadAll()},[profile.app_user_id]);
   async function afterIssued(){await Promise.all([loadAll(),refreshProfile()])}
-  return <AppShell profile={profile} tab={tab} setTab={setTab}>{loading&&!dashboard?<Loading/>:<>{error&&<div className="notice error global-error">{error}</div>}{tab==="dashboard"&&<DashboardView data={dashboard} checks={checks}/>} {tab==="checks"&&<><ChecksView students={students} rules={rules} onIssued={afterIssued}/>{profile.roles?.includes("TEACHER")&&<main className="content teacher-check-manager-wrap"><TeacherCheckManager onChanged={afterIssued}/></main>}</>} {tab==="students"&&<StudentsView students={students} roles={profile.roles||[]} reload={loadAll}/>} {tab==="rankings"&&<RankingsView data={rankings}/>} {tab==="rewards"&&<><RewardsView rewards={rewards}/>{profile.roles?.some(r=>["SUPER_ADMIN","SCHOOL_ADMIN","PRINCIPAL","REWARD_OFFICER"].includes(r))&&<main className="content reward-admin-wrap"><RewardManagementPanel onChanged={loadAll}/></main>}</>} {tab==="referrals"&&<ReferralCenter roles={profile.roles} students={students} profileName={profile.name||""}/>} {tab==="redemption"&&profile.roles?.includes("GUIDANCE_COUNSELOR")&&<GuidanceRedemptionCenter/>}                                {tab==="student-evaluations"&&<StudentEvaluationReports roles={profile.roles} students={students}/>}                                                 {tab==="behavioral"&&<BehavioralExcellence students={students}/>} {tab==="khameesna"&&<KhameesnaCompetition isSuperAdmin={profile.roles?.includes("SUPER_ADMIN")===true}/>} {tab==="account"&&<UserAccount profile={profile} onProfileChanged={refreshProfile}/>} {tab==="system"&&profile.roles?.includes("SUPER_ADMIN")&&<SystemControlPanel/>} {tab==="admin"&&isAdmin&&<AdminView pending={pending} users={users} staff={staff} classes={adminClasses} reload={loadAll} isSuperAdmin={profile.roles?.includes("SUPER_ADMIN")===true}/>}</>}</AppShell>;
+  return <AppShell profile={profile} tab={tab} setTab={setTab}>{loading&&!dashboard?<Loading/>:<>{error&&<div className="notice error global-error">{error}</div>}{tab==="dashboard"&&<DashboardView data={dashboard} checks={checks}/>} {tab==="checks"&&<><ChecksView students={students} rules={rules} onIssued={afterIssued}/>{profile.roles?.includes("TEACHER")&&<main className="content teacher-check-manager-wrap"><TeacherCheckManager onChanged={afterIssued}/></main>}</>} {tab==="students"&&<StudentsView students={students} roles={profile.roles||[]} reload={loadAll}/>} {tab==="rankings"&&<RankingsView data={rankings}/>} {tab==="rewards"&&<><RewardsView rewards={rewards}/>{profile.roles?.some(r=>["SUPER_ADMIN","SCHOOL_ADMIN","PRINCIPAL","REWARD_OFFICER"].includes(r))&&<main className="content reward-admin-wrap"><RewardManagementPanel onChanged={loadAll}/></main>}</>} {tab==="referrals"&&<ReferralCenter roles={profile.roles} students={students} profileName={profile.name||""}/>} {tab==="redemption"&&profile.roles?.includes("GUIDANCE_COUNSELOR")&&<GuidanceRedemptionCenter/>}                                  {tab==="student-evaluations"&&<StudentEvaluationReports roles={profile.roles} students={students}/>}                                                 {tab==="behavioral"&&<BehavioralExcellence students={students}/>} {tab==="khameesna"&&<KhameesnaCompetition isSuperAdmin={profile.roles?.includes("SUPER_ADMIN")===true}/>} {tab==="account"&&<UserAccount profile={profile} onProfileChanged={refreshProfile}/>} {tab==="system"&&profile.roles?.includes("SUPER_ADMIN")&&<SystemControlPanel/>} {tab==="admin"&&isAdmin&&<AdminView pending={pending} users={users} staff={staff} classes={adminClasses} reload={loadAll} isSuperAdmin={profile.roles?.includes("SUPER_ADMIN")===true}/>}</>}</AppShell>;
 }
 
 export default function App(){
@@ -406,9 +410,10 @@ export default function App(){
   const sessionState=neon.auth.useSession();
   const [profile,setProfile]=useState<Profile|null>(null);const[profileError,setProfileError]=useState("");const[profileLoading,setProfileLoading]=useState(false);
   async function refreshProfile(){setProfileLoading(true);setProfileError("");try{let next:Profile|null=null;for(let attempt=0;attempt<4;attempt++){next=await rpc<Profile>("api_profile");if(next?.status!=="PENDING")break;if(attempt<3)await new Promise(resolve=>setTimeout(resolve,300*(attempt+1)))}setProfile(next)}catch(e){setProfileError(niceError(e))}finally{setProfileLoading(false)}}
-  useEffect(()=>{if(sessionState?.data?.user?.id)refreshProfile();else setProfile(null)},[sessionState?.data?.user?.id]);
+  useEffect(()=>{if(sessionState?.data?.user?.id){sessionStorage.removeItem("mishkat-login-succeeded");refreshProfile()}else setProfile(null)},[sessionState?.data?.user?.id]);
   if(verifyNonce)return <VerifyView nonce={verifyNonce}/>;
   if(sessionState?.isPending)return <Loading text="جارٍ التحقق من الجلسة..."/>;
+  if(!sessionState?.data&&sessionStorage.getItem("mishkat-login-succeeded")==="1")return <div className="full-center"><div className="pending-card"><div className="logos"><img src={SCHOOL_LOGO}/><img src={GUIDANCE_LOGO}/></div><span className="pending-icon">!</span><h1>تعذر تثبيت جلسة الدخول على هذا الجهاز</h1><p>تم قبول بيانات الدخول، لكن المتصفح لم يحتفظ بالجلسة. افتح التطبيق من Chrome أو Safari مباشرة وليس من داخل واتساب أو متصفح مدمج، وتأكد أن ملفات تعريف الارتباط وبيانات المواقع غير محظورة.</p><button className="btn primary" onClick={()=>window.location.reload()}>إعادة محاولة الجلسة</button><button className="btn ghost" onClick={()=>{sessionStorage.removeItem("mishkat-login-succeeded");window.location.reload()}}>العودة لشاشة الدخول</button></div></div>;
   if(!sessionState?.data)return <AuthScreen/>;
   if(profileLoading&&!profile)return <Loading text="جارٍ تحميل صلاحيات الحساب..."/>;
   if(profileError&&!profile)return <div className="full-center"><div className="pending-card"><h1>تعذر تحميل الصلاحيات</h1><p>{profileError}</p><button className="btn primary" onClick={refreshProfile}>إعادة المحاولة</button><button className="btn ghost" onClick={()=>neon.auth.signOut()}>تسجيل الخروج</button></div></div>;

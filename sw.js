@@ -1,4 +1,4 @@
-const CACHE_NAME = "mishkat-bank-shell-v2";
+const CACHE_NAME = "mishkat-bank-shell-v3";
 const BASE = "/student-excellence-bank/";
 const APP_SHELL = [
   BASE,
@@ -46,6 +46,14 @@ self.addEventListener("fetch", (event) => {
   }
 
   event.respondWith(
-    caches.match(request).then((cached) => cached || fetch(request))
+    fetch(request)
+      .then((response) => {
+        if (response && response.ok) {
+          const copy = response.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(request, copy));
+        }
+        return response;
+      })
+      .catch(() => caches.match(request))
   );
 });

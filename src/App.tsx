@@ -66,6 +66,7 @@
 // SYSTEM_FEATURES_V2
 // SYSTEM_FEATURES_V2
 // SYSTEM_FEATURES_V2
+// SYSTEM_FEATURES_V2
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import QRCode from "qrcode";
 import { AUTH_URL, neon, niceError, rpc } from "./client";
@@ -136,8 +137,40 @@ function unwrapError(result: any) {
   return result;
 }
 
+async function ensureAppSessionReady() {
+  for (let attempt = 0; attempt < 8; attempt++) {
+    try {
+      const current = await neon.auth.getSession();
+      if (current?.data?.user?.id) return true;
+    } catch {}
+    await new Promise(resolve => window.setTimeout(resolve, 250));
+  }
+  return false;
+}
+
 function Loading({ text = "جارٍ تحميل بنك التميز..." }: { text?: string }) {
   return <div className="full-center"><div className="loader" /><p>{text}</p></div>;
+}
+
+function SessionRecovery() {
+  const [failed,setFailed]=useState(false);
+  useEffect(()=>{
+    let active=true;
+    (async()=>{
+      const ready=await ensureAppSessionReady();
+      if(!active)return;
+      if(ready){
+        const count=Number(sessionStorage.getItem("mishkat-session-recovery-count")||"0");
+        if(count<1){sessionStorage.setItem("mishkat-session-recovery-count",String(count+1));window.location.replace(window.location.href);return}
+      }
+      sessionStorage.removeItem("mishkat-login-succeeded");
+      sessionStorage.removeItem("mishkat-session-recovery-count");
+      setFailed(true);
+    })();
+    return()=>{active=false};
+  },[]);
+  if(!failed)return <Loading text="جارٍ استكمال جلسة الدخول..."/>;
+  return <div className="full-center"><div className="pending-card"><div className="logos"><img src={SCHOOL_LOGO}/><img src={GUIDANCE_LOGO}/></div><span className="pending-icon">!</span><h1>لم تكتمل جلسة الدخول</h1><p>بيانات الدخول قُبلت، لكن الجلسة لم تكتمل على هذا الجهاز. أعد المحاولة. إذا استمرت المشكلة امسح بيانات موقع بنك التميز فقط ثم افتحه من جديد.</p><button className="btn primary" onClick={()=>{sessionStorage.setItem("mishkat-login-succeeded","1");sessionStorage.setItem("mishkat-session-recovery-count","0");window.location.reload()}}>إعادة فحص الجلسة</button><button className="btn ghost" onClick={()=>{sessionStorage.removeItem("mishkat-login-succeeded");sessionStorage.removeItem("mishkat-session-recovery-count");window.location.reload()}}>العودة لشاشة الدخول</button></div></div>;
 }
 
 function AuthScreen() {
@@ -179,9 +212,14 @@ function AuthScreen() {
     try {
       const result = await neon.auth.signIn.email({ email: email.trim(), password });
       unwrapError(result);
-      // AUTH_DEVICE_SESSION_FIX_APP: reload once after a successful password sign-in so session state is re-read from storage.
+      // AUTH_SESSION_STABILITY_V2_APP: verify the real Neon session and only reload as a delayed fallback.
+      const sessionReady = await ensureAppSessionReady();
+      if (!sessionReady) throw new Error("تم قبول بيانات الدخول، لكن الجلسة لم تكتمل. أعد المحاولة بعد لحظات.");
       sessionStorage.setItem("mishkat-login-succeeded", "1");
-      window.location.replace(window.location.href);
+      sessionStorage.setItem("mishkat-session-recovery-count", "0");
+      window.setTimeout(() => {
+        if (sessionStorage.getItem("mishkat-login-succeeded") === "1") window.location.replace(window.location.href);
+      }, 900);
     } catch (e) { setMessage(niceError(e)); } finally { setBusy(false); }
   }
 
@@ -506,10 +544,10 @@ export default function App(){
   const sessionState=neon.auth.useSession();
   const [profile,setProfile]=useState<Profile|null>(null);const[profileError,setProfileError]=useState("");const[profileLoading,setProfileLoading]=useState(false);
   async function refreshProfile(){setProfileLoading(true);setProfileError("");try{let next:Profile|null=null;for(let attempt=0;attempt<4;attempt++){next=await rpc<Profile>("api_profile");if(next?.status!=="PENDING")break;if(attempt<3)await new Promise(resolve=>setTimeout(resolve,300*(attempt+1)))}setProfile(next)}catch(e){setProfileError(niceError(e))}finally{setProfileLoading(false)}}
-  useEffect(()=>{if(sessionState?.data?.user?.id){sessionStorage.removeItem("mishkat-login-succeeded");refreshProfile()}else setProfile(null)},[sessionState?.data?.user?.id]);
+  useEffect(()=>{if(sessionState?.data?.user?.id){sessionStorage.removeItem("mishkat-login-succeeded");sessionStorage.removeItem("mishkat-session-recovery-count");refreshProfile()}else setProfile(null)},[sessionState?.data?.user?.id]);
   if(verifyNonce)return <VerifyView nonce={verifyNonce}/>;
   if(sessionState?.isPending)return <Loading text="جارٍ التحقق من الجلسة..."/>;
-  if(!sessionState?.data&&sessionStorage.getItem("mishkat-login-succeeded")==="1")return <div className="full-center"><div className="pending-card"><div className="logos"><img src={SCHOOL_LOGO}/><img src={GUIDANCE_LOGO}/></div><span className="pending-icon">!</span><h1>تعذر تثبيت جلسة الدخول على هذا الجهاز</h1><p>تم قبول بيانات الدخول، لكن المتصفح لم يحتفظ بالجلسة. افتح التطبيق من Chrome أو Safari مباشرة وليس من داخل واتساب أو متصفح مدمج، وتأكد أن ملفات تعريف الارتباط وبيانات المواقع غير محظورة.</p><button className="btn primary" onClick={()=>window.location.reload()}>إعادة محاولة الجلسة</button><button className="btn ghost" onClick={()=>{sessionStorage.removeItem("mishkat-login-succeeded");window.location.reload()}}>العودة لشاشة الدخول</button></div></div>;
+  if(!sessionState?.data&&sessionStorage.getItem("mishkat-login-succeeded")==="1")return <SessionRecovery/>;
   if(!sessionState?.data)return <AuthScreen/>;
   if(profileLoading&&!profile)return <Loading text="جارٍ تحميل صلاحيات الحساب..."/>;
   if(profileError&&!profile)return <div className="full-center"><div className="pending-card"><h1>تعذر تحميل الصلاحيات</h1><p>{profileError}</p><button className="btn primary" onClick={refreshProfile}>إعادة المحاولة</button><button className="btn ghost" onClick={()=>neon.auth.signOut()}>تسجيل الخروج</button></div></div>;

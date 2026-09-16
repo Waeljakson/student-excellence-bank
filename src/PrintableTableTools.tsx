@@ -27,7 +27,7 @@ export default function PrintableTableTools(){
         table.dataset.reportPrintReady="1";
         const container=table.closest<HTMLElement>("[data-report-title],section,article,.panel,main")||table.parentElement;
         const existing=container?Array.from(container.querySelectorAll<HTMLButtonElement>("button")).find(b=>/طباعة|PDF/i.test(b.textContent||"")):null;
-        if(existing){existing.classList.add("report-print-btn");return}
+        if(existing){existing.classList.add("report-print-btn");if(!/PDF/i.test(existing.textContent||""))existing.textContent="طباعة / حفظ PDF";return}
         const host=table.parentElement;if(!host||host.querySelector(":scope > .auto-report-print-toolbar"))return;
         const toolbar=document.createElement("div");toolbar.className="auto-report-print-toolbar no-print";
         const btn=document.createElement("button");btn.type="button";btn.className="report-print-btn";btn.textContent="طباعة / حفظ PDF";

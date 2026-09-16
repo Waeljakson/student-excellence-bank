@@ -1,7 +1,11 @@
 import { FormEvent, useEffect, useState } from "react";
 import { neon, niceError, rpc } from "./client";
+import { readDataCache, writeDataCache, sameCacheVersion, type CacheVersions } from "./data-cache";
 import "./feature-upgrade.css";
 import "./student-account.css";
+import StudentPrograms from "./StudentPrograms";
+import StudentRedemptionPanel from "./StudentRedemptionPanel";
+import "./redemption.css";
 import "./targeted-competitions.css";
 
 const SCHOOL_LOGO = `${import.meta.env.BASE_URL}school-logo.png`;
@@ -10,11 +14,11 @@ const GUIDANCE_LOGO = `${import.meta.env.BASE_URL}guidance-logo.png`;
 type PortalAnnouncement={ id:string; title_ar:string; body_ar:string; starts_at:string; ends_at?:string|null; announcement_type?:string; criteria?:string[]; target_class_ids?:string[] };
 type PortalData = {
   student: { id:string; student_no:string; name:string; grade_name:string; class_name:string; points:number; value_sar:number; avatar?:string|null };
-  checks: Array<{ id:string; serial_no:string; points:number; reason:string; status:string; approval_status:string; issued_at:string; rule_name:string; issuer_name:string }>;
+  checks: Array<{ id:string; serial_no:string; points:number; reason:string; status:string; approval_status:string; issued_at:string; rule_name:string; issuer_name:string; reversed_at?:string|null; reversal_reason?:string|null }>;
   announcements: PortalAnnouncement[];
 };
 
-function date(v:string){return new Date(v).toLocaleDateString("ar-SA",{year:"numeric",month:"long",day:"numeric"})}
+function date(v?:string|null){return v?new Date(v).toLocaleDateString("ar-SA",{year:"numeric",month:"long",day:"numeric"}):"—"}
 function authError(result:any){if(result?.error)throw new Error(result.error.message||result.error.code||"تعذر تنفيذ العملية")}
 
 async function prepareAvatar(file:File){
@@ -27,16 +31,28 @@ async function prepareAvatar(file:File){
   return canvas.toDataURL("image/jpeg",0.78);
 }
 
-export default function StudentPortal(){
+export default function StudentPortal({cacheUserId=""}:{cacheUserId?:string}){
   const[data,setData]=useState<PortalData|null>(null);const[error,setError]=useState("");
   const[photoBusy,setPhotoBusy]=useState(false);const[photoMsg,setPhotoMsg]=useState("");
   const[currentPassword,setCurrentPassword]=useState("");const[newPassword,setNewPassword]=useState("");const[confirmPassword,setConfirmPassword]=useState("");const[passwordBusy,setPasswordBusy]=useState(false);const[passwordMsg,setPasswordMsg]=useState("");
-  async function load(){setError("");try{setData(await rpc<PortalData>("api_student_portal"))}catch(e){setError(niceError(e))}}
-  useEffect(()=>{load()},[]);
+  async function load(force=false){
+    const scope=cacheUserId?"student:"+cacheUserId:"";
+    const cached=scope?readDataCache<any>(scope):null;
+    if(!force&&cached?.data?.portal&&!data)setData(cached.data.portal as PortalData);
+    setError("");
+    try{
+      const versions=await rpc<CacheVersions>("api_student_cache_version");
+      if(!force&&cached?.data?.portal&&sameCacheVersion(cached.versions,versions,"student_portal")){setData(cached.data.portal as PortalData);return}
+      const fresh=await rpc<PortalData>("api_student_portal");
+      setData(fresh);
+      if(scope)writeDataCache(scope,{...(cached?.versions||{}),student_portal:versions.student_portal},{...(cached?.data||{}),portal:fresh});
+    }catch(e){if(cached?.data?.portal)setData(cached.data.portal as PortalData);else setError(niceError(e))}
+  }
+  useEffect(()=>{void load()},[cacheUserId]);
 
   async function uploadPhoto(e:React.ChangeEvent<HTMLInputElement>){
     const file=e.target.files?.[0];if(!file)return;setPhotoBusy(true);setPhotoMsg("");
-    try{const image=await prepareAvatar(file);const result=await neon.auth.updateUser({image});authError(result);await load();setPhotoMsg("تم تحديث صورتك الشخصية.");}
+    try{const image=await prepareAvatar(file);const result=await neon.auth.updateUser({image});authError(result);await load(true);setPhotoMsg("تم تحديث صورتك الشخصية.");}
     catch(err){setPhotoMsg(niceError(err))}finally{setPhotoBusy(false);e.target.value=""}
   }
 
@@ -59,8 +75,8 @@ export default function StudentPortal(){
     <header className="student-portal-head"><div className="student-brand"><div className="logos"><img src={SCHOOL_LOGO}/><img src={GUIDANCE_LOGO}/></div><div><span>مدارس المشكاة الأهلية</span><h1>بوابة الطالب — بنك التميز</h1></div></div><button className="btn ghost" onClick={()=>neon.auth.signOut()}>تسجيل الخروج</button></header>
     <main className="student-portal-content">
       <section className="student-welcome student-profile-welcome"><div className="student-profile-main"><div className="student-avatar">{s.avatar?<img src={s.avatar} alt="الصورة الشخصية"/>:<span>{s.name?.trim()?.charAt(0)||"ط"}</span>}</div><div><span>أهلًا بك</span><h2>{s.name}</h2><p>{s.grade_name} — فصل {s.class_name} · رقم الطالب {s.student_no}</p></div></div><div className="student-balance"><small>رصيدك الحالي</small><strong>{Number(s.points).toLocaleString("ar-SA")}</strong><span>نقطة · {Number(s.value_sar).toLocaleString("ar-SA")} ر.س</span></div></section>
-
-      {competitions.length>0&&<section className="student-competition-banners">{competitions.map((c,index)=><article className="competition-check-banner" key={c.id}><div className="check-perforation top"/><div className="competition-check-side"><div className="competition-check-logos"><img src={SCHOOL_LOGO}/><img src={GUIDANCE_LOGO}/></div><span>مسابقة مدرسية</span><b>{String(index+1).padStart(2,"0")}</b></div><div className="competition-check-main"><div className="competition-check-kicker"><span>تم إطلاق المسابقة لفصلك</span><em>نشطة الآن</em></div><h2>{c.title_ar}</h2><p>{c.body_ar}</p>{c.criteria?.length?<div className="competition-check-criteria">{c.criteria.map((criterion,i)=><span key={i}><b>{i+1}</b>{criterion}</span>)}</div>:null}<div className="competition-check-footer"><div><small>تبدأ</small><b>{date(c.starts_at)}</b></div><div><small>تنتهي</small><b>{c.ends_at?date(c.ends_at):"حتى إشعار آخر"}</b></div><div><small>الفصل المستهدف</small><b>{s.grade_name} — فصل {s.class_name}</b></div></div></div><div className="check-perforation bottom"/></article>)}</section>}
+      <StudentPrograms competitions={competitions} student={s}/>
+      <StudentRedemptionPanel/>
 
       <section className="portal-panel student-account-panel"><div className="portal-panel-title"><div><h3>إعدادات حسابي</h3><p>الصورة الشخصية وكلمة المرور</p></div><span>⚙</span></div><div className="student-account-grid">
         <div className="student-photo-settings"><div className="student-avatar large">{s.avatar?<img src={s.avatar} alt="الصورة الشخصية"/>:<span>{s.name?.trim()?.charAt(0)||"ط"}</span>}</div><div><h4>صورتي الشخصية</h4><p>اختر صورة واضحة. سيتم قصها وضغطها تلقائيًا.</p><label className={`btn primary upload-avatar-btn ${photoBusy?"disabled":""}`}>{photoBusy?"جارٍ حفظ الصورة...":"اختيار صورة"}<input type="file" accept="image/jpeg,image/png,image/webp" disabled={photoBusy} onChange={uploadPhoto}/></label>{photoMsg&&<div className="notice compact-notice">{photoMsg}</div>}</div></div>
@@ -68,7 +84,7 @@ export default function StudentPortal(){
       </div></section>
 
       <section className="student-portal-grid">
-        <article className="portal-panel"><div className="portal-panel-title"><h3>شيكات التميز الخاصة بي</h3><span>{data.checks.length}</span></div>{data.checks.length?<div className="student-checks">{data.checks.map(c=><div className="student-check-card" key={c.id}><div><b>{c.rule_name}</b><small>{c.reason}</small><em>{date(c.issued_at)} · {c.issuer_name}</em></div><strong>+{c.points}</strong><span>{c.serial_no}</span></div>)}</div>:<div className="empty">لم يصدر لك أي شيك تميز حتى الآن.</div>}</article>
+        <article className="portal-panel"><div className="portal-panel-title"><h3>شيكات التميز الخاصة بي</h3><span>{data.checks.length}</span></div>{data.checks.length?<div className="student-checks">{data.checks.map(c=><div className={c.status==="REVERSED"?"student-check-card reversed":"student-check-card"} key={c.id}><div><b>{c.rule_name}</b><small>{c.reason}</small><em>{date(c.issued_at)} · {c.issuer_name}</em>{c.status==="REVERSED"&&<div className="student-check-reversed-note"><b>تم إيقاف الشيك بواسطة المعلم: {c.issuer_name}</b><span>{c.reversal_reason||"تم إيقاف الشيك بواسطة المعلم المصدر"} · {date(c.reversed_at)}</span></div>}</div><strong>{c.status==="REVERSED"?"−":"+"}{c.points}</strong><span>{c.serial_no}</span></div>)}</div>:<div className="empty">لم يصدر لك أي شيك تميز حتى الآن.</div>}</article>
         <article className="portal-panel"><div className="portal-panel-title"><h3>الإعلانات العامة</h3><span>{announcements.length}</span></div>{announcements.length?<div className="announcement-list">{announcements.map(a=><div className="announcement-card" key={a.id}><span>إعلان</span><h4>{a.title_ar}</h4><p>{a.body_ar}</p><small>تاريخ الإعلان: {date(a.starts_at)}{a.ends_at?` · حتى ${date(a.ends_at)}`:""}</small></div>)}</div>:<div className="empty">لا توجد إعلانات عامة حاليًا.</div>}</article>
       </section>
 

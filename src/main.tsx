@@ -16,6 +16,7 @@ import "./redemption-page-fix.css";
 import "./sidebar-fixed.css";
 import "./sidebar-no-scroll.css";
 import "./behavioral-cycle-admin-fix.css";
+import "./behavioral-report.css";
 
 if ("serviceWorker" in navigator && import.meta.env.PROD) {
   window.addEventListener("load", () => {

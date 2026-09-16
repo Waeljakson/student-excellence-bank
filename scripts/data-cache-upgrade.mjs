@@ -109,7 +109,7 @@ const bankComponent = String.raw`function BankApp({ profile, refreshProfile }: {
 }`;
 
 app = app.slice(0, bankStart) + bankComponent + app.slice(appExport);
-app = app.replace('<StudentPortal/>','<StudentPortal cacheUserId={profile.app_user_id||profile.auth_user_id||profile.email||""}/>');
+if (app.includes('<StudentPortal/>')) app = app.replace('<StudentPortal/>','<StudentPortal cacheUserId={profile.app_user_id||profile.auth_user_id||profile.email||""}/>');
 writeFileSync(appPath, app);
 
 const portalPath = "src/StudentPortal.tsx";
@@ -121,6 +121,6 @@ portal = portal.replace('export default function StudentPortal(){','export defau
 const oldLoad='  async function load(){setError("");try{setData(await rpc<PortalData>("api_student_portal"))}catch(e){setError(niceError(e))}}\n  useEffect(()=>{load()},[]);';
 const newLoad=`  async function load(force=false){\n    const scope=cacheUserId?"student:"+cacheUserId:"";\n    const cached=scope?readDataCache<any>(scope):null;\n    if(!force&&cached?.data?.portal&&!data)setData(cached.data.portal as PortalData);\n    setError("");\n    try{\n      const versions=await rpc<CacheVersions>("api_cache_versions");\n      if(!force&&cached?.data?.portal&&sameCacheVersion(cached.versions,versions,"student_portal")){setData(cached.data.portal as PortalData);return}\n      const fresh=await rpc<PortalData>("api_student_portal");\n      setData(fresh);\n      if(scope)writeDataCache(scope,{...(cached?.versions||{}),student_portal:versions.student_portal},{...(cached?.data||{}),portal:fresh});\n    }catch(e){if(cached?.data?.portal)setData(cached.data.portal as PortalData);else setError(niceError(e))}\n  }\n  useEffect(()=>{void load()},[cacheUserId]);`;
 if (portal.includes(oldLoad)) portal = portal.replace(oldLoad,newLoad);
-else if (!portal.includes('api_cache_versions') || !portal.includes('student_portal')) throw new Error("data-cache: StudentPortal load marker missing");
+else if ((!portal.includes('api_cache_versions')&&!portal.includes('api_student_cache_version')) || !portal.includes('student_portal')) throw new Error("data-cache: StudentPortal load marker missing");
 portal = portal.replace('authError(result);await load();setPhotoMsg("تم تحديث صورتك الشخصية.");','authError(result);await load(true);setPhotoMsg("تم تحديث صورتك الشخصية.");');
 writeFileSync(portalPath, portal);

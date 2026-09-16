@@ -31,8 +31,9 @@ if(src.includes(oldTail)) src=src.replace(oldTail,newTail);
 else if(!src.includes('<StudentClassEditor student={s} onChanged={reload}/>')) throw new Error("student-class-edit: row marker missing");
 
 const oldCall='<StudentsView students={students}/>';
-const newCall='<StudentsView students={students} roles={profile.roles||[]} reload={loadAll}/>';
-if(src.includes(oldCall)) src=src.replace(oldCall,newCall);
-else if(!src.includes('<StudentsView students={students} roles={profile.roles||[]} reload={loadAll}/>')) throw new Error("student-class-edit: call marker missing");
+const loadAllCall='<StudentsView students={students} roles={profile.roles||[]} reload={loadAll}/>';
+const cachedCall='<StudentsView students={students} roles={profile.roles||[]} reload={refreshStudents}/>';
+if(src.includes(oldCall)) src=src.replace(oldCall,loadAllCall);
+else if(!src.includes(loadAllCall)&&!src.includes(cachedCall)) throw new Error("student-class-edit: call marker missing");
 
 writeFileSync(path,src);

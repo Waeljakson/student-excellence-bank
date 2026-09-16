@@ -68,6 +68,7 @@
 // SYSTEM_FEATURES_V2
 // SYSTEM_FEATURES_V2
 // SYSTEM_FEATURES_V2
+// SYSTEM_FEATURES_V2
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import QRCode from "qrcode";
 import { AUTH_URL, neon, niceError, rpc } from "./client";
@@ -216,11 +217,9 @@ function AuthScreen() {
       // AUTH_SESSION_STABILITY_V2_APP: verify the real Neon session and only reload as a delayed fallback.
       const sessionReady = await ensureAppSessionReady();
       if (!sessionReady) throw new Error("تم قبول بيانات الدخول، لكن الجلسة لم تكتمل. أعد المحاولة بعد لحظات.");
-      sessionStorage.setItem("mishkat-login-succeeded", "1");
-      sessionStorage.setItem("mishkat-session-recovery-count", "0");
-      window.setTimeout(() => {
-        if (sessionStorage.getItem("mishkat-login-succeeded") === "1") window.location.replace(window.location.href);
-      }, 900);
+      sessionStorage.removeItem("mishkat-login-succeeded");
+      sessionStorage.removeItem("mishkat-session-recovery-count");
+      window.dispatchEvent(new Event("mishkat-auth-success"));
     } catch (e) { setMessage(niceError(e)); } finally { setBusy(false); }
   }
 
@@ -543,13 +542,36 @@ function BankApp({ profile, refreshProfile }: { profile: Profile; refreshProfile
 export default function App(){
   const verifyNonce=new URLSearchParams(window.location.search).get("verify");
   const sessionState=neon.auth.useSession();
+  // AUTH_SESSION_BRIDGE_V3_APP: use getSession as the source-of-truth fallback instead of reloading the page.
+  const [verifiedSession,setVerifiedSession]=useState<any>(null);
+  const [sessionProbeDone,setSessionProbeDone]=useState(false);
+  const sessionUserId=sessionState?.data?.user?.id||verifiedSession?.user?.id;
+  async function probeSession(){
+    try{
+      const current=await neon.auth.getSession();
+      setVerifiedSession(current?.data?.user?.id?current.data:null);
+    }catch{
+      setVerifiedSession(null);
+    }finally{
+      setSessionProbeDone(true);
+    }
+  }
+  useEffect(()=>{
+    void probeSession();
+    const onAuthSuccess=()=>{setSessionProbeDone(false);void probeSession()};
+    window.addEventListener("mishkat-auth-success",onAuthSuccess);
+    return()=>window.removeEventListener("mishkat-auth-success",onAuthSuccess);
+  },[]);
+  useEffect(()=>{
+    if(sessionState?.data?.user?.id){setVerifiedSession(sessionState.data);setSessionProbeDone(true);return}
+    if(sessionProbeDone)void probeSession();
+  },[sessionState?.data?.user?.id]);
   const [profile,setProfile]=useState<Profile|null>(null);const[profileError,setProfileError]=useState("");const[profileLoading,setProfileLoading]=useState(false);
   async function refreshProfile(){setProfileLoading(true);setProfileError("");try{let next:Profile|null=null;for(let attempt=0;attempt<4;attempt++){next=await rpc<Profile>("api_profile");if(next?.status!=="PENDING")break;if(attempt<3)await new Promise(resolve=>setTimeout(resolve,300*(attempt+1)))}setProfile(next)}catch(e){setProfileError(niceError(e))}finally{setProfileLoading(false)}}
-  useEffect(()=>{if(sessionState?.data?.user?.id){sessionStorage.removeItem("mishkat-login-succeeded");sessionStorage.removeItem("mishkat-session-recovery-count");refreshProfile()}else setProfile(null)},[sessionState?.data?.user?.id]);
+  useEffect(()=>{if(sessionUserId){sessionStorage.removeItem("mishkat-login-succeeded");sessionStorage.removeItem("mishkat-session-recovery-count");refreshProfile()}else setProfile(null)},[sessionUserId]);
   if(verifyNonce)return <VerifyView nonce={verifyNonce}/>;
-  if(sessionState?.isPending)return <Loading text="جارٍ التحقق من الجلسة..."/>;
-  if(!sessionState?.data&&sessionStorage.getItem("mishkat-login-succeeded")==="1")return <SessionRecovery/>;
-  if(!sessionState?.data)return <AuthScreen/>;
+  if((sessionState?.isPending||!sessionProbeDone)&&!sessionUserId)return <Loading text="جارٍ التحقق من الجلسة..."/>;
+  if(!sessionUserId)return <AuthScreen/>;
   if(profileLoading&&!profile)return <Loading text="جارٍ تحميل صلاحيات الحساب..."/>;
   if(profileError&&!profile)return <div className="full-center"><div className="pending-card"><h1>تعذر تحميل الصلاحيات</h1><p>{profileError}</p><button className="btn primary" onClick={refreshProfile}>إعادة المحاولة</button><button className="btn ghost" onClick={()=>neon.auth.signOut()}>تسجيل الخروج</button></div></div>;
   if(!profile)return <Loading/>;

@@ -71,6 +71,7 @@
 // SYSTEM_FEATURES_V2
 // SYSTEM_FEATURES_V2
 // SYSTEM_FEATURES_V2
+// SYSTEM_FEATURES_V2
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import QRCode from "qrcode";
 import { AUTH_URL, neon, niceError, rpc } from "./client";
@@ -95,6 +96,10 @@ import AddTeacherPanel from "./AddTeacherPanel";
 import StaffDirectoryTable from "./StaffDirectoryTable";
 import StudentClassEditor from "./StudentClassEditor";
 import NotificationCenter from "./NotificationCenter";
+import GuardianLogin from "./GuardianLogin";
+import GuardianPortal from "./GuardianPortal";
+import StudentFollowupNotebook from "./StudentFollowupNotebook";
+import PeriodicEvaluationCenter from "./PeriodicEvaluationCenter";
 import { readDataCache, writeDataCache, sameCacheVersion, type CacheVersions } from "./data-cache";
 
 type Profile = {
@@ -127,7 +132,7 @@ type KhameesnaRecent = { id: string; points: number; lesson_no: number; subject_
 type KhameesnaHistory = { week_start: string; class_id: string; grade_name: string; class_name: string; total_points: number };
 type KhameesnaBoard = { week_start: string; week_end: string; status: "IN_PROGRESS" | "THURSDAY" | "CLOSED"; reward: string; max_points: number; leader_count: number; allowed_classes: Array<{class_id:string;grade_name:string;class_name:string}>; standings: KhameesnaStanding[]; recent: KhameesnaRecent[]; history: KhameesnaHistory[] };
 
-type Tab = "dashboard" | "checks" | "khameesna" | "students" | "rankings" | "rewards" | "admin" | "system" | "account" | "referrals" | "behavioral" | "redemption" | "student-evaluations";
+type Tab = "dashboard" | "checks" | "khameesna" | "students" | "rankings" | "rewards" | "admin" | "system" | "account" | "referrals" | "behavioral" | "redemption" | "student-evaluations" | "followup" | "periodic-evaluations";
 
 const BASE_URL = new URL(import.meta.env.BASE_URL, window.location.origin).toString();
 const SCHOOL_LOGO = `${import.meta.env.BASE_URL}school-logo.png`;
@@ -179,7 +184,7 @@ function SessionRecovery() {
 }
 
 function AuthScreen() {
-  const [mode, setMode] = useState<"otp" | "register" | "password" | "teacher" | "student">("password");
+  const [mode, setMode] = useState<"otp" | "register" | "password" | "teacher" | "student" | "guardian">("password");
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -237,7 +242,7 @@ function AuthScreen() {
       <div className="auth-tabs">
         <button className={mode==="password"?"active":""} onClick={()=>{setMode("password");setMessage("")}}>دخول الإدارة</button>
         <button className={mode==="teacher"?"active":""} onClick={()=>{setMode("teacher");setMessage("")}}>دخول الهيئة</button>
-        <button className={mode==="student"?"active":""} onClick={()=>{setMode("student");setMessage("")}}>دخول الطالب</button>
+        <button className={mode==="student"?"active":""} onClick={()=>{setMode("student");setMessage("")}}>دخول الطالب</button><button className={mode==="guardian"?"active":""} onClick={()=>{setMode("guardian");setMessage("")}}>دخول ولي الأمر</button>
       </div>
       {mode==="password" && <form onSubmit={passwordLogin} className="form-stack"><h2>دخول الإدارة</h2><p>دخول مدير النظام والإدارة بالبريد الإلكتروني وكلمة المرور.</p>
         <label>البريد الإلكتروني<input type="email" required value={email} onChange={e=>setEmail(e.target.value)}/></label>
@@ -247,6 +252,7 @@ function AuthScreen() {
       {mode==="password"&&<AdminPasswordReset/>}
       {mode==="teacher"&&<TeacherLogin/>}
       {mode==="student"&&<StudentLogin/>}
+      {mode==="guardian"&&<GuardianLogin/>}
       {message && <div className="notice">{message}</div>}
     </div>
   </div>;
@@ -299,6 +305,8 @@ function AppShell({ profile, children, tab, setTab }: { profile: Profile; childr
   const showBehavior=profile.roles?.some(r=>["TEACHER","GUIDANCE_COUNSELOR","SUPER_ADMIN"].includes(r));
   if(showBehavior) nav.splice(Math.min(5,nav.length),0,["behavioral","التميز السلوكي","✦"]);
   if(profile.roles?.some(r=>["TEACHER","VICE_PRINCIPAL","GUIDANCE_COUNSELOR","SUPER_ADMIN"].includes(r))) nav.splice(Math.min(4,nav.length),0,["student-evaluations","تقارير التقييم","▤"]);
+  if(profile.roles?.includes("TEACHER")) nav.push(["followup","دفتر المتابعة","▤"]);
+  if(profile.roles?.some(r=>["TEACHER","VICE_PRINCIPAL","SUPER_ADMIN"].includes(r))) nav.push(["periodic-evaluations","التقييم الدوري","◎"]);
   nav.push(["account","حسابي","◉"]);
   if(isAdmin) nav.push(["admin","الهيئة والصلاحيات","⚙"]);
   if(profile.roles?.includes("SUPER_ADMIN")) nav.push(["system","إعدادات النظام","◆"]);
@@ -540,7 +548,7 @@ function BankApp({ profile, refreshProfile }: { profile: Profile; refreshProfile
   async function refreshAdmin(){await syncData(["admin","students","rules"],true)}
   async function afterIssued(){await Promise.all([syncData(["dashboard","checks","students","rankings"],true),refreshProfile()])}
 
-  return <AppShell profile={profile} tab={tab} setTab={setTab}>{loading&&!dashboard?<Loading/>:<>{error&&<div className="notice error global-error">{error}</div>}{tab==="dashboard"&&<DashboardView data={dashboard} checks={checks}/>} {tab==="checks"&&<><ChecksView students={students} rules={rules} onIssued={afterIssued}/>{profile.roles?.includes("TEACHER")&&<main className="content teacher-check-manager-wrap"><TeacherCheckManager onChanged={afterIssued}/></main>}</>} {tab==="students"&&<StudentsView students={students} roles={profile.roles||[]} reload={refreshStudents}/>} {tab==="rankings"&&<RankingsView data={rankings}/>} {tab==="rewards"&&<><RewardsView rewards={rewards}/>{profile.roles?.some(r=>["SUPER_ADMIN","SCHOOL_ADMIN","PRINCIPAL","REWARD_OFFICER"].includes(r))&&<main className="content reward-admin-wrap"><RewardManagementPanel onChanged={refreshRewards}/></main>}</>} {tab==="referrals"&&<ReferralCenter roles={profile.roles} students={students} profileName={profile.name||""}/>} {tab==="redemption"&&profile.roles?.includes("GUIDANCE_COUNSELOR")&&<GuidanceRedemptionCenter/>} {tab==="student-evaluations"&&<StudentEvaluationReports roles={profile.roles} students={students}/>} {tab==="behavioral"&&<BehavioralExcellence students={students}/>} {tab==="khameesna"&&<KhameesnaCompetition isSuperAdmin={profile.roles?.includes("SUPER_ADMIN")===true}/>} {tab==="account"&&<UserAccount profile={profile} onProfileChanged={refreshProfile}/>} {tab==="system"&&profile.roles?.includes("SUPER_ADMIN")&&<SystemControlPanel/>} {tab==="admin"&&isAdmin&&<AdminView pending={pending} users={users} staff={staff} classes={adminClasses} reload={refreshAdmin} isSuperAdmin={profile.roles?.includes("SUPER_ADMIN")===true}/>}</>}</AppShell>;
+  return <AppShell profile={profile} tab={tab} setTab={setTab}>{loading&&!dashboard?<Loading/>:<>{error&&<div className="notice error global-error">{error}</div>}{tab==="dashboard"&&<DashboardView data={dashboard} checks={checks}/>} {tab==="checks"&&<><ChecksView students={students} rules={rules} onIssued={afterIssued}/>{profile.roles?.includes("TEACHER")&&<main className="content teacher-check-manager-wrap"><TeacherCheckManager onChanged={afterIssued}/></main>}</>} {tab==="students"&&<StudentsView students={students} roles={profile.roles||[]} reload={refreshStudents}/>} {tab==="rankings"&&<RankingsView data={rankings}/>} {tab==="rewards"&&<><RewardsView rewards={rewards}/>{profile.roles?.some(r=>["SUPER_ADMIN","SCHOOL_ADMIN","PRINCIPAL","REWARD_OFFICER"].includes(r))&&<main className="content reward-admin-wrap"><RewardManagementPanel onChanged={refreshRewards}/></main>}</>} {tab==="referrals"&&<ReferralCenter roles={profile.roles} students={students} profileName={profile.name||""}/>} {tab==="redemption"&&profile.roles?.includes("GUIDANCE_COUNSELOR")&&<GuidanceRedemptionCenter/>} {tab==="student-evaluations"&&<StudentEvaluationReports roles={profile.roles} students={students}/>} {tab==="followup"&&<StudentFollowupNotebook/>} {tab==="periodic-evaluations"&&<PeriodicEvaluationCenter/>} {tab==="behavioral"&&<BehavioralExcellence students={students}/>} {tab==="khameesna"&&<KhameesnaCompetition isSuperAdmin={profile.roles?.includes("SUPER_ADMIN")===true}/>} {tab==="account"&&<UserAccount profile={profile} onProfileChanged={refreshProfile}/>} {tab==="system"&&profile.roles?.includes("SUPER_ADMIN")&&<SystemControlPanel/>} {tab==="admin"&&isAdmin&&<AdminView pending={pending} users={users} staff={staff} classes={adminClasses} reload={refreshAdmin} isSuperAdmin={profile.roles?.includes("SUPER_ADMIN")===true}/>}</>}</AppShell>;
 }
 
 export default function App(){
@@ -581,5 +589,6 @@ export default function App(){
   if(!profile)return <Loading/>;
   if(profile.status!=="APPROVED")return <PendingAccount profile={profile} onRefresh={refreshProfile}/>;
   if(profile.roles?.includes("STUDENT"))return <StudentPortal cacheUserId={profile.app_user_id||profile.auth_user_id||profile.email||""}/>;
+  if(profile.roles?.includes("GUARDIAN"))return <GuardianPortal/>;
   return <BankApp profile={profile} refreshProfile={refreshProfile}/>;
 }

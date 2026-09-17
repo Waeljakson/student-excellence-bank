@@ -1,4 +1,4 @@
-const CACHE_NAME = "mishkat-bank-shell-v18";
+const CACHE_NAME = "mishkat-bank-shell-v19";
 const BASE = "/student-excellence-bank/";
 const APP_SHELL = [
   BASE,
@@ -28,51 +28,19 @@ self.addEventListener("activate", (event) => {
 self.addEventListener("fetch", (event) => {
   const request = event.request;
   if (request.method !== "GET") return;
-
   const url = new URL(request.url);
   if (url.origin !== self.location.origin || !url.pathname.startsWith(BASE)) return;
-
   if (request.mode === "navigate") {
-    event.respondWith(
-      fetch(request)
-        .then((response) => {
-          if (response && response.ok) {
-            const copy = response.clone();
-            caches.open(CACHE_NAME).then((cache) => cache.put(BASE, copy));
-          }
-          return response;
-        })
-        .catch(() => caches.match(BASE))
-    );
+    event.respondWith(fetch(request).then((response) => {
+      if (response && response.ok) { const copy=response.clone(); caches.open(CACHE_NAME).then((cache)=>cache.put(BASE,copy)); }
+      return response;
+    }).catch(()=>caches.match(BASE)));
     return;
   }
-
-  const immutableAsset = url.pathname.includes(`${BASE}assets/`);
+  const immutableAsset=url.pathname.includes(`${BASE}assets/`);
   if (immutableAsset) {
-    event.respondWith(
-      caches.match(request).then((cached) => {
-        if (cached) return cached;
-        return fetch(request).then((response) => {
-          if (response && response.ok) {
-            const copy = response.clone();
-            caches.open(CACHE_NAME).then((cache) => cache.put(request, copy));
-          }
-          return response;
-        });
-      })
-    );
+    event.respondWith(caches.match(request).then((cached)=>cached||fetch(request).then((response)=>{if(response&&response.ok){const copy=response.clone();caches.open(CACHE_NAME).then((cache)=>cache.put(request,copy));}return response;})));
     return;
   }
-
-  event.respondWith(
-    fetch(request)
-      .then((response) => {
-        if (response && response.ok) {
-          const copy = response.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put(request, copy));
-        }
-        return response;
-      })
-      .catch(() => caches.match(request))
-  );
+  event.respondWith(fetch(request).then((response)=>{if(response&&response.ok){const copy=response.clone();caches.open(CACHE_NAME).then((cache)=>cache.put(request,copy));}return response;}).catch(()=>caches.match(request)));
 });

@@ -9,6 +9,7 @@ const BEHAVIOR=["ملتزم ومنضبط.","متعاون ومحترم.","مشا�
 type S={id:string;name:string;student_no:string;class_id:string;grade_name:string;class_name:string};
 type Draft={academic:string;behavior:string;notes:string};
 type ClassGroup={id:string;label:string;grade_name:string;class_name:string;students:S[]};
+type TeacherProgress={teacher_id:string;teacher_name:string;subject_ar:string;class_count:number;expected_count:number;completed_count:number;remaining_count:number;progress_percent:number;status:"NOT_STARTED"|"IN_PROGRESS"|"COMPLETED";last_evaluation_at?:string|null};
 
 export default function PeriodicEvaluationCenter(){
   const[data,setData]=useState<any>(null);
@@ -19,6 +20,7 @@ export default function PeriodicEvaluationCenter(){
   const[due,setDue]=useState("");
   const[classId,setClassId]=useState("");
   const[onlyPending,setOnlyPending]=useState(false);
+  const[showCompletedTeachers,setShowCompletedTeachers]=useState(false);
   const[drafts,setDrafts]=useState<Record<string,Draft>>({});
 
   async function load(){try{setData(await rpc<any>("api_periodic_evaluation_data"))}catch(e){setMsg(niceError(e))}}
@@ -28,6 +30,13 @@ export default function PeriodicEvaluationCenter(){
   const active=cycles.find((x:any)=>x.status==="ACTIVE");
   const students:S[]=data?.students||[];
   const evaluations:any[]=data?.evaluations||[];
+  const teacherProgress:TeacherProgress[]=data?.teacher_progress||[];
+  const visibleTeacherProgress=showCompletedTeachers?teacherProgress:teacherProgress.filter(t=>t.status!=="COMPLETED");
+  const teachersCompleted=teacherProgress.filter(t=>t.status==="COMPLETED").length;
+  const teachersNotStarted=teacherProgress.filter(t=>t.status==="NOT_STARTED").length;
+  const teachersInProgress=teacherProgress.filter(t=>t.status==="IN_PROGRESS").length;
+  const teacherRemainingTotal=teacherProgress.reduce((sum,t)=>sum+Number(t.remaining_count||0),0);
+
   const existing=useMemo(()=>new Map(evaluations.filter((x:any)=>x.cycle_id===active?.id).map((x:any)=>[x.student_id,x])),[evaluations,active?.id]);
 
   const classes=useMemo<ClassGroup[]>(()=>{
@@ -93,7 +102,23 @@ export default function PeriodicEvaluationCenter(){
   return <><header className="topbar"><div><h1>التقييمات الدورية</h1><p>دورة تقييم تحصيلي وسلوكي للطلاب، ثم نشر النتائج لأولياء الأمور.</p></div></header><main className="content">
     {data?.can_manage&&<section className="panel form-stack"><h3>إدارة دورة التقييم</h3><div className="referral-grid two"><label>اسم الدورة<input value={title} onChange={e=>setTitle(e.target.value)}/></label><label>بداية الدورة<input type="datetime-local" value={start} onChange={e=>setStart(e.target.value)}/></label><label>الموعد النهائي<input type="datetime-local" value={due} onChange={e=>setDue(e.target.value)}/></label><button className="btn primary" disabled={busy==="create"} onClick={createCycle}>إنشاء دورة</button></div>{cycles.map((c:any)=><div className="cycle-admin-row" key={c.id}><div><b>{c.title_ar}</b><small>{c.status} · حتى {new Date(c.due_at).toLocaleString("ar-SA")}</small></div><div>{c.status==="DRAFT"&&<button className="mini-btn" onClick={()=>action(c.id,"ACTIVATE")}>إطلاق الدورة</button>}{c.status==="ACTIVE"&&<button className="mini-btn" onClick={()=>action(c.id,"CLOSE")}>إغلاق التقييم</button>}{c.status==="CLOSED"&&<button className="mini-btn" onClick={()=>action(c.id,"PUBLISH")}>نشر لولي الأمر</button>}</div></div>)}</section>}
 
-    {active?<section className="panel periodic-board">
+    {data?.can_manage&&active&&<section className="panel teacher-progress-panel">
+      <div className="panel-title"><div><h3>متابعة إنجاز المعلمين</h3><p>متابعة مباشرة لعدد الطلاب الذين قيّمهم كل معلم والمتبقي عليه في الدورة الحالية.</p></div><button className="mini-btn" type="button" onClick={()=>load()}>تحديث الآن</button></div>
+      <div className="teacher-progress-summary">
+        <div><small>إجمالي المعلمين</small><b>{teacherProgress.length}</b></div>
+        <div className="done"><small>أكملوا التقييم</small><b>{teachersCompleted}</b></div>
+        <div className="progress"><small>تحت التنفيذ</small><b>{teachersInProgress}</b></div>
+        <div className="not-started"><small>لم يبدأوا</small><b>{teachersNotStarted}</b></div>
+        <div className="remaining"><small>إجمالي التقييمات المتبقية</small><b>{teacherRemainingTotal}</b></div>
+      </div>
+      <div className="periodic-tools"><div><b>المعلمون غير المكتملين: {teacherProgress.length-teachersCompleted}</b><span>القائمة مرتبة بحيث يظهر غير المكتمل أولًا والأكثر طلابًا متبقيًا في الأعلى.</span></div><label className="periodic-pending-toggle"><input type="checkbox" checked={showCompletedTeachers} onChange={e=>setShowCompletedTeachers(e.target.checked)}/> إظهار المعلمين المكتملين أيضًا</label></div>
+      <div className="table-wrap teacher-progress-table-wrap"><table className="teacher-progress-table"><thead><tr><th>المعلم</th><th>المادة</th><th>الفصول</th><th>المطلوب</th><th>تم تقييمه</th><th>المتبقي</th><th>الإنجاز</th><th>الحالة</th><th>آخر تقييم</th></tr></thead><tbody>
+        {visibleTeacherProgress.map(t=><tr key={t.teacher_id} className={`teacher-progress-row ${t.status.toLowerCase().replace("_","-")}`}><td><b>{t.teacher_name}</b></td><td>{t.subject_ar||"—"}</td><td>{t.class_count}</td><td>{t.expected_count}</td><td>{t.completed_count}</td><td><strong className={t.remaining_count>0?"remaining-count":"done-count"}>{t.remaining_count}</strong></td><td><div className="progress-cell"><span><i style={{width:`${Math.min(100,Math.max(0,Number(t.progress_percent||0)))}%`}}/></span><b>{Number(t.progress_percent||0)}%</b></div></td><td><span className={`teacher-status ${t.status.toLowerCase().replace("_","-")}`}>{t.status==="COMPLETED"?"✓ مكتمل":t.status==="NOT_STARTED"?"لم يبدأ":"تحت التنفيذ"}</span></td><td>{t.last_evaluation_at?new Date(t.last_evaluation_at).toLocaleString("ar-SA"):"—"}</td></tr>)}
+        {!visibleTeacherProgress.length&&<tr><td colSpan={9} className="periodic-empty-row">جميع المعلمين أكملوا التقييم ✓</td></tr>}
+      </tbody></table></div>
+    </section>}
+
+    {active&&students.length>0?<section className="panel periodic-board">
       <div className="panel-title periodic-head"><div><h3>{active.title_ar}</h3><p>آخر موعد: {new Date(active.due_at).toLocaleString("ar-SA")}</p></div><div className="periodic-overall"><span className="done">✓ تم {totalDone}</span><span className={totalPending?"pending":"done"}>متبقي {totalPending}</span><b>{totalDone}/{students.length}</b></div></div>
 
       {classes.length>0&&<>
@@ -106,8 +131,7 @@ export default function PeriodicEvaluationCenter(){
           {!currentStudents.length&&<tr><td colSpan={6} className="periodic-empty-row">{onlyPending?"تم تقييم جميع طلاب هذا الفصل ✓":"لا يوجد طلاب في هذا الفصل."}</td></tr>}
         </tbody></table></div>
       </>}
-      {!classes.length&&<div className="empty">لا توجد فصول مسندة لهذا المعلم في الدورة الحالية.</div>}
-    </section>:!data?.can_manage&&<section className="panel empty">لا توجد دورة تقييم دورية مفعلة حاليًا.</section>}
+    </section>:!active&&!data?.can_manage&&<section className="panel empty">لا توجد دورة تقييم دورية مفعلة حاليًا.</section>}
     {msg&&<div className="notice">{msg}</div>}
   </main></>;
 }

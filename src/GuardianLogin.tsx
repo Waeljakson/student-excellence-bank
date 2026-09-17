@@ -3,7 +3,7 @@ import {neon,niceError,rpc} from "./client";
 
 function normalizeMobile(value:string){
   let m=value.replace(/\D/g,"");
-  if(m.startsWith("009665"))m="0"+m.slice(4);
+  if(m.startsWith("009665"))m="0"+m.slice(5);
   else if(m.startsWith("9665"))m="0"+m.slice(3);
   else if(m.length===9&&m.startsWith("5"))m="0"+m;
   return m;

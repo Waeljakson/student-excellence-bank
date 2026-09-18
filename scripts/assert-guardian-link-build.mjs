@@ -3,7 +3,7 @@ const dir="dist/assets";
 const files=readdirSync(dir).filter(x=>x.endsWith(".js"));
 const required=[
   "api_guardian_lookup",
-  "api_student_followup_self",
+  "followup_notes",
   "متوسطة وثانوية مشكاة الشعلة"
 ];
 const bundle=files.map(file=>readFileSync(`${dir}/${file}`,"utf8")).join("\n");

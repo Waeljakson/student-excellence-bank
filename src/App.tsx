@@ -103,6 +103,7 @@ import AddTeacherPanel from "./AddTeacherPanel";
 import StaffDirectoryTable from "./StaffDirectoryTable";
 import StudentClassEditor from "./StudentClassEditor";
 import StudentMobileEditor from "./StudentMobileEditor";
+import GuardianAccessLinkButton from "./GuardianAccessLinkButton";
 import NotificationCenter from "./NotificationCenter";
 import GuardianLogin from "./GuardianLogin";
 import GuardianPortal from "./GuardianPortal";
@@ -377,7 +378,7 @@ function StudentsView({students,roles,reload}:{students:Student[];roles:string[]
         {secondaryGroups.length>0&&<div className="student-stage-row secondary-stage"><div className="stage-row-title"><b>المرحلة الثانوية</b><span>{secondaryGroups.reduce((n,g)=>n+g.students.length,0)} طالب</span></div><div className="student-class-tabs">{renderTabs(secondaryGroups)}</div></div>}
         {otherGroups.length>0&&<div className="student-stage-row"><div className="stage-row-title"><b>فصول أخرى</b><span>{otherGroups.reduce((n,g)=>n+g.students.length,0)} طالب</span></div><div className="student-class-tabs">{renderTabs(otherGroups)}</div></div>}
       </div>
-      {list.length?<div className="table-wrap"><table><thead><tr><th>الطالب</th><th>الرقم</th><th>الصف</th><th>الفصل</th><th>المستوى</th><th>الرصيد</th><th>القيمة</th>{canEditStudentClass&&<th>الإجراء</th>}</tr></thead><tbody>{list.map(s=><tr key={s.id}><td><b>{s.name}</b></td><td>{s.student_no}</td><td>{s.grade_name}</td><td>{s.class_name}</td><td><span className="pill">{s.level}</span></td><td><b>{s.points} نقطة</b></td><td>{Number(s.value_sar).toLocaleString("ar-SA")} ر.س</td>{canEditStudentClass&&<td><div className="student-row-actions"><StudentClassEditor student={s} onChanged={reload}/><StudentMobileEditor student={s}/></div></td>}</tr>)}</tbody></table></div>:<Empty text={q?"لا يوجد طالب مطابق للبحث داخل هذا الفصل.":"لا يوجد طلاب في هذه القائمة."}/>} 
+      {list.length?<div className="table-wrap"><table><thead><tr><th>الطالب</th><th>الرقم</th><th>الصف</th><th>الفصل</th><th>المستوى</th><th>الرصيد</th><th>القيمة</th>{canEditStudentClass&&<th>الإجراء</th>}</tr></thead><tbody>{list.map(s=><tr key={s.id}><td><b>{s.name}</b></td><td>{s.student_no}</td><td>{s.grade_name}</td><td>{s.class_name}</td><td><span className="pill">{s.level}</span></td><td><b>{s.points} نقطة</b></td><td>{Number(s.value_sar).toLocaleString("ar-SA")} ر.س</td>{canEditStudentClass&&<td><div className="student-row-actions"><StudentClassEditor student={s} onChanged={reload}/><StudentMobileEditor student={s}/><GuardianAccessLinkButton student={s}/></div></td>}</tr>)}</tbody></table></div>:<Empty text={q?"لا يوجد طالب مطابق للبحث داخل هذا الفصل.":"لا يوجد طلاب في هذه القائمة."}/>} 
     </section>
   </main></>;
 }
@@ -561,6 +562,7 @@ function BankApp({ profile, refreshProfile }: { profile: Profile; refreshProfile
 
 export default function App(){
   const verifyNonce=new URLSearchParams(window.location.search).get("verify");
+  const guardianToken=new URLSearchParams(window.location.search).get("guardian");
   const sessionState=neon.auth.useSession();
   // AUTH_SESSION_BRIDGE_V3_APP: use getSession as the source-of-truth fallback instead of reloading the page.
   const [verifiedSession,setVerifiedSession]=useState<any>(null);
@@ -589,6 +591,7 @@ export default function App(){
   const [profile,setProfile]=useState<Profile|null>(null);const[profileError,setProfileError]=useState("");const[profileLoading,setProfileLoading]=useState(false);
   async function refreshProfile(){setProfileLoading(true);setProfileError("");try{let next:Profile|null=null;for(let attempt=0;attempt<4;attempt++){next=await rpc<Profile>("api_profile");if(next?.status!=="PENDING")break;if(attempt<3)await new Promise(resolve=>setTimeout(resolve,300*(attempt+1)))}setProfile(next)}catch(e){setProfileError(niceError(e))}finally{setProfileLoading(false)}}
   useEffect(()=>{if(sessionUserId){sessionStorage.removeItem("mishkat-login-succeeded");sessionStorage.removeItem("mishkat-session-recovery-count");refreshProfile()}else setProfile(null)},[sessionUserId]);
+  if(guardianToken)return <GuardianPortal token={guardianToken}/>;
   if(verifyNonce)return <VerifyView nonce={verifyNonce}/>;
   if((sessionState?.isPending||!sessionProbeDone)&&!sessionUserId)return <Loading text="جارٍ التحقق من الجلسة..."/>;
   if(!sessionUserId)return <AuthScreen/>;

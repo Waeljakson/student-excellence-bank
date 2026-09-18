@@ -13,12 +13,14 @@ const SCHOOL_LOGO = `${import.meta.env.BASE_URL}school-logo.png`;
 const GUIDANCE_LOGO = `${import.meta.env.BASE_URL}guidance-logo.png`;
 
 type PortalAnnouncement={ id:string; title_ar:string; body_ar:string; starts_at:string; ends_at?:string|null; announcement_type?:string; criteria?:string[]; target_class_ids?:string[] };
+type FollowupNote={ id:string; subject_ar?:string; note_kind?:string; category_ar?:string; note_text:string; note_date:string; teacher_name?:string };
 type PortalData = {
   student: { id:string; student_no:string; name:string; grade_name:string; class_name:string; points:number; value_sar:number; avatar?:string|null };
   checks: Array<{ id:string; serial_no:string; points:number; reason:string; status:string; approval_status:string; issued_at:string; rule_name:string; issuer_name:string; reversed_at?:string|null; reversal_reason?:string|null }>;
   announcements: PortalAnnouncement[];
-  followup_notes: Array<{ id:string; subject_ar?:string; note_kind?:string; category_ar?:string; note_text:string; note_date:string; teacher_name?:string }>;
+  followup_notes: FollowupNote[];
 };
+type StudentTab="home"|"competitions"|"rewards"|"followup"|"checks"|"announcements"|"account";
 
 function date(v?:string|null){return v?new Date(v).toLocaleDateString("ar-SA",{year:"numeric",month:"long",day:"numeric"}):"—"}
 function authError(result:any){if(result?.error)throw new Error(result.error.message||result.error.code||"تعذر تنفيذ العملية")}
@@ -35,8 +37,10 @@ async function prepareAvatar(file:File){
 
 export default function StudentPortal({cacheUserId=""}:{cacheUserId?:string}){
   const[data,setData]=useState<PortalData|null>(null);const[error,setError]=useState("");
+  const[tab,setTab]=useState<StudentTab>("home");
   const[photoBusy,setPhotoBusy]=useState(false);const[photoMsg,setPhotoMsg]=useState("");
   const[currentPassword,setCurrentPassword]=useState("");const[newPassword,setNewPassword]=useState("");const[confirmPassword,setConfirmPassword]=useState("");const[passwordBusy,setPasswordBusy]=useState(false);const[passwordMsg,setPasswordMsg]=useState("");
+
   async function load(force=false){
     const scope=cacheUserId?"student:"+cacheUserId:"";
     const cached=scope?readDataCache<any>(scope):null;
@@ -70,28 +74,93 @@ export default function StudentPortal({cacheUserId=""}:{cacheUserId?:string}){
 
   if(error)return <div className="full-center"><div className="pending-card"><h1>تعذر تحميل بوابة الطالب</h1><p>{error}</p><button className="btn ghost" onClick={()=>neon.auth.signOut()}>تسجيل الخروج</button></div></div>;
   if(!data)return <div className="full-center"><div className="loader"/><p>جارٍ تحميل بوابة الطالب...</p></div>;
+
   const s=data.student;
   const competitions=data.announcements.filter(a=>a.announcement_type==="TARGETED_COMPETITION");
   const announcements=data.announcements.filter(a=>a.announcement_type!=="TARGETED_COMPETITION");
+  const activeNotes=data.followup_notes||[];
+  const recentNote=activeNotes[0];
+  const recentCheck=data.checks[0];
+
+  const tabs:Array<{id:StudentTab;label:string;icon:string;count?:number}>=[
+    {id:"home",label:"الرئيسية",icon:"⌂"},
+    {id:"competitions",label:"المسابقات",icon:"★",count:competitions.length},
+    {id:"rewards",label:"المكافآت",icon:"◆"},
+    {id:"followup",label:"ملاحظات المعلمين",icon:"✎",count:activeNotes.length},
+    {id:"checks",label:"شيكات التميز",icon:"✓",count:data.checks.length},
+    {id:"announcements",label:"الإعلانات",icon:"◉",count:announcements.length},
+    {id:"account",label:"حسابي",icon:"⚙"}
+  ];
+
   return <div className="student-portal">
-    <header className="student-portal-head"><div className="student-brand"><div className="logos"><img src={SCHOOL_LOGO}/><img src={GUIDANCE_LOGO}/></div><div><span>مدارس المشكاة الأهلية</span><h1>بوابة الطالب — بنك التميز</h1></div></div><button className="btn ghost" onClick={()=>neon.auth.signOut()}>تسجيل الخروج</button></header>
+    <header className="student-portal-head">
+      <div className="student-brand"><div className="logos"><img src={SCHOOL_LOGO}/><img src={GUIDANCE_LOGO}/></div><div><span>متوسطة وثانوية مشكاة الشعلة</span><h1>بوابة الطالب — بنك التميز</h1></div></div>
+      <button className="btn ghost" onClick={()=>neon.auth.signOut()}>تسجيل الخروج</button>
+    </header>
+
     <main className="student-portal-content">
-      <section className="student-welcome student-profile-welcome"><div className="student-profile-main"><div className="student-avatar">{s.avatar?<img src={s.avatar} alt="الصورة الشخصية"/>:<span>{s.name?.trim()?.charAt(0)||"ط"}</span>}</div><div><span>أهلًا بك</span><h2>{s.name}</h2><p>{s.grade_name} — فصل {s.class_name} · رقم الطالب {s.student_no}</p></div></div><div className="student-balance"><small>رصيدك الحالي</small><strong>{Number(s.points).toLocaleString("ar-SA")}</strong><span>نقطة · {Number(s.value_sar).toLocaleString("ar-SA")} ر.س</span></div></section>
-      <StudentPrograms competitions={competitions} student={s}/>
-      <StudentRedemptionPanel/>
-      <StudentFollowupPanel notes={data.followup_notes||[]}/>
-
-      <section className="portal-panel student-account-panel"><div className="portal-panel-title"><div><h3>إعدادات حسابي</h3><p>الصورة الشخصية وكلمة المرور</p></div><span>⚙</span></div><div className="student-account-grid">
-        <div className="student-photo-settings"><div className="student-avatar large">{s.avatar?<img src={s.avatar} alt="الصورة الشخصية"/>:<span>{s.name?.trim()?.charAt(0)||"ط"}</span>}</div><div><h4>صورتي الشخصية</h4><p>اختر صورة واضحة. سيتم قصها وضغطها تلقائيًا.</p><label className={`btn primary upload-avatar-btn ${photoBusy?"disabled":""}`}>{photoBusy?"جارٍ حفظ الصورة...":"اختيار صورة"}<input type="file" accept="image/jpeg,image/png,image/webp" disabled={photoBusy} onChange={uploadPhoto}/></label>{photoMsg&&<div className="notice compact-notice">{photoMsg}</div>}</div></div>
-        <form className="student-password-form form-stack" onSubmit={changePassword}><h4>تغيير كلمة المرور</h4><label>كلمة المرور الحالية<input type="password" autoComplete="current-password" required value={currentPassword} onChange={e=>setCurrentPassword(e.target.value)}/></label><label>كلمة المرور الجديدة<input type="password" autoComplete="new-password" minLength={8} required value={newPassword} onChange={e=>setNewPassword(e.target.value)}/></label><label>تأكيد كلمة المرور الجديدة<input type="password" autoComplete="new-password" minLength={8} required value={confirmPassword} onChange={e=>setConfirmPassword(e.target.value)}/></label><button className="btn primary" disabled={passwordBusy}>{passwordBusy?"جارٍ التغيير...":"تغيير كلمة المرور"}</button>{passwordMsg&&<div className="notice compact-notice">{passwordMsg}</div>}</form>
-      </div></section>
-
-      <section className="student-portal-grid">
-        <article className="portal-panel"><div className="portal-panel-title"><h3>شيكات التميز الخاصة بي</h3><span>{data.checks.length}</span></div>{data.checks.length?<div className="student-checks">{data.checks.map(c=><div className={c.status==="REVERSED"?"student-check-card reversed":"student-check-card"} key={c.id}><div><b>{c.rule_name}</b><small>{c.reason}</small><em>{date(c.issued_at)} · {c.issuer_name}</em>{c.status==="REVERSED"&&<div className="student-check-reversed-note"><b>تم إيقاف الشيك بواسطة المعلم: {c.issuer_name}</b><span>{c.reversal_reason||"تم إيقاف الشيك بواسطة المعلم المصدر"} · {date(c.reversed_at)}</span></div>}</div><strong>{c.status==="REVERSED"?"−":"+"}{c.points}</strong><span>{c.serial_no}</span></div>)}</div>:<div className="empty">لم يصدر لك أي شيك تميز حتى الآن.</div>}</article>
-        <article className="portal-panel"><div className="portal-panel-title"><h3>الإعلانات العامة</h3><span>{announcements.length}</span></div>{announcements.length?<div className="announcement-list">{announcements.map(a=><div className="announcement-card" key={a.id}><span>إعلان</span><h4>{a.title_ar}</h4><p>{a.body_ar}</p><small>تاريخ الإعلان: {date(a.starts_at)}{a.ends_at?` · حتى ${date(a.ends_at)}`:""}</small></div>)}</div>:<div className="empty">لا توجد إعلانات عامة حاليًا.</div>}</article>
+      <section className="student-welcome student-profile-welcome">
+        <div className="student-profile-main">
+          <div className="student-avatar">{s.avatar?<img src={s.avatar} alt="الصورة الشخصية"/>:<span>{s.name?.trim()?.charAt(0)||"ط"}</span>}</div>
+          <div><span>أهلًا بك</span><h2>{s.name}</h2><p>{s.grade_name} — فصل {s.class_name} · رقم الطالب {s.student_no}</p></div>
+        </div>
+        <div className="student-balance"><small>رصيدك الحالي</small><strong>{Number(s.points).toLocaleString("ar-SA")}</strong><span>نقطة · {Number(s.value_sar).toLocaleString("ar-SA")} ر.س</span></div>
       </section>
 
-      <p className="student-security-note">لا تظهر لك إلا المسابقات الموجهة لفصلك خلال فترة إطلاقها. بيانات الدخول شخصية ولا يجب مشاركتها.</p>
+      <nav className="student-tabs" aria-label="أقسام بوابة الطالب">
+        {tabs.map(x=><button key={x.id} className={tab===x.id?"active":""} onClick={()=>setTab(x.id)}>
+          <span className="student-tab-icon">{x.icon}</span>
+          <span>{x.label}</span>
+          {typeof x.count==="number"&&<b>{x.count}</b>}
+        </button>)}
+      </nav>
+
+      <div className="student-tab-content">
+        {tab==="home"&&<>
+          <section className="student-home-stats">
+            <button onClick={()=>setTab("checks")}><span>رصيد التميز</span><strong>{Number(s.points).toLocaleString("ar-SA")}</strong><small>نقطة</small></button>
+            <button onClick={()=>setTab("checks")}><span>شيكات التميز</span><strong>{data.checks.length}</strong><small>شيك</small></button>
+            <button onClick={()=>setTab("followup")}><span>ملاحظات المعلمين</span><strong>{activeNotes.length}</strong><small>ملاحظة</small></button>
+            <button onClick={()=>setTab("competitions")}><span>المسابقات الحالية</span><strong>{competitions.length}</strong><small>مسابقة</small></button>
+          </section>
+
+          <section className="student-home-grid">
+            <article className="portal-panel student-home-card">
+              <div className="portal-panel-title"><div><h3>آخر ملاحظة من المعلمين</h3><p>أحدث متابعة مسجلة لك</p></div><button className="student-link-btn" onClick={()=>setTab("followup")}>عرض الكل</button></div>
+              {recentNote?<div className={`guardian-note ${String(recentNote.note_kind||"general").toLowerCase()}`}><div><b>{recentNote.subject_ar||"متابعة"}</b><span>{recentNote.category_ar||"ملاحظة"}</span></div><p>{recentNote.note_text}</p><small>{new Date(recentNote.note_date).toLocaleDateString("ar-SA")} · {recentNote.teacher_name}</small></div>:<div className="empty">لا توجد ملاحظات مسجلة لك حتى الآن.</div>}
+            </article>
+
+            <article className="portal-panel student-home-card">
+              <div className="portal-panel-title"><div><h3>آخر شيك تميز</h3><p>أحدث نقاط حصلت عليها</p></div><button className="student-link-btn" onClick={()=>setTab("checks")}>عرض الكل</button></div>
+              {recentCheck?<div className={recentCheck.status==="REVERSED"?"student-check-card reversed":"student-check-card"}><div><b>{recentCheck.rule_name}</b><small>{recentCheck.reason}</small><em>{date(recentCheck.issued_at)} · {recentCheck.issuer_name}</em></div><strong>{recentCheck.status==="REVERSED"?"−":"+"}{recentCheck.points}</strong><span>{recentCheck.serial_no}</span></div>:<div className="empty">لم يصدر لك أي شيك تميز حتى الآن.</div>}
+            </article>
+          </section>
+        </>}
+
+        {tab==="competitions"&&<StudentPrograms competitions={competitions} student={s}/>}
+        {tab==="rewards"&&<StudentRedemptionPanel/>}
+        {tab==="followup"&&<StudentFollowupPanel notes={activeNotes}/>}
+
+        {tab==="checks"&&<section className="portal-panel">
+          <div className="portal-panel-title"><div><h3>شيكات التميز الخاصة بي</h3><p>جميع الشيكات والنقاط المسجلة على حسابك</p></div><span>{data.checks.length}</span></div>
+          {data.checks.length?<div className="student-checks">{data.checks.map(c=><div className={c.status==="REVERSED"?"student-check-card reversed":"student-check-card"} key={c.id}><div><b>{c.rule_name}</b><small>{c.reason}</small><em>{date(c.issued_at)} · {c.issuer_name}</em>{c.status==="REVERSED"&&<div className="student-check-reversed-note"><b>تم إيقاف الشيك بواسطة المعلم: {c.issuer_name}</b><span>{c.reversal_reason||"تم إيقاف الشيك بواسطة المعلم المصدر"} · {date(c.reversed_at)}</span></div>}</div><strong>{c.status==="REVERSED"?"−":"+"}{c.points}</strong><span>{c.serial_no}</span></div>)}</div>:<div className="empty">لم يصدر لك أي شيك تميز حتى الآن.</div>}
+        </section>}
+
+        {tab==="announcements"&&<section className="portal-panel">
+          <div className="portal-panel-title"><div><h3>الإعلانات العامة</h3><p>آخر إعلانات المدرسة الموجهة للطلاب</p></div><span>{announcements.length}</span></div>
+          {announcements.length?<div className="announcement-list">{announcements.map(a=><div className="announcement-card" key={a.id}><span>إعلان</span><h4>{a.title_ar}</h4><p>{a.body_ar}</p><small>تاريخ الإعلان: {date(a.starts_at)}{a.ends_at?` · حتى ${date(a.ends_at)}`:""}</small></div>)}</div>:<div className="empty">لا توجد إعلانات عامة حاليًا.</div>}
+        </section>}
+
+        {tab==="account"&&<section className="portal-panel student-account-panel">
+          <div className="portal-panel-title"><div><h3>إعدادات حسابي</h3><p>الصورة الشخصية وكلمة المرور</p></div><span>⚙</span></div>
+          <div className="student-account-grid">
+            <div className="student-photo-settings"><div className="student-avatar large">{s.avatar?<img src={s.avatar} alt="الصورة الشخصية"/>:<span>{s.name?.trim()?.charAt(0)||"ط"}</span>}</div><div><h4>صورتي الشخصية</h4><p>اختر صورة واضحة. سيتم قصها وضغطها تلقائيًا.</p><label className={`btn primary upload-avatar-btn ${photoBusy?"disabled":""}`}>{photoBusy?"جارٍ حفظ الصورة...":"اختيار صورة"}<input type="file" accept="image/jpeg,image/png,image/webp" disabled={photoBusy} onChange={uploadPhoto}/></label>{photoMsg&&<div className="notice compact-notice">{photoMsg}</div>}</div></div>
+            <form className="student-password-form form-stack" onSubmit={changePassword}><h4>تغيير كلمة المرور</h4><label>كلمة المرور الحالية<input type="password" autoComplete="current-password" required value={currentPassword} onChange={e=>setCurrentPassword(e.target.value)}/></label><label>كلمة المرور الجديدة<input type="password" autoComplete="new-password" minLength={8} required value={newPassword} onChange={e=>setNewPassword(e.target.value)}/></label><label>تأكيد كلمة المرور الجديدة<input type="password" autoComplete="new-password" minLength={8} required value={confirmPassword} onChange={e=>setConfirmPassword(e.target.value)}/></label><button className="btn primary" disabled={passwordBusy}>{passwordBusy?"جارٍ التغيير...":"تغيير كلمة المرور"}</button>{passwordMsg&&<div className="notice compact-notice">{passwordMsg}</div>}</form>
+          </div>
+        </section>}
+      </div>
+
+      <p className="student-security-note">بيانات الدخول شخصية ولا يجب مشاركتها. لا تظهر لك إلا البيانات والمسابقات المرتبطة بحسابك وفصلك.</p>
     </main>
   </div>;
 }

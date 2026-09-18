@@ -27,8 +27,9 @@ if(!student.includes('import StudentFollowupPanel from "./StudentFollowupPanel";
   student=student.replace(marker,marker+'\nimport StudentFollowupPanel from "./StudentFollowupPanel";');
 }
 const followupRender='<StudentFollowupPanel notes={data.followup_notes||[]}/>';
+const hasFollowupPanel=student.includes('<StudentFollowupPanel notes=');
 if(student.includes('<StudentFollowupPanel/>')) student=student.replace('<StudentFollowupPanel/>',followupRender);
-if(!student.includes(followupRender)){
+if(!hasFollowupPanel&&!student.includes(followupRender)){
   const marker='<StudentRedemptionPanel/>';
   if(!student.includes(marker))throw new Error("parent-identity-portal-upgrade: StudentRedemptionPanel render missing");
   student=student.replace(marker,marker+'\n      '+followupRender);
@@ -45,7 +46,7 @@ if(!student.includes('Array.isArray(cached.data.portal.followup_notes)')){
     'if(!force&&cached?.data?.portal&&Array.isArray(cached.data.portal.followup_notes)&&sameCacheVersion(cached.versions,versions,"student_portal")){setData(cached.data.portal as PortalData);return}'
   );
 }
-if(!student.includes(followupRender)){
+if(!student.includes('<StudentFollowupPanel notes=')){
   throw new Error("parent-identity-portal-upgrade: student followup panel injection failed");
 }
 writeFileSync(studentPath,student);

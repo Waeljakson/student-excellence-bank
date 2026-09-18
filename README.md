@@ -7,11 +7,11 @@
 جميع الحقوق محفوظة © 2026 — مدارس المشكاة الأهلية.
 
 ## التقنية
-- Next.js 16 + React 19 + TypeScript
+- Vite + React 19 + TypeScript
 - Neon Serverless PostgreSQL
 - Neon Auth (Better Auth managed by Neon)
 - QR موقّع HMAC للتحقق من الشيكات
-- Vercel للنشر + GitHub لإدارة الكود
+- GitHub Pages للنشر + GitHub لإدارة الكود
 
 ## ما تم تنفيذه في النسخة الأولى
 - قاعدة بيانات Neon فعلية باسم `excellence_bank`.

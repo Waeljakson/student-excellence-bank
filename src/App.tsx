@@ -83,6 +83,7 @@
 // SYSTEM_FEATURES_V2
 // SYSTEM_FEATURES_V2
 // SYSTEM_FEATURES_V2
+// SYSTEM_FEATURES_V2
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import QRCode from "qrcode";
 import { AUTH_URL, neon, niceError, rpc } from "./client";
@@ -567,6 +568,7 @@ function BankApp({ profile, refreshProfile }: { profile: Profile; refreshProfile
 export default function App(){
   const verifyNonce=new URLSearchParams(window.location.search).get("verify");
   const guardianToken=new URLSearchParams(window.location.search).get("guardian");
+  const parentPortal=new URLSearchParams(window.location.search).get("parent");
   const sessionState=neon.auth.useSession();
   // AUTH_SESSION_BRIDGE_V3_APP: use getSession as the source-of-truth fallback instead of reloading the page.
   const [verifiedSession,setVerifiedSession]=useState<any>(null);
@@ -595,6 +597,7 @@ export default function App(){
   const [profile,setProfile]=useState<Profile|null>(null);const[profileError,setProfileError]=useState("");const[profileLoading,setProfileLoading]=useState(false);
   async function refreshProfile(){setProfileLoading(true);setProfileError("");try{let next:Profile|null=null;for(let attempt=0;attempt<4;attempt++){next=await rpc<Profile>("api_profile");if(next?.status!=="PENDING")break;if(attempt<3)await new Promise(resolve=>setTimeout(resolve,300*(attempt+1)))}setProfile(next)}catch(e){setProfileError(niceError(e))}finally{setProfileLoading(false)}}
   useEffect(()=>{if(sessionUserId){sessionStorage.removeItem("mishkat-login-succeeded");sessionStorage.removeItem("mishkat-session-recovery-count");refreshProfile()}else setProfile(null)},[sessionUserId]);
+  if(parentPortal)return <GuardianLogin standalone/>;
   if(guardianToken)return <GuardianPortal token={guardianToken}/>;
   if(verifyNonce)return <VerifyView nonce={verifyNonce}/>;
   if((sessionState?.isPending||!sessionProbeDone)&&!sessionUserId)return <Loading text="جارٍ التحقق من الجلسة..."/>;

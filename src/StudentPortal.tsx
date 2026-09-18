@@ -5,6 +5,7 @@ import "./feature-upgrade.css";
 import "./student-account.css";
 import StudentPrograms from "./StudentPrograms";
 import StudentRedemptionPanel from "./StudentRedemptionPanel";
+import StudentFollowupPanel from "./StudentFollowupPanel";
 import "./redemption.css";
 import "./targeted-competitions.css";
 
@@ -77,6 +78,7 @@ export default function StudentPortal({cacheUserId=""}:{cacheUserId?:string}){
       <section className="student-welcome student-profile-welcome"><div className="student-profile-main"><div className="student-avatar">{s.avatar?<img src={s.avatar} alt="الصورة الشخصية"/>:<span>{s.name?.trim()?.charAt(0)||"ط"}</span>}</div><div><span>أهلًا بك</span><h2>{s.name}</h2><p>{s.grade_name} — فصل {s.class_name} · رقم الطالب {s.student_no}</p></div></div><div className="student-balance"><small>رصيدك الحالي</small><strong>{Number(s.points).toLocaleString("ar-SA")}</strong><span>نقطة · {Number(s.value_sar).toLocaleString("ar-SA")} ر.س</span></div></section>
       <StudentPrograms competitions={competitions} student={s}/>
       <StudentRedemptionPanel/>
+      <StudentFollowupPanel/>
 
       <section className="portal-panel student-account-panel"><div className="portal-panel-title"><div><h3>إعدادات حسابي</h3><p>الصورة الشخصية وكلمة المرور</p></div><span>⚙</span></div><div className="student-account-grid">
         <div className="student-photo-settings"><div className="student-avatar large">{s.avatar?<img src={s.avatar} alt="الصورة الشخصية"/>:<span>{s.name?.trim()?.charAt(0)||"ط"}</span>}</div><div><h4>صورتي الشخصية</h4><p>اختر صورة واضحة. سيتم قصها وضغطها تلقائيًا.</p><label className={`btn primary upload-avatar-btn ${photoBusy?"disabled":""}`}>{photoBusy?"جارٍ حفظ الصورة...":"اختيار صورة"}<input type="file" accept="image/jpeg,image/png,image/webp" disabled={photoBusy} onChange={uploadPhoto}/></label>{photoMsg&&<div className="notice compact-notice">{photoMsg}</div>}</div></div>

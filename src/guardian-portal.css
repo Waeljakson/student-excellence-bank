@@ -10,3 +10,6 @@
 .parent-daily-card>p{line-height:1.9;margin:8px 0 14px}.parent-advice{background:rgba(255,255,255,.72);border:1px solid #dfe8eb;border-radius:12px;padding:12px 14px}
 .parent-advice ul{margin:8px 0 0;padding-right:20px;line-height:1.9}.weekend-wish{margin-top:12px;padding:11px 13px;border-radius:11px;background:#edf5ff;font-weight:700;color:#335d7d}
 @media(max-width:760px){.parent-daily-head{flex-direction:column}.parent-daily-card{padding:16px}}
+
+.guardian-school-brand{display:flex;align-items:center;gap:14px}.guardian-school-logos,.guardian-login-logos{display:flex;align-items:center;gap:8px}.guardian-school-logos img{width:54px;height:54px;object-fit:contain}.guardian-login-logos{justify-content:center;margin-bottom:8px}.guardian-login-logos img{width:66px;height:66px;object-fit:contain}.guardian-login-title{text-align:center}.guardian-login-title span,.guardian-school-brand span{font-weight:800;color:#314f5d}.guardian-login-title h2{margin:5px 0 12px}.guardian-public-brand .logos{justify-content:center}
+@media(max-width:760px){.guardian-school-brand{align-items:flex-start}.guardian-school-logos img{width:44px;height:44px}.guardian-login-logos img{width:56px;height:56px}}

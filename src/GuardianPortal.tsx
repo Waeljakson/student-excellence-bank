@@ -1,4 +1,4 @@
-import {useEffect,useMemo,useState} from "react";
+import {useEffect,useState} from "react";
 import {neon,niceError,rpc} from "./client";
 import "./guardian-portal.css";
 
@@ -62,7 +62,7 @@ function DailyFollowup({child}:{child:Child}){
 
 function riyardDayFix(){return riyadhDay()}
 
-export default function GuardianPortal({token,studentNo}:{token?:string;studentNo?:string}){
+export default function GuardianPortal({token,studentNo,initialData}:{token?:string;studentNo?:string;initialData?:any}){
   const[data,setData]=useState<any>(null);
   const[error,setError]=useState("");
   const[childId,setChildId]=useState("");
@@ -71,13 +71,17 @@ export default function GuardianPortal({token,studentNo}:{token?:string;studentN
   const identityMode=!!studentNo;
 
   useEffect(()=>{
+    if(initialData){setData(initialData);setChildId(initialData.children?.[0]?.id||"");return}
     const request=identityMode
-      ?rpc<any>("api_guardian_portal_by_student_no",{p_student_no:studentNo})
+      ?rpc<any>("api_guardian_lookup",{p_mobile:studentNo}).then(x=>{
+          if(!x?.exists||x?.source!=="student_no"||!x?.portal)throw new Error("STUDENT_NOT_FOUND");
+          return x.portal;
+        })
       :tokenMode
         ?rpc<any>("api_guardian_portal_by_token",{p_token:token})
         :rpc<any>("api_guardian_portal");
     request.then(d=>{setData(d);setChildId(d.children?.[0]?.id||"")}).catch(e=>setError(niceError(e)));
-  },[token,studentNo,tokenMode,identityMode]);
+  },[token,studentNo,tokenMode,identityMode,initialData]);
 
   function leave(){
     if(tokenMode||identityMode){window.location.href=import.meta.env.BASE_URL+"?parent=1";return}
@@ -92,7 +96,10 @@ export default function GuardianPortal({token,studentNo}:{token?:string;studentN
 
   return <div className="guardian-portal">
     <header className="guardian-head">
-      <div><span>مدارس المشكاة الأهلية</span><h1>بوابة ولي الأمر</h1><p>{c?.name||data.guardian?.name}</p>{identityMode&&<small>دخول برقم هوية / رقم الطالب بدون كلمة مرور</small>}</div>
+      <div className="guardian-school-brand">
+        <div className="guardian-school-logos"><img src={`${import.meta.env.BASE_URL}school-logo.png`} alt="شعار المدرسة"/><img src={`${import.meta.env.BASE_URL}guidance-logo.png`} alt="شعار التوجيه الطلابي"/></div>
+        <div><span>متوسطة وثانوية مشكاة الشعلة</span><h1>بوابة ولي الأمر</h1><p>{c?.name||data.guardian?.name}</p>{identityMode&&<small>دخول برقم هوية / رقم الطالب بدون كلمة مرور</small>}</div>
+      </div>
       <button className="btn ghost" onClick={leave}>{identityMode||tokenMode?"تغيير الطالب":"تسجيل الخروج"}</button>
     </header>
     <main className="guardian-content">

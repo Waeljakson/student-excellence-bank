@@ -202,7 +202,7 @@ function SessionRecovery() {
 }
 
 function AuthScreen() {
-  const [mode, setMode] = useState<"otp" | "register" | "password" | "teacher" | "student" | "guardian">("password");
+  const [mode, setMode] = useState<"otp" | "register" | "password" | "teacher" | "student">("password");
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -260,7 +260,7 @@ function AuthScreen() {
       <div className="auth-tabs">
         <button className={mode==="password"?"active":""} onClick={()=>{setMode("password");setMessage("")}}>دخول الإدارة</button>
         <button className={mode==="teacher"?"active":""} onClick={()=>{setMode("teacher");setMessage("")}}>دخول الهيئة</button>
-        <button className={mode==="student"?"active":""} onClick={()=>{setMode("student");setMessage("")}}>دخول الطالب</button><button className={mode==="guardian"?"active":""} onClick={()=>{setMode("guardian");setMessage("")}}>دخول ولي الأمر</button>
+        <button className={mode==="student"?"active":""} onClick={()=>{setMode("student");setMessage("")}}>دخول الطالب</button>
       </div>
       {mode==="password" && <form onSubmit={passwordLogin} className="form-stack"><h2>دخول الإدارة</h2><p>دخول مدير النظام والإدارة بالبريد الإلكتروني وكلمة المرور.</p>
         <label>البريد الإلكتروني<input type="email" required value={email} onChange={e=>setEmail(e.target.value)}/></label>
@@ -270,7 +270,6 @@ function AuthScreen() {
       {mode==="password"&&<AdminPasswordReset/>}
       {mode==="teacher"&&<TeacherLogin/>}
       {mode==="student"&&<StudentLogin/>}
-      {mode==="guardian"&&<GuardianLogin/>}
       {message && <div className="notice">{message}</div>}
     </div>
   </div>;

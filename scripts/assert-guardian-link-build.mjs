@@ -12,7 +12,9 @@ const required=[
   "حذف الملاحظة",
   "guardian_unique_visitors",
   "متابعة أولياء الأمور",
-  "تنبيه أو معلومة عامة"
+  "تنبيه أو معلومة عامة",
+  "guardian-followup-days",
+  "ملاحظات هذا اليوم"
 ];
 const bundle=files.map(file=>readFileSync(`${dir}/${file}`,"utf8")).join("\n");
 const missing=required.filter(x=>!bundle.includes(x));

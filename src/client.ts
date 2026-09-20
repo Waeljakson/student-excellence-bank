@@ -79,7 +79,8 @@ export function niceError(error: unknown) {
   if (message.includes("STAFF_NOT_FOUND")) return "لم يتم العثور على الموظف في دليل الهيئة.";
   if (message.includes("CLASS_NOT_FOUND")) return "الفصل غير موجود أو لا يتبع العام الدراسي الحالي.";
   if (message.includes("DEPARTMENT_NOT_FOUND")) return "القسم المختار غير موجود أو غير متاح لهذه المدرسة.";
-  if (message.includes("CURRENT_ACADEMIC_YEAR_NOT_FOUND")) return "لا يوجد عام دراسي حالي مضبوط في النظام.";\n  if (message.includes("STUDENT_NO_10_DIGITS_REQUIRED")) return "رقم الطالب يجب أن يتكون من 10 أرقام.";
+  if (message.includes("CURRENT_ACADEMIC_YEAR_NOT_FOUND")) return "لا يوجد عام دراسي حالي مضبوط في النظام.";
+  if (message.includes("STUDENT_NO_10_DIGITS_REQUIRED")) return "رقم الطالب يجب أن يتكون من 10 أرقام.";
   if (message.includes("STUDENT_NAME_REQUIRED")) return "اكتب اسم الطالب كاملًا.";
   if (message.includes("STUDENT_NO_EXISTS")) return "رقم الطالب موجود بالفعل في قاعدة المدرسة.";
   if (message.includes("STUDENT_MOBILE_INVALID")) return "رقم الجوال غير صحيح. استخدم الصيغة 05xxxxxxxx.";

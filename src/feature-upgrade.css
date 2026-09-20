@@ -117,3 +117,123 @@
     max-width:218px;
   }
 }
+
+
+
+/* STUDENT_TABLE_COMPACT_V45 */
+.student-wallet-panel .table-wrap table{
+  width:100%;
+  border-collapse:collapse;
+  table-layout:auto;
+}
+.student-wallet-panel .table-wrap th,
+.student-wallet-panel .table-wrap td{
+  padding:8px 7px;
+  white-space:nowrap;
+  vertical-align:middle;
+}
+.student-wallet-panel .table-wrap th:nth-child(1),
+.student-wallet-panel .table-wrap td:nth-child(1){
+  width:24%;
+  min-width:175px;
+  max-width:260px;
+}
+.student-wallet-panel .table-wrap td:nth-child(1)>b{
+  display:block;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  max-width:250px;
+}
+.student-wallet-panel .table-wrap th:nth-child(2),
+.student-wallet-panel .table-wrap td:nth-child(2){width:90px;min-width:78px}
+.student-wallet-panel .table-wrap th:nth-child(3),
+.student-wallet-panel .table-wrap td:nth-child(3){width:105px;min-width:92px}
+.student-wallet-panel .table-wrap th:nth-child(4),
+.student-wallet-panel .table-wrap td:nth-child(4){width:54px;min-width:48px;text-align:center}
+.student-wallet-panel .table-wrap th:nth-child(5),
+.student-wallet-panel .table-wrap td:nth-child(5){width:72px;min-width:64px;text-align:center}
+.student-wallet-panel .table-wrap th:nth-child(6),
+.student-wallet-panel .table-wrap td:nth-child(6){width:78px;min-width:70px;text-align:center}
+.student-wallet-panel .table-wrap th:nth-child(7),
+.student-wallet-panel .table-wrap td:nth-child(7){width:82px;min-width:74px;text-align:center}
+.student-wallet-panel .table-wrap th:last-child,
+.student-wallet-panel .table-wrap td:last-child{
+  width:360px;
+  min-width:330px;
+  max-width:380px;
+}
+.student-wallet-panel .student-row-actions{
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  width:100%;
+  max-width:360px;
+  gap:4px;
+}
+.student-wallet-panel .student-row-actions>button{
+  min-height:32px;
+  padding:5px 4px;
+  font-size:7.5px;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+@media(max-width:1180px){
+  .student-wallet-panel .table-wrap th,
+  .student-wallet-panel .table-wrap td{padding:7px 6px}
+  .student-wallet-panel .table-wrap th:nth-child(1),
+  .student-wallet-panel .table-wrap td:nth-child(1){min-width:165px;max-width:220px}
+  .student-wallet-panel .table-wrap td:nth-child(1)>b{max-width:215px}
+  .student-wallet-panel .table-wrap th:nth-child(2),
+  .student-wallet-panel .table-wrap td:nth-child(2){min-width:72px;width:78px}
+  .student-wallet-panel .table-wrap th:nth-child(3),
+  .student-wallet-panel .table-wrap td:nth-child(3){min-width:86px;width:94px}
+  .student-wallet-panel .table-wrap th:last-child,
+  .student-wallet-panel .table-wrap td:last-child{width:235px;min-width:225px;max-width:245px}
+  .student-wallet-panel .student-row-actions{
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    width:225px;
+    max-width:225px;
+  }
+}
+@media(max-width:700px){
+  .student-wallet-panel .table-wrap{
+    overflow-x:auto;
+    overscroll-behavior-x:contain;
+  }
+  .student-wallet-panel .table-wrap table{
+    width:max-content;
+    min-width:100%;
+  }
+  .student-wallet-panel .table-wrap th,
+  .student-wallet-panel .table-wrap td{
+    padding:6px 5px;
+    font-size:9px;
+  }
+  .student-wallet-panel .table-wrap th:nth-child(1),
+  .student-wallet-panel .table-wrap td:nth-child(1){min-width:160px;max-width:190px}
+  .student-wallet-panel .table-wrap td:nth-child(1)>b{max-width:185px}
+  .student-wallet-panel .table-wrap th:nth-child(2),
+  .student-wallet-panel .table-wrap td:nth-child(2){min-width:70px}
+  .student-wallet-panel .table-wrap th:nth-child(3),
+  .student-wallet-panel .table-wrap td:nth-child(3){min-width:82px}
+  .student-wallet-panel .table-wrap th:nth-child(4),
+  .student-wallet-panel .table-wrap td:nth-child(4){min-width:42px}
+  .student-wallet-panel .table-wrap th:nth-child(5),
+  .student-wallet-panel .table-wrap td:nth-child(5){min-width:58px}
+  .student-wallet-panel .table-wrap th:nth-child(6),
+  .student-wallet-panel .table-wrap td:nth-child(6){min-width:64px}
+  .student-wallet-panel .table-wrap th:nth-child(7),
+  .student-wallet-panel .table-wrap td:nth-child(7){min-width:68px}
+  .student-wallet-panel .table-wrap th:last-child,
+  .student-wallet-panel .table-wrap td:last-child{width:210px;min-width:210px;max-width:210px}
+  .student-wallet-panel .student-row-actions{
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    width:200px;
+    max-width:200px;
+  }
+  .student-wallet-panel .student-row-actions>button{
+    min-height:30px;
+    font-size:7px;
+    padding:4px 3px;
+  }
+}

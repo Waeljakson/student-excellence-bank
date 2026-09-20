@@ -382,13 +382,15 @@ function StudentsView({students,roles,reload}:{students:Student[];roles:string[]
 
   async function archiveStudent(student:Student){
     if(!canDeleteStudent||deleteBusy)return;
-    const ok=window.confirm(`هل تريد حذف الطالب «${student.name}» من قوائم النظام؟\n\nسيتم إيقاف حساب الطالب وإخفاؤه من بوابة الطالب وولي الأمر، مع الاحتفاظ بالشيكات والملاحظات والتقارير القديمة في السجل الإداري.`);
+    const ok=window.confirm(`تحذير: سيتم حذف الطالب «${student.name}» نهائيًا من قاعدة البيانات.\n\nسيتم حذف حسابه وشيكاته وملاحظاته وتقييماته وإحالاته وحركات محفظته والبيانات المرتبطة به، ولا يمكن التراجع عن العملية.\n\nهل تريد الاستمرار؟`);
     if(!ok)return;
+    const finalOk=window.confirm(`تأكيد أخير لحذف «${student.name}» نهائيًا. هذه العملية غير قابلة للاسترجاع.\n\nاضغط «موافق» لتنفيذ الحذف النهائي.`);
+    if(!finalOk)return;
     setDeleteBusy(student.id);setStudentMsg("");
     try{
       const result=await rpc<any>("api_archive_student",{p_student_id:student.id});
-      if(!result?.deleted)throw new Error(result?.error||"تعذر حذف الطالب.");
-      setStudentMsg(`تم حذف الطالب ${student.name} من القوائم بنجاح مع الاحتفاظ بسجلاته السابقة.`);
+      if(!result?.deleted||result?.permanent!==true)throw new Error(result?.error||"تعذر حذف الطالب نهائيًا.");
+      setStudentMsg(`تم حذف الطالب ${student.name} نهائيًا من قاعدة البيانات.`);
       await reload();
     }catch(e){setStudentMsg(niceError(e))}finally{setDeleteBusy("")}
   }
@@ -429,7 +431,7 @@ function StudentsView({students,roles,reload}:{students:Student[];roles:string[]
         {secondaryGroups.length>0&&<div className="student-stage-row secondary-stage"><div className="stage-row-title"><b>المرحلة الثانوية</b><span>{secondaryGroups.reduce((n,g)=>n+g.students.length,0)} طالب</span></div><div className="student-class-tabs">{renderTabs(secondaryGroups)}</div></div>}
         {otherGroups.length>0&&<div className="student-stage-row"><div className="stage-row-title"><b>فصول أخرى</b><span>{otherGroups.reduce((n,g)=>n+g.students.length,0)} طالب</span></div><div className="student-class-tabs">{renderTabs(otherGroups)}</div></div>}
       </div>
-      {list.length?<div className="table-wrap"><table><thead><tr><th>الطالب</th><th>الرقم</th><th>الصف</th><th>الفصل</th><th>المستوى</th><th>الرصيد</th><th>القيمة</th>{(canEditStudentClass||canDeleteStudent)&&<th>الإجراء</th>}</tr></thead><tbody>{list.map(s=><tr key={s.id}><td><b>{s.name}</b></td><td>{s.student_no}</td><td>{s.grade_name}</td><td>{s.class_name}</td><td><span className="pill">{s.level}</span></td><td><b>{s.points} نقطة</b></td><td>{Number(s.value_sar).toLocaleString("ar-SA")} ر.س</td>{(canEditStudentClass||canDeleteStudent)&&<td><div className="student-row-actions">{canEditStudentClass&&<><StudentClassEditor student={s} onChanged={reload}/><StudentMobileEditor student={s}/><GuardianAccessLinkButton student={s}/></>}{canDeleteStudent&&<button type="button" className="student-delete-btn" disabled={deleteBusy===s.id} onClick={()=>archiveStudent(s)}>{deleteBusy===s.id?"جارٍ الحذف...":"حذف الطالب"}</button>}</div></td>}</tr>)}</tbody></table></div>:<Empty text={q?"لا يوجد طالب مطابق للبحث داخل هذا الفصل.":"لا يوجد طلاب في هذه القائمة."}/>} 
+      {list.length?<div className="table-wrap"><table><thead><tr><th>الطالب</th><th>الرقم</th><th>الصف</th><th>الفصل</th><th>المستوى</th><th>الرصيد</th><th>القيمة</th>{(canEditStudentClass||canDeleteStudent)&&<th>الإجراء</th>}</tr></thead><tbody>{list.map(s=><tr key={s.id}><td><b>{s.name}</b></td><td>{s.student_no}</td><td>{s.grade_name}</td><td>{s.class_name}</td><td><span className="pill">{s.level}</span></td><td><b>{s.points} نقطة</b></td><td>{Number(s.value_sar).toLocaleString("ar-SA")} ر.س</td>{(canEditStudentClass||canDeleteStudent)&&<td><div className="student-row-actions">{canEditStudentClass&&<><StudentClassEditor student={s} onChanged={reload}/><StudentMobileEditor student={s}/><GuardianAccessLinkButton student={s}/></>}{canDeleteStudent&&<button type="button" className="student-delete-btn" disabled={deleteBusy===s.id} onClick={()=>archiveStudent(s)}>{deleteBusy===s.id?"جارٍ الحذف...":"حذف الطالب نهائيًا"}</button>}</div></td>}</tr>)}</tbody></table></div>:<Empty text={q?"لا يوجد طالب مطابق للبحث داخل هذا الفصل.":"لا يوجد طلاب في هذه القائمة."}/>} 
     </section>
   </main></>;
 }

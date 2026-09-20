@@ -9,7 +9,7 @@ const required=[
   "ملاحظات المعلمين",
   "شيكات التميز",
   "api_delete_negative_followup_note",
-  "حذف الملاحظة"
+  "حذف الملاحظة",\n  "guardian_unique_visitors",\n  "متابعة أولياء الأمور"
 ];
 const bundle=files.map(file=>readFileSync(`${dir}/${file}`,"utf8")).join("\n");
 const missing=required.filter(x=>!bundle.includes(x));

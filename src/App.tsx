@@ -121,7 +121,7 @@ import RewardPermissionPanel from "./RewardPermissionPanel";
 import RewardManagementPanel from "./RewardManagementPanel";
 import AddTeacherPanel from "./AddTeacherPanel";
 import StaffDirectoryTable from "./StaffDirectoryTable";
-import StudentClassEditor from "./StudentClassEditor";
+import StudentClassEditor from "./StudentClassEditor";\nimport StudentAddModal from "./StudentAddModal";
 import StudentMobileEditor from "./StudentMobileEditor";
 import GuardianAccessLinkButton from "./GuardianAccessLinkButton";
 import NotificationCenter from "./NotificationCenter";
@@ -381,7 +381,7 @@ function StudentsView({students,roles,reload,onDeleted}:{students:Student[];role
   const[deleteBusy,setDeleteBusy]=useState("");
   const[studentMsg,setStudentMsg]=useState("");
   const canEditStudentClass=roles.some(r=>["SUPER_ADMIN","SCHOOL_ADMIN","PRINCIPAL","VICE_PRINCIPAL","GUIDANCE_COUNSELOR"].includes(r));
-  const canDeleteStudent=roles.includes("SUPER_ADMIN");
+  const canDeleteStudent=roles.includes("SUPER_ADMIN");\n  const canAddStudent=roles.some(r=>["SUPER_ADMIN","SCHOOL_ADMIN","PRINCIPAL"].includes(r));
 
   async function archiveStudent(student:Student){
     if(!canDeleteStudent||deleteBusy)return;
@@ -428,7 +428,7 @@ function StudentsView({students,roles,reload,onDeleted}:{students:Student[];role
     <section className="stats-grid"><Stat label="إجمالي الطلاب" value={students.length}/><Stat label="طلاب لديهم نقاط" value={students.filter(s=>Number(s.points)>0).length}/><Stat label="إجمالي النقاط" value={total}/><Stat label="عدد الفصول" value={groups.length}/></section>
     <section className="panel student-wallet-panel">
       {studentMsg&&<div className="notice">{studentMsg}</div>}
-      <div className="panel-title"><div><h3>محافظ الطلاب</h3><p>{selected?selected.grade_name+" — فصل "+selected.class_name:"جميع الطلاب"} · {scoped.length} طالب</p></div><input className="search" value={q} onChange={e=>setQ(e.target.value)} placeholder="ابحث داخل القائمة..."/></div>
+      <div className="panel-title"><div><h3>محافظ الطلاب</h3><p>{selected?selected.grade_name+" — فصل "+selected.class_name:"جميع الطلاب"} · {scoped.length} طالب</p></div><div className="student-panel-tools">{canAddStudent&&<StudentAddModal onAdded={reload}/>}<input className="search" value={q} onChange={e=>setQ(e.target.value)} placeholder="ابحث داخل القائمة..."/></div></div>
       <div className="student-tabs-all"><button type="button" className={activeClass==="ALL"?"active":""} onClick={()=>setActiveClass("ALL")}><b>كل الطلاب</b><span>{students.length}</span></button></div>
       <div className="student-stage-rows">
         {middleGroups.length>0&&<div className="student-stage-row middle-stage"><div className="stage-row-title"><b>المرحلة المتوسطة</b><span>{middleGroups.reduce((n,g)=>n+g.students.length,0)} طالب</span></div><div className="student-class-tabs">{renderTabs(middleGroups)}</div></div>}

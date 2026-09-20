@@ -26,3 +26,16 @@
 .guardian-followup-day-head>div{display:grid;gap:2px}.guardian-followup-day-head span{font-size:9px;color:#71838c}.guardian-followup-day-head strong{font-size:15px;color:#294b58}.guardian-followup-day-head small{color:#607782;font-weight:700}
 .guardian-followup-day-notes .guardian-note:first-child{margin-top:0}
 @media(max-width:760px){.guardian-followup-days{margin-left:-14px;margin-right:-14px;padding-right:14px;padding-left:14px}.guardian-followup-days button{min-width:96px}.guardian-followup-day-head{align-items:flex-start}}
+
+.guardian-eval-title{margin-bottom:14px}.guardian-eval-title h3{margin:0}.guardian-eval-title p{margin:5px 0 0;color:#70828b;font-size:11px}
+.guardian-eval-table-wrap{width:100%;overflow-x:auto;border:1px solid #dce6ea;border-radius:14px;background:#fff}
+.guardian-eval-table{width:100%;min-width:760px;border-collapse:collapse;table-layout:auto;font-size:11px}
+.guardian-eval-table th,.guardian-eval-table td{padding:11px 12px;text-align:right;vertical-align:top;border-bottom:1px solid #e5ecef;border-left:1px solid #edf2f4}
+.guardian-eval-table th:last-child,.guardian-eval-table td:last-child{border-left:0}.guardian-eval-table tbody tr:last-child td{border-bottom:0}
+.guardian-eval-table th{background:#eef5f7;color:#264f5c;font-weight:800;white-space:nowrap}.guardian-eval-table td{color:#314951}
+.guardian-rating-badge{display:inline-flex;align-items:center;justify-content:center;min-width:70px;padding:5px 8px;border-radius:999px;background:#eef6f2;color:#2f7253;font-weight:800;white-space:nowrap}
+.guardian-eval-notes{min-width:180px;white-space:pre-wrap;line-height:1.7}
+.guardian-report-card{border:1px solid #dce6ea;border-radius:16px;padding:15px;margin:13px 0;background:#fff;box-shadow:0 5px 18px rgba(30,65,78,.04)}
+.guardian-report-head{display:flex;justify-content:space-between;gap:12px;align-items:center;margin-bottom:12px}.guardian-report-head>div{display:grid;gap:2px}.guardian-report-head span{font-size:9px;color:#71848d}.guardian-report-head strong{color:#244d5a;font-size:15px}
+.guardian-report-opinions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}.guardian-report-opinions>div{border:1px solid #e0e8eb;border-radius:12px;padding:12px;background:#f8fbfc}.guardian-report-opinions b{color:#275466}.guardian-report-opinions p{margin:6px 0 0;line-height:1.8;white-space:pre-wrap}
+@media(max-width:760px){.guardian-eval-table{font-size:10px;min-width:700px}.guardian-report-opinions{grid-template-columns:1fr}.guardian-report-card{padding:12px}}

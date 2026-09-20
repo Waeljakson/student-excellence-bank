@@ -99,6 +99,7 @@
 // SYSTEM_FEATURES_V2
 // SYSTEM_FEATURES_V2
 // SYSTEM_FEATURES_V2
+// SYSTEM_FEATURES_V2
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import QRCode from "qrcode";
 import { AUTH_URL, neon, niceError, rpc } from "./client";
@@ -382,7 +383,8 @@ function StudentsView({students,roles,reload,onDeleted}:{students:Student[];role
   const[deleteBusy,setDeleteBusy]=useState("");
   const[studentMsg,setStudentMsg]=useState("");
   const canEditStudentClass=roles.some(r=>["SUPER_ADMIN","SCHOOL_ADMIN","PRINCIPAL","VICE_PRINCIPAL","GUIDANCE_COUNSELOR"].includes(r));
-  const canDeleteStudent=roles.includes("SUPER_ADMIN");\n  const canAddStudent=roles.some(r=>["SUPER_ADMIN","SCHOOL_ADMIN","PRINCIPAL"].includes(r));
+  const canDeleteStudent=roles.includes("SUPER_ADMIN");
+  const canAddStudent=roles.some(r=>["SUPER_ADMIN","SCHOOL_ADMIN","PRINCIPAL"].includes(r));
 
   async function archiveStudent(student:Student){
     if(!canDeleteStudent||deleteBusy)return;

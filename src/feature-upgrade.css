@@ -34,3 +34,8 @@
 .guardian-coverage-track span{display:block;height:100%;border-radius:999px;background:linear-gradient(90deg,#0c7564,#0b526e);transition:width .25s ease}
 @media(max-width:800px){.guardian-visit-stats{grid-template-columns:1fr 1fr}}
 @media(max-width:500px){.guardian-visit-stats{grid-template-columns:1fr}.guardian-visit-stats article{padding:12px}}
+
+.student-delete-btn{border:1px solid #e2a6a6;background:#fff4f4;color:#a61b1b;border-radius:9px;padding:7px 10px;font-family:inherit;font-size:9px;font-weight:800;cursor:pointer;white-space:nowrap}
+.student-delete-btn:hover{background:#ffe7e7;border-color:#d87878}
+.student-delete-btn:disabled{opacity:.55;cursor:not-allowed}
+@media(max-width:700px){.student-delete-btn{padding:6px 8px;font-size:8px}}

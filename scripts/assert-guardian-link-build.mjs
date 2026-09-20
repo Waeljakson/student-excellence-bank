@@ -17,7 +17,9 @@ const required=[
   "ملاحظات هذا اليوم",
   "التقييم التحصيلي",
   "guardian-eval-table",
-  "جيد جدًا"
+  "جيد جدًا",
+  "api_archive_student",
+  "حذف الطالب"
 ];
 const bundle=files.map(file=>readFileSync(`${dir}/${file}`,"utf8")).join("\n");
 const missing=required.filter(x=>!bundle.includes(x));

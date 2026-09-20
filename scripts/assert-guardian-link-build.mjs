@@ -14,7 +14,10 @@ const required=[
   "متابعة أولياء الأمور",
   "تنبيه أو معلومة عامة",
   "guardian-followup-days",
-  "ملاحظات هذا اليوم"
+  "ملاحظات هذا اليوم",
+  "التقييم التحصيلي",
+  "guardian-eval-table",
+  "جيد جدًا"
 ];
 const bundle=files.map(file=>readFileSync(`${dir}/${file}`,"utf8")).join("\n");
 const missing=required.filter(x=>!bundle.includes(x));

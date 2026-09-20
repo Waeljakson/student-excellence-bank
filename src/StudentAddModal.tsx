@@ -1,8 +1,8 @@
 import {FormEvent,useMemo,useState} from "react";
 import {niceError,rpc} from "./client";
 
-type ClassOption={id:string;grade_id:string;grade_name:string;class_name:string};
-type AddedStudent={ok:boolean;student_id:string;student_no:string;name:string;grade_name:string;class_name:string;guardian_linked:boolean};
+type ClassOption={id:string;grade_id:string;grade_name:string;class_name:string;department_id:string};
+type ImportResult={ok:boolean;inserted:number;updated:number;skipped:number;errors?:Array<{row:number;student_no?:string;error:string}>};
 
 export default function StudentAddModal({onAdded}:{onAdded:()=>Promise<void>}){
   const[open,setOpen]=useState(false);
@@ -16,7 +16,6 @@ export default function StudentAddModal({onAdded}:{onAdded:()=>Promise<void>}){
   const[classId,setClassId]=useState("");
   const[mobile,setMobile]=useState("");
   const[guardianName,setGuardianName]=useState("");
-  const[relationship,setRelationship]=useState("ولي أمر");
   const[joinedAt,setJoinedAt]=useState("");
   const[photoUrl,setPhotoUrl]=useState("");
 
@@ -39,7 +38,7 @@ export default function StudentAddModal({onAdded}:{onAdded:()=>Promise<void>}){
 
   function reset(){
     setStudentNo("");setFullName("");setGradeId("");setClassId("");setMobile("");
-    setGuardianName("");setRelationship("ولي أمر");setJoinedAt("");setPhotoUrl("");setMsg("");
+    setGuardianName("");setJoinedAt("");setPhotoUrl("");setMsg("");
   }
 
   async function submit(e:FormEvent){
@@ -49,20 +48,31 @@ export default function StudentAddModal({onAdded}:{onAdded:()=>Promise<void>}){
     if(!classId){setMsg("اختر الصف والفصل.");return}
     setBusy(true);setMsg("");
     try{
-      const result=await rpc<AddedStudent>("api_add_student",{
-        p_student_no:studentNo.trim(),
-        p_full_name_ar:fullName.trim(),
-        p_class_id:classId,
-        p_mobile:mobile.trim()||null,
-        p_guardian_name:guardianName.trim()||null,
-        p_relationship:relationship.trim()||"ولي أمر",
-        p_joined_at:joinedAt||null,
-        p_photo_url:photoUrl.trim()||null
+      const lookup=await rpc<{exists:boolean}>("api_student_lookup",{p_student_no:studentNo.trim()});
+      if(lookup?.exists){setMsg("رقم الطالب موجود بالفعل في قاعدة المدرسة.");return}
+      const selected=options.find(x=>x.id===classId);
+      if(!selected?.department_id){setMsg("تعذر تحديد قسم الصف المختار. أعد فتح نافذة الإضافة وحاول مرة أخرى.");return}
+      const result=await rpc<ImportResult>("api_import_students",{
+        p_department_id:selected.department_id,
+        p_rows:[{
+          student_no:studentNo.trim(),
+          student_name:fullName.trim(),
+          grade:selected.grade_name,
+          class_name:selected.class_name,
+          mobile:mobile.trim()||null,
+          guardian_name:guardianName.trim()||null,
+          joined_at:joinedAt||null,
+          photo_url:photoUrl.trim()||null
+        }]
       });
+      if(result?.inserted!==1){
+        const detail=result?.errors?.[0]?.error;
+        throw new Error(detail||"تعذر إضافة الطالب.");
+      }
       await onAdded();
-      const label=result?.grade_name&&result?.class_name?`${result.grade_name} — فصل ${result.class_name}`:"الفصل المحدد";
+      const label=`${selected.grade_name} — فصل ${selected.class_name}`;
       reset();setOpen(false);
-      window.alert(`تمت إضافة الطالب ${result?.name||fullName} بنجاح إلى ${label}.\nيمكنه الدخول برقم الطالب وكلمة المرور الافتراضية: رقم الطالب + Aa.`);
+      window.alert(`تمت إضافة الطالب ${fullName} بنجاح إلى ${label}.\nيمكنه الدخول برقم الطالب وكلمة المرور الافتراضية: رقم الطالب + Aa.`);
     }catch(e){setMsg(niceError(e))}finally{setBusy(false)}
   }
 
@@ -99,11 +109,6 @@ export default function StudentAddModal({onAdded}:{onAdded:()=>Promise<void>}){
           </label>
           <label>اسم ولي الأمر
             <input value={guardianName} onChange={e=>setGuardianName(e.target.value)} placeholder="اختياري" disabled={busy}/>
-          </label>
-          <label>صلة القرابة
-            <select value={relationship} onChange={e=>setRelationship(e.target.value)} disabled={busy}>
-              <option>ولي أمر</option><option>أب</option><option>أم</option><option>أخ</option><option>عم</option><option>خال</option><option>أخرى</option>
-            </select>
           </label>
           <label>تاريخ الانضمام
             <input type="date" value={joinedAt} onChange={e=>setJoinedAt(e.target.value)} disabled={busy}/>

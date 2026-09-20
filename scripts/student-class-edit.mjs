@@ -33,7 +33,8 @@ else if(!src.includes('<StudentClassEditor student={s} onChanged={reload}/>')) t
 const oldCall='<StudentsView students={students}/>';
 const loadAllCall='<StudentsView students={students} roles={profile.roles||[]} reload={loadAll}/>';
 const cachedCall='<StudentsView students={students} roles={profile.roles||[]} reload={refreshStudents}/>';
+const cachedDeleteCall='<StudentsView students={students} roles={profile.roles||[]} reload={refreshStudents} onDeleted={removeStudentLocally}/>';
 if(src.includes(oldCall)) src=src.replace(oldCall,loadAllCall);
-else if(!src.includes(loadAllCall)&&!src.includes(cachedCall)) throw new Error("student-class-edit: call marker missing");
+else if(!src.includes(loadAllCall)&&!src.includes(cachedCall)&&!src.includes(cachedDeleteCall)) throw new Error("student-class-edit: call marker missing");
 
 writeFileSync(path,src);

@@ -374,7 +374,7 @@ function ChecksView({students,rules,onIssued}:{students:Student[];rules:Rule[];o
   return <><Header title="إصدار شيك تميز" subtitle="اختر الطالب والبطاقة فقط — قيمة النقاط محددة مركزيًا من مدير النظام"/><main className="content"><section className="grid-2"><form className="panel form-stack" onSubmit={submit}><h3>بيانات الشيك</h3><label>ابحث عن الطالب<input value={query} onChange={e=>setQuery(e.target.value)} placeholder="الاسم أو رقم الطالب"/></label><label>الطالب<select required value={studentId} onChange={e=>setStudentId(e.target.value)}><option value="">اختر الطالب</option>{filtered.map(s=><option key={s.id} value={s.id}>{s.name} — {s.grade_name} / {s.class_name}</option>)}</select></label><label>فئة التميز<select required value={ruleId} onChange={e=>chooseRule(e.target.value)}><option value="">اختر الفئة</option>{rules.map(r=><option key={r.id} value={r.id}>{r.name_ar} ({r.default_points} نقاط){r.is_mega?" — شيك عملاق":""}</option>)}</select></label><div className="form-row"><div className="fixed-point-value"><span>نقاط البطاقة</span><strong>{points}</strong><small>يحددها مدير النظام فقط</small></div><label>سبب الشيك<input required value={reason} onChange={e=>setReason(e.target.value)}/></label></div><label>ملاحظات<textarea value={notes} onChange={e=>setNotes(e.target.value)} rows={3}/></label><button className="btn primary" disabled={busy}>{busy?"جارٍ الإصدار...":"إصدار شيك التميز"}</button>{message&&<div className="notice">{message}</div>}</form><section className="panel rule-panel"><h3>الفئات المتاحة لحسابك</h3>{rules.length?<div className="rules">{rules.map(r=><button key={r.id} className={ruleId===r.id?"rule active":"rule"} onClick={()=>chooseRule(r.id)}><b>{r.name_ar}</b><span>{r.default_points} نقاط</span>{r.is_mega&&<small>خاص بالإدارة والتوجيه</small>}</button>)}</div>:<Empty text="لا توجد فئات إصدار متاحة لهذه الصلاحية."/>}</section></section>{issued&&<section className="check-print panel"><div className="check-head"><div className="logos"><img src={SCHOOL_LOGO}/><img src={GUIDANCE_LOGO}/></div><div><span>بنك التميز الطلابي</span><h2>شيك تميز</h2></div><b>{issued.serial_no}</b></div><div className="check-body"><div><small>الطالب</small><h2>{issued.student_name}</h2><small>سبب التميز</small><h3>{issued.reason}</h3><div className="big-points">+{issued.points} نقطة</div></div>{qr&&<div className="qr"><img src={qr}/><small>امسح للتحقق من الشيك</small></div>}</div><button className="btn ghost no-print" onClick={()=>window.print()}>طباعة الشيك</button></section>}</main></>;
 }
 
-function StudentsView({students,roles,reload}:{students:Student[];roles:string[];reload:()=>Promise<void>}){
+function StudentsView({students,roles,reload,onDeleted}:{students:Student[];roles:string[];reload:()=>Promise<void>;onDeleted:(studentId:string)=>void}){
   const[q,setQ]=useState("");
   const[activeClass,setActiveClass]=useState("ALL");
   const[deleteBusy,setDeleteBusy]=useState("");
@@ -392,6 +392,7 @@ function StudentsView({students,roles,reload}:{students:Student[];roles:string[]
     try{
       const result=await rpc<any>("api_archive_student",{p_student_id:student.id});
       if(!result?.deleted||result?.permanent!==true)throw new Error(result?.error||"تعذر حذف الطالب نهائيًا.");
+      onDeleted(student.id);
       setStudentMsg(`تم حذف الطالب ${student.name} نهائيًا من قاعدة البيانات.`);
       await reload();
     }catch(e){setStudentMsg(niceError(e))}finally{setDeleteBusy("")}
@@ -582,7 +583,7 @@ function BankApp({ profile, refreshProfile }: { profile: Profile; refreshProfile
       const latest=readDataCache<any>(cacheScope);
       writeDataCache(cacheScope,{...(latest?.versions||{}),...nextVersions},{...(latest?.data||{}),...base});
     }catch(e){
-      if(!cached){
+      if(force||!cached){
         try{
           serverVersions=null;
           await Promise.all(keys.filter(k=>k!=="admin"||isAdmin).map(k=>pull(k)));
@@ -608,12 +609,23 @@ function BankApp({ profile, refreshProfile }: { profile: Profile; refreshProfile
     else if(tab==="admin"&&isAdmin)void syncData(["admin"]);
   },[tab]);
 
-  async function refreshStudents(){await syncData(["students","rankings"],true)}
+  async function refreshStudents(){await syncData(["students","rankings","dashboard"],true)}
+  function removeStudentLocally(studentId:string){
+    setStudents(prev=>prev.filter(s=>s.id!==studentId));
+    setRankings(prev=>prev?{...prev,students:(prev.students||[]).filter(s=>s.id!==studentId)}:prev);
+    const cached=readDataCache<any>(cacheScope);
+    if(cached){
+      const data:any={...(cached.data||{})};
+      if(Array.isArray(data.students))data.students=data.students.filter((s:Student)=>s.id!==studentId);
+      if(data.rankings?.students)data.rankings={...data.rankings,students:data.rankings.students.filter((s:any)=>s.id!==studentId)};
+      writeDataCache(cacheScope,cached.versions,data);
+    }
+  }
   async function refreshRewards(){await syncData(["rewards"],true)}
   async function refreshAdmin(){await syncData(["admin","students","rules"],true)}
   async function afterIssued(){await Promise.all([syncData(["dashboard","checks","students","rankings"],true),refreshProfile()])}
 
-  return <AppShell profile={profile} tab={tab} setTab={setTab}>{loading&&!dashboard?<Loading/>:<>{error&&<div className="notice error global-error">{error}</div>}{tab==="dashboard"&&<DashboardView data={dashboard} checks={checks} isSuperAdmin={profile.roles?.includes("SUPER_ADMIN")===true} onRefresh={()=>void syncData(["dashboard"],true)}/>} {tab==="checks"&&<><ChecksView students={students} rules={rules} onIssued={afterIssued}/>{profile.roles?.includes("TEACHER")&&<main className="content teacher-check-manager-wrap"><TeacherCheckManager onChanged={afterIssued}/></main>}</>} {tab==="students"&&<StudentsView students={students} roles={profile.roles||[]} reload={refreshStudents}/>} {tab==="rankings"&&<RankingsView data={rankings}/>} {tab==="rewards"&&<><RewardsView rewards={rewards}/>{profile.roles?.some(r=>["SUPER_ADMIN","SCHOOL_ADMIN","PRINCIPAL","REWARD_OFFICER"].includes(r))&&<main className="content reward-admin-wrap"><RewardManagementPanel onChanged={refreshRewards}/></main>}</>} {tab==="referrals"&&<ReferralCenter roles={profile.roles} students={students} profileName={profile.name||""}/>} {tab==="redemption"&&profile.roles?.includes("GUIDANCE_COUNSELOR")&&<GuidanceRedemptionCenter/>} {tab==="student-evaluations"&&<StudentEvaluationReports roles={profile.roles} students={students}/>} {tab==="followup"&&<StudentFollowupNotebook roles={profile.roles}/>} {tab==="periodic-evaluations"&&<PeriodicEvaluationCenter/>} {tab==="behavioral"&&<BehavioralExcellence students={students}/>} {tab==="khameesna"&&<KhameesnaCompetition isSuperAdmin={profile.roles?.includes("SUPER_ADMIN")===true}/>} {tab==="account"&&<UserAccount profile={profile} onProfileChanged={refreshProfile}/>} {tab==="system"&&profile.roles?.includes("SUPER_ADMIN")&&<SystemControlPanel/>} {tab==="admin"&&isAdmin&&<AdminView pending={pending} users={users} staff={staff} classes={adminClasses} reload={refreshAdmin} isSuperAdmin={profile.roles?.includes("SUPER_ADMIN")===true}/>}</>}</AppShell>;
+  return <AppShell profile={profile} tab={tab} setTab={setTab}>{loading&&!dashboard?<Loading/>:<>{error&&<div className="notice error global-error">{error}</div>}{tab==="dashboard"&&<DashboardView data={dashboard} checks={checks} isSuperAdmin={profile.roles?.includes("SUPER_ADMIN")===true} onRefresh={()=>void syncData(["dashboard"],true)}/>} {tab==="checks"&&<><ChecksView students={students} rules={rules} onIssued={afterIssued}/>{profile.roles?.includes("TEACHER")&&<main className="content teacher-check-manager-wrap"><TeacherCheckManager onChanged={afterIssued}/></main>}</>} {tab==="students"&&<StudentsView students={students} roles={profile.roles||[]} reload={refreshStudents} onDeleted={removeStudentLocally}/>}  {tab==="rankings"&&<RankingsView data={rankings}/>} {tab==="rewards"&&<><RewardsView rewards={rewards}/>{profile.roles?.some(r=>["SUPER_ADMIN","SCHOOL_ADMIN","PRINCIPAL","REWARD_OFFICER"].includes(r))&&<main className="content reward-admin-wrap"><RewardManagementPanel onChanged={refreshRewards}/></main>}</>} {tab==="referrals"&&<ReferralCenter roles={profile.roles} students={students} profileName={profile.name||""}/>} {tab==="redemption"&&profile.roles?.includes("GUIDANCE_COUNSELOR")&&<GuidanceRedemptionCenter/>} {tab==="student-evaluations"&&<StudentEvaluationReports roles={profile.roles} students={students}/>} {tab==="followup"&&<StudentFollowupNotebook roles={profile.roles}/>} {tab==="periodic-evaluations"&&<PeriodicEvaluationCenter/>} {tab==="behavioral"&&<BehavioralExcellence students={students}/>} {tab==="khameesna"&&<KhameesnaCompetition isSuperAdmin={profile.roles?.includes("SUPER_ADMIN")===true}/>} {tab==="account"&&<UserAccount profile={profile} onProfileChanged={refreshProfile}/>} {tab==="system"&&profile.roles?.includes("SUPER_ADMIN")&&<SystemControlPanel/>} {tab==="admin"&&isAdmin&&<AdminView pending={pending} users={users} staff={staff} classes={adminClasses} reload={refreshAdmin} isSuperAdmin={profile.roles?.includes("SUPER_ADMIN")===true}/>}</>}</AppShell>;
 }
 
 export default function App(){

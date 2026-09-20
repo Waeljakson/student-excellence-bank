@@ -25,3 +25,12 @@
 .followup-delete-btn:disabled{opacity:.55;cursor:not-allowed}
 .followup-no-delete{color:#a6b2b9}
 @media(max-width:700px){.followup-delete-btn{padding:6px 8px;font-size:8px}}
+
+.guardian-visit-panel{margin-top:18px;border-color:#cfe4df;background:linear-gradient(180deg,#fff,#f7fbfa)}
+.guardian-visit-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.guardian-visit-stats article{display:grid;gap:3px;padding:15px;border:1px solid #dcebe7;border-radius:14px;background:#fff}
+.guardian-visit-stats small{font-size:9px;color:#718698}.guardian-visit-stats strong{font-size:27px;color:#0b725f;line-height:1.3}.guardian-visit-stats span{font-size:8px;color:#899aa5}
+.guardian-coverage-track{height:8px;margin-top:13px;border-radius:999px;background:#e5efec;overflow:hidden}
+.guardian-coverage-track span{display:block;height:100%;border-radius:999px;background:linear-gradient(90deg,#0c7564,#0b526e);transition:width .25s ease}
+@media(max-width:800px){.guardian-visit-stats{grid-template-columns:1fr 1fr}}
+@media(max-width:500px){.guardian-visit-stats{grid-template-columns:1fr}.guardian-visit-stats article{padding:12px}}

@@ -10,7 +10,7 @@ type ClassGroup={id:string;label:string;students:S[]};
 
 const kindLabel=(kind:string)=>kind==="POSITIVE"?"إيجابية":kind==="NEGATIVE"?"سلبية":"عامة";
 
-export default function StudentFollowupNotebook(){
+export default function StudentFollowupNotebook({roles=[]}:{roles?:string[]}){
   const[data,setData]=useState<Data|null>(null);
   const[studentId,setStudentId]=useState("");
   const[classId,setClassId]=useState("");
@@ -21,6 +21,8 @@ export default function StudentFollowupNotebook(){
   const[busy,setBusy]=useState(false);
   const[q,setQ]=useState("");
   const[monitorKind,setMonitorKind]=useState("ALL");
+  const[deletingId,setDeletingId]=useState("");
+  const isSuperAdmin=roles.includes("SUPER_ADMIN");
 
   async function load(){try{setData(await rpc<Data>("api_teacher_followup_data"))}catch(e){setMsg(niceError(e))}}
   useEffect(()=>{void load()},[]);
@@ -57,6 +59,19 @@ export default function StudentFollowupNotebook(){
   async function saveStudent(){if(!studentId||!text.trim())return;setBusy(true);setMsg("");try{await rpc("api_add_student_followup_note",{p_student_id:studentId,p_kind:kind,p_category_ar:category,p_note_text:text});setText("");setMsg("تم حفظ الملاحظة وإتاحتها لولي الأمر.");await load()}catch(e){setMsg(niceError(e))}finally{setBusy(false)}}
   async function saveClass(){if(!classId||!text.trim())return;setBusy(true);setMsg("");try{const r=await rpc<any>("api_add_class_followup_note",{p_class_id:classId,p_kind:kind,p_category_ar:category,p_note_text:text});setText("");setMsg(`تم إرسال الملاحظة إلى ${r.count||0} طالب في الفصل.`);await load()}catch(e){setMsg(niceError(e))}finally{setBusy(false)}}
 
+  async function deleteNegativeNote(n:Note){
+    if(!isSuperAdmin||n.note_kind!=="NEGATIVE"||deletingId)return;
+    const student=n.student_name||n.student_no||"الطالب";
+    if(!window.confirm(`هل تريد حذف الملاحظة السلبية المسجلة على ${student}؟\n\nسيتم حذفها من الطالب وولي الأمر، مع الاحتفاظ بنسخة في سجل التدقيق الإداري.`))return;
+    setDeletingId(n.id);setMsg("");
+    try{
+      const r=await rpc<any>("api_delete_negative_followup_note",{p_note_id:n.id});
+      if(!r?.deleted)throw new Error(r?.error||"تعذر حذف الملاحظة.");
+      setMsg("تم حذف الملاحظة السلبية بنجاح.");
+      await load();
+    }catch(e){setMsg(niceError(e))}finally{setDeletingId("")}
+  }
+
   if(canMonitor)return <>
     <header className="topbar"><div><h1>دفتر متابعة الطلاب</h1><p>عرض إشرافي لملاحظات المعلمين على الطلاب، مرتبة حسب الفصول خلال آخر 90 يومًا.</p></div></header>
     <main className="content">
@@ -78,9 +93,9 @@ export default function StudentFollowupNotebook(){
               <input value={q} onChange={e=>setQ(e.target.value)} placeholder="بحث باسم الطالب أو المعلم أو نص الملاحظة"/>
             </div>
           </div>
-          <div className="table-wrap"><table><thead><tr><th>الطالب</th><th>المعلم / المادة</th><th>النوع</th><th>التصنيف</th><th>الملاحظة</th><th>التاريخ</th></tr></thead><tbody>
-            {classNotes.map(n=><tr key={n.id}><td><b>{n.student_name||"—"}</b><br/><small>{n.student_no||""}</small></td><td><b>{n.teacher_name||"—"}</b><br/><small>{n.subject_ar||"—"}</small></td><td><span className={`teacher-status ${n.note_kind==="POSITIVE"?"completed":n.note_kind==="NEGATIVE"?"not-started":"in-progress"}`}>{kindLabel(n.note_kind)}</span></td><td>{n.category_ar||"—"}</td><td style={{whiteSpace:"pre-wrap",minWidth:260}}>{n.note_text||"—"}</td><td>{new Date(n.note_date||n.created_at).toLocaleDateString("ar-SA")}</td></tr>)}
-            {!classNotes.length&&<tr><td colSpan={6} className="periodic-empty-row">لا توجد ملاحظات مطابقة في هذا الفصل حتى الآن.</td></tr>}
+          <div className="table-wrap"><table><thead><tr><th>الطالب</th><th>المعلم / المادة</th><th>النوع</th><th>التصنيف</th><th>الملاحظة</th><th>التاريخ</th>{isSuperAdmin&&<th>إجراء</th>}</tr></thead><tbody>
+            {classNotes.map(n=><tr key={n.id}><td><b>{n.student_name||"—"}</b><br/><small>{n.student_no||""}</small></td><td><b>{n.teacher_name||"—"}</b><br/><small>{n.subject_ar||"—"}</small></td><td><span className={`teacher-status ${n.note_kind==="POSITIVE"?"completed":n.note_kind==="NEGATIVE"?"not-started":"in-progress"}`}>{kindLabel(n.note_kind)}</span></td><td>{n.category_ar||"—"}</td><td style={{whiteSpace:"pre-wrap",minWidth:260}}>{n.note_text||"—"}</td><td>{new Date(n.note_date||n.created_at).toLocaleDateString("ar-SA")}</td>{isSuperAdmin&&<td>{n.note_kind==="NEGATIVE"?<button type="button" className="followup-delete-btn" disabled={deletingId===n.id} onClick={()=>deleteNegativeNote(n)}>{deletingId===n.id?"جارٍ الحذف...":"حذف الملاحظة"}</button>:<span className="followup-no-delete">—</span>}</td>}</tr>)}
+            {!classNotes.length&&<tr><td colSpan={isSuperAdmin?7:6} className="periodic-empty-row">لا توجد ملاحظات مطابقة في هذا الفصل حتى الآن.</td></tr>}
           </tbody></table></div>
         </>}
         {!classes.length&&<div className="notice">لا توجد فصول متاحة للعرض.</div>}

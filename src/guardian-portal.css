@@ -13,3 +13,16 @@
 
 .guardian-school-brand{display:flex;align-items:center;gap:14px}.guardian-school-logos,.guardian-login-logos{display:flex;align-items:center;gap:8px}.guardian-school-logos img{width:54px;height:54px;object-fit:contain}.guardian-login-logos{justify-content:center;margin-bottom:8px}.guardian-login-logos img{width:66px;height:66px;object-fit:contain}.guardian-login-title{text-align:center}.guardian-login-title span,.guardian-school-brand span{font-weight:800;color:#314f5d}.guardian-login-title h2{margin:5px 0 12px}.guardian-public-brand .logos{justify-content:center}
 @media(max-width:760px){.guardian-school-brand{align-items:flex-start}.guardian-school-logos img{width:44px;height:44px}.guardian-login-logos img{width:56px;height:56px}}
+
+.guardian-followup-title{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:12px}
+.guardian-followup-title h3{margin:0}.guardian-followup-title p{margin:5px 0 0;color:#70828b;font-size:11px}
+.guardian-followup-timeline{display:grid;gap:14px}
+.guardian-followup-days{display:flex;gap:8px;overflow-x:auto;padding:3px 1px 9px;scrollbar-width:thin;scroll-snap-type:x proximity}
+.guardian-followup-days button{flex:0 0 auto;min-width:104px;border:1px solid #d8e3e8;background:#fff;border-radius:13px;padding:10px 12px;font-family:inherit;display:flex;align-items:center;justify-content:space-between;gap:10px;cursor:pointer;scroll-snap-align:start}
+.guardian-followup-days button span{font-weight:800;color:#405965}.guardian-followup-days button b{min-width:24px;height:24px;border-radius:999px;display:grid;place-items:center;background:#eef4f6;color:#55717d;font-size:10px}
+.guardian-followup-days button.active{border-color:#0b7180;background:linear-gradient(135deg,#0d7f8d,#0a6575);box-shadow:0 7px 18px rgba(13,127,141,.17)}
+.guardian-followup-days button.active span{color:#fff}.guardian-followup-days button.active b{background:rgba(255,255,255,.18);color:#fff}
+.guardian-followup-day-head{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:12px 14px;border-radius:12px;background:#f4f8f9;border:1px solid #e0e8eb}
+.guardian-followup-day-head>div{display:grid;gap:2px}.guardian-followup-day-head span{font-size:9px;color:#71838c}.guardian-followup-day-head strong{font-size:15px;color:#294b58}.guardian-followup-day-head small{color:#607782;font-weight:700}
+.guardian-followup-day-notes .guardian-note:first-child{margin-top:0}
+@media(max-width:760px){.guardian-followup-days{margin-left:-14px;margin-right:-14px;padding-right:14px;padding-left:14px}.guardian-followup-days button{min-width:96px}.guardian-followup-day-head{align-items:flex-start}}

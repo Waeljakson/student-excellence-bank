@@ -1,8 +1,9 @@
-const CACHE_NAME = "mishkat-bank-shell-v39";
+const CACHE_NAME = "mishkat-bank-shell-v40";
 const BASE = "/student-excellence-bank/";
 const APP_SHELL = [
   BASE,
   `${BASE}manifest.webmanifest`,
+  `${BASE}parent-manifest.webmanifest`,
   `${BASE}icon-192.svg`,
   `${BASE}icon-512.svg`,
   `${BASE}school-logo.png`,

@@ -7,7 +7,9 @@ const required=[
   "متوسطة وثانوية مشكاة الشعلة",
   "student-tabs",
   "ملاحظات المعلمين",
-  "شيكات التميز"
+  "شيكات التميز",
+  "api_delete_negative_followup_note",
+  "حذف الملاحظة"
 ];
 const bundle=files.map(file=>readFileSync(`${dir}/${file}`,"utf8")).join("\n");
 const missing=required.filter(x=>!bundle.includes(x));

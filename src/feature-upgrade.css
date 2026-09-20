@@ -19,3 +19,9 @@
 .student-tab-content .student-account-panel{margin-top:0}
 @media(max-width:1000px){.student-tabs{grid-template-columns:repeat(4,1fr)}.student-home-stats{grid-template-columns:repeat(2,1fr)}}
 @media(max-width:700px){.student-tabs{display:flex;overflow-x:auto;scrollbar-width:none;position:sticky;top:72px;z-index:4;border-radius:14px;margin:12px 0;padding:7px}.student-tabs::-webkit-scrollbar{display:none}.student-tabs button{flex:0 0 auto;min-width:112px;min-height:44px}.student-tab-content{min-height:240px}.student-home-grid{grid-template-columns:1fr}.student-home-stats{gap:8px}.student-home-stats button{padding:13px}.student-home-stats strong{font-size:24px}}
+
+.followup-delete-btn{border:1px solid #efb0b0;background:#fff5f5;color:#b3261e;border-radius:9px;padding:7px 10px;font-family:inherit;font-size:9px;font-weight:800;cursor:pointer;white-space:nowrap}
+.followup-delete-btn:hover{background:#ffeaea;border-color:#df8585}
+.followup-delete-btn:disabled{opacity:.55;cursor:not-allowed}
+.followup-no-delete{color:#a6b2b9}
+@media(max-width:700px){.followup-delete-btn{padding:6px 8px;font-size:8px}}

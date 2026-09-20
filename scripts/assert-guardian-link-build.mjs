@@ -11,7 +11,8 @@ const required=[
   "api_delete_negative_followup_note",
   "حذف الملاحظة",
   "guardian_unique_visitors",
-  "متابعة أولياء الأمور"
+  "متابعة أولياء الأمور",
+  "تنبيه أو معلومة عامة"
 ];
 const bundle=files.map(file=>readFileSync(`${dir}/${file}`,"utf8")).join("\n");
 const missing=required.filter(x=>!bundle.includes(x));

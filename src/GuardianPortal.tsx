@@ -65,6 +65,24 @@ function DailyFollowup({child}:{child:Child}){
 
 function riyardDayFix(){return riyadhDay()}
 
+function guardianRatingLabel(value?:string|null){
+  const key=String(value||"").trim().toUpperCase();
+  return ({
+    EXCELLENT:"ممتاز",
+    VERY_GOOD:"جيد جدًا",
+    GOOD:"جيد",
+    WEAK:"ضعيف"
+  } as Record<string,string>)[key]||(!value?"لم يقيّم":String(value));
+}
+
+function guardianSubjectLabel(value?:string|null){
+  const v=String(value||"").trim();
+  if(v==="E")return "لغة إنجليزية";
+  if(v==="بدنية")return "التربية البدنية";
+  if(v==="فنية")return "التربية الفنية";
+  return v||"—";
+}
+
 function FollowupTimeline({notes}:{notes:Note[]}){
   const today=riyardDayFix().key;
   const days=Array.from(new Set((notes||[]).map(n=>String(n.note_date||"").slice(0,10)).filter(Boolean))).sort((a,b)=>b.localeCompare(a));
@@ -165,8 +183,8 @@ export default function GuardianPortal({token,studentNo,initialData}:{token?:str
         </nav>
         {tab==="overview"&&<section className="portal-panel"><h3>ملخص الطالب</h3><div className="guardian-summary"><article><span>نقاط التميز</span><b>{c.points}</b></article><article><span>ملاحظات المتابعة</span><b>{c.notes.length}</b></article><article><span>التقييمات الدورية</span><b>{c.periodic_evaluations.length}</b></article><article><span>المسابقات</span><b>{c.competitions.length}</b></article></div></section>}
         {tab==="followup"&&<section className="portal-panel"><div className="guardian-followup-title"><div><h3>دفتر متابعة الطالب</h3><p>الملاحظات مرتبة يوميًا لسهولة المتابعة المستمرة.</p></div></div><FollowupTimeline notes={c.notes||[]}/></section>}
-        {tab==="periodic"&&<section className="portal-panel"><h3>التقييمات الدورية المنشورة</h3>{c.periodic_evaluations.length?c.periodic_evaluations.map((e:any,i:number)=><article className="guardian-eval" key={i}><h4>{e.cycle_title} — {e.subject_ar}</h4><p><b>تحصيلي:</b> {e.academic_rating}</p><p><b>سلوكي:</b> {e.behavior_rating}</p>{e.notes&&<p>{e.notes}</p>}<small>{e.teacher_name}</small></article>):<div className="empty">لا توجد تقييمات دورية منشورة.</div>}</section>}
-        {tab==="individual"&&<section className="portal-panel"><h3>تقارير التقييم المرسلة لولي الأمر</h3>{c.individual_evaluations.length?c.individual_evaluations.map((r:any)=><article className="guardian-eval" key={r.report_id}><h4>{r.report_no}</h4>{r.responses?.map((x:any,i:number)=><div key={i}><b>{x.subject_ar} — {x.teacher_name}</b><p>تحصيلي: {x.academic_rating} · سلوكي: {x.behavior_rating}</p>{x.notes&&<p>{x.notes}</p>}</div>)}{r.vice_principal_opinion&&<p><b>رأي الوكيل:</b> {r.vice_principal_opinion}</p>}{r.guidance_opinion&&<p><b>رأي الموجه:</b> {r.guidance_opinion}</p>}</article>):<div className="empty">لا توجد تقارير مرسلة.</div>}</section>}
+        {tab==="periodic"&&<section className="portal-panel"><div className="guardian-eval-title"><h3>التقييمات الدورية المنشورة</h3><p>عرض عربي منظم للتقييم التحصيلي والسلوكي.</p></div>{c.periodic_evaluations.length?<div className="guardian-eval-table-wrap"><table className="guardian-eval-table"><thead><tr><th>الفترة</th><th>المادة</th><th>التقييم التحصيلي</th><th>التقييم السلوكي</th><th>ملاحظات المعلم</th><th>المعلم</th></tr></thead><tbody>{c.periodic_evaluations.map((e:any,i:number)=><tr key={i}><td>{e.cycle_title||"—"}</td><td>{guardianSubjectLabel(e.subject_ar)}</td><td><span className="guardian-rating-badge">{guardianRatingLabel(e.academic_rating)}</span></td><td><span className="guardian-rating-badge">{guardianRatingLabel(e.behavior_rating)}</span></td><td className="guardian-eval-notes">{e.notes||"—"}</td><td>{e.teacher_name||"—"}</td></tr>)}</tbody></table></div>:<div className="empty">لا توجد تقييمات دورية منشورة.</div>}</section>}
+        {tab==="individual"&&<section className="portal-panel"><div className="guardian-eval-title"><h3>تقارير التقييم المرسلة لولي الأمر</h3><p>تفاصيل كل تقرير معروضة بالعربية في جدول موحد.</p></div>{c.individual_evaluations.length?c.individual_evaluations.map((r:any)=><article className="guardian-report-card" key={r.report_id}><div className="guardian-report-head"><div><span>رقم التقرير</span><strong>{r.report_no||"—"}</strong></div></div><div className="guardian-eval-table-wrap"><table className="guardian-eval-table"><thead><tr><th>المادة</th><th>المعلم</th><th>التقييم التحصيلي</th><th>التقييم السلوكي</th><th>ملاحظات المعلم</th></tr></thead><tbody>{(r.responses||[]).map((x:any,i:number)=><tr key={i}><td>{guardianSubjectLabel(x.subject_ar)}</td><td>{x.teacher_name||"—"}</td><td><span className="guardian-rating-badge">{guardianRatingLabel(x.academic_rating)}</span></td><td><span className="guardian-rating-badge">{guardianRatingLabel(x.behavior_rating)}</span></td><td className="guardian-eval-notes">{x.notes||"—"}</td></tr>)}</tbody></table></div>{(r.vice_principal_opinion||r.guidance_opinion)&&<div className="guardian-report-opinions">{r.vice_principal_opinion&&<div><b>رأي وكيل المدرسة</b><p>{r.vice_principal_opinion}</p></div>}{r.guidance_opinion&&<div><b>رأي الموجه الطلابي</b><p>{r.guidance_opinion}</p></div>}</div>}</article>):<div className="empty">لا توجد تقارير مرسلة.</div>}</section>}
         {tab==="competitions"&&<section className="portal-panel"><h3>المسابقات المشترك فيها</h3>{c.competitions.length?c.competitions.map((x:any)=><article className="guardian-eval" key={x.id}><h4>{x.name_ar}</h4><p>{x.description_ar}</p>{x.reward_text_ar&&<small>المكافأة: {x.reward_text_ar}</small>}</article>):<div className="empty">الطالب غير مشترك في مسابقات حاليًا.</div>}</section>}
       </>}
     </main>

@@ -3,15 +3,32 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-    <meta name="theme-color" content="#0b3a65" />
-    <meta name="description" content="بنك التميز الطلابي - مدارس المشكاة الأهلية" />
+    <meta id="app-theme-color" name="theme-color" content="#0b3a65" />
+    <meta id="app-description" name="description" content="بنك التميز الطلابي - مدارس المشكاة الأهلية" />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-    <meta name="apple-mobile-web-app-title" content="بنك التميز" />
-    <link rel="manifest" href="/student-excellence-bank/manifest.webmanifest" />
+    <meta id="apple-app-title" name="apple-mobile-web-app-title" content="بنك التميز" />
     <link rel="apple-touch-icon" href="/student-excellence-bank/school-logo.png" />
     <title>بنك التميز الطلابي</title>
+    <script>
+      (() => {
+        const isParentPortal = new URLSearchParams(window.location.search).get("parent") === "1";
+        const manifest = document.createElement("link");
+        manifest.rel = "manifest";
+        manifest.href = isParentPortal
+          ? "/student-excellence-bank/parent-manifest.webmanifest"
+          : "/student-excellence-bank/manifest.webmanifest";
+        document.head.appendChild(manifest);
+
+        if (isParentPortal) {
+          document.title = "بوابة ولي الأمر - مشكاة الشعلة";
+          document.getElementById("apple-app-title")?.setAttribute("content", "ولي الأمر");
+          document.getElementById("app-description")?.setAttribute("content", "بوابة ولي الأمر - متوسطة وثانوية مشكاة الشعلة");
+          document.getElementById("app-theme-color")?.setAttribute("content", "#0b6b58");
+        }
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>

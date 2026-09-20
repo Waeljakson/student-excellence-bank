@@ -21,7 +21,6 @@ const required=[
   "api_archive_student",
   "حذف الطالب نهائيًا",
   "student-row-actions",
-  "api_add_student",
   "إضافة طالب"
 ];
 const bundle=files.map(file=>readFileSync(`${dir}/${file}`,"utf8")).join("\n");

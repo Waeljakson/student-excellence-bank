@@ -374,7 +374,23 @@ function ChecksView({students,rules,onIssued}:{students:Student[];rules:Rule[];o
 function StudentsView({students,roles,reload}:{students:Student[];roles:string[];reload:()=>Promise<void>}){
   const[q,setQ]=useState("");
   const[activeClass,setActiveClass]=useState("ALL");
+  const[deleteBusy,setDeleteBusy]=useState("");
+  const[studentMsg,setStudentMsg]=useState("");
   const canEditStudentClass=roles.some(r=>["SUPER_ADMIN","SCHOOL_ADMIN","PRINCIPAL","VICE_PRINCIPAL","GUIDANCE_COUNSELOR"].includes(r));
+  const canDeleteStudent=roles.includes("SUPER_ADMIN");
+
+  async function archiveStudent(student:Student){
+    if(!canDeleteStudent||deleteBusy)return;
+    const ok=window.confirm(`هل تريد حذف الطالب «${student.name}» من قوائم النظام؟\n\nسيتم إيقاف حساب الطالب وإخفاؤه من بوابة الطالب وولي الأمر، مع الاحتفاظ بالشيكات والملاحظات والتقارير القديمة في السجل الإداري.`);
+    if(!ok)return;
+    setDeleteBusy(student.id);setStudentMsg("");
+    try{
+      const result=await rpc<any>("api_archive_student",{p_student_id:student.id});
+      if(!result?.deleted)throw new Error(result?.error||"تعذر حذف الطالب.");
+      setStudentMsg(`تم حذف الطالب ${student.name} من القوائم بنجاح مع الاحتفاظ بسجلاته السابقة.`);
+      await reload();
+    }catch(e){setStudentMsg(niceError(e))}finally{setDeleteBusy("")}
+  }
   const groups=useMemo(()=>{
     const map=new Map<string,{key:string;grade_name:string;class_name:string;students:Student[]}>();
     students.forEach(s=>{
@@ -404,6 +420,7 @@ function StudentsView({students,roles,reload}:{students:Student[];roles:string[]
   return <><Header title="الطلاب والمحافظ" subtitle="كل طالب يظهر داخل قائمة فصله — والأرصدة ناتجة من دفتر الحركات"/><main className="content">
     <section className="stats-grid"><Stat label="إجمالي الطلاب" value={students.length}/><Stat label="طلاب لديهم نقاط" value={students.filter(s=>Number(s.points)>0).length}/><Stat label="إجمالي النقاط" value={total}/><Stat label="عدد الفصول" value={groups.length}/></section>
     <section className="panel student-wallet-panel">
+      {studentMsg&&<div className="notice">{studentMsg}</div>}
       <div className="panel-title"><div><h3>محافظ الطلاب</h3><p>{selected?selected.grade_name+" — فصل "+selected.class_name:"جميع الطلاب"} · {scoped.length} طالب</p></div><input className="search" value={q} onChange={e=>setQ(e.target.value)} placeholder="ابحث داخل القائمة..."/></div>
       <div className="student-tabs-all"><button type="button" className={activeClass==="ALL"?"active":""} onClick={()=>setActiveClass("ALL")}><b>كل الطلاب</b><span>{students.length}</span></button></div>
       <div className="student-stage-rows">
@@ -411,7 +428,7 @@ function StudentsView({students,roles,reload}:{students:Student[];roles:string[]
         {secondaryGroups.length>0&&<div className="student-stage-row secondary-stage"><div className="stage-row-title"><b>المرحلة الثانوية</b><span>{secondaryGroups.reduce((n,g)=>n+g.students.length,0)} طالب</span></div><div className="student-class-tabs">{renderTabs(secondaryGroups)}</div></div>}
         {otherGroups.length>0&&<div className="student-stage-row"><div className="stage-row-title"><b>فصول أخرى</b><span>{otherGroups.reduce((n,g)=>n+g.students.length,0)} طالب</span></div><div className="student-class-tabs">{renderTabs(otherGroups)}</div></div>}
       </div>
-      {list.length?<div className="table-wrap"><table><thead><tr><th>الطالب</th><th>الرقم</th><th>الصف</th><th>الفصل</th><th>المستوى</th><th>الرصيد</th><th>القيمة</th>{canEditStudentClass&&<th>الإجراء</th>}</tr></thead><tbody>{list.map(s=><tr key={s.id}><td><b>{s.name}</b></td><td>{s.student_no}</td><td>{s.grade_name}</td><td>{s.class_name}</td><td><span className="pill">{s.level}</span></td><td><b>{s.points} نقطة</b></td><td>{Number(s.value_sar).toLocaleString("ar-SA")} ر.س</td>{canEditStudentClass&&<td><div className="student-row-actions"><StudentClassEditor student={s} onChanged={reload}/><StudentMobileEditor student={s}/><GuardianAccessLinkButton student={s}/></div></td>}</tr>)}</tbody></table></div>:<Empty text={q?"لا يوجد طالب مطابق للبحث داخل هذا الفصل.":"لا يوجد طلاب في هذه القائمة."}/>} 
+      {list.length?<div className="table-wrap"><table><thead><tr><th>الطالب</th><th>الرقم</th><th>الصف</th><th>الفصل</th><th>المستوى</th><th>الرصيد</th><th>القيمة</th>{(canEditStudentClass||canDeleteStudent)&&<th>الإجراء</th>}</tr></thead><tbody>{list.map(s=><tr key={s.id}><td><b>{s.name}</b></td><td>{s.student_no}</td><td>{s.grade_name}</td><td>{s.class_name}</td><td><span className="pill">{s.level}</span></td><td><b>{s.points} نقطة</b></td><td>{Number(s.value_sar).toLocaleString("ar-SA")} ر.س</td>{(canEditStudentClass||canDeleteStudent)&&<td><div className="student-row-actions">{canEditStudentClass&&<><StudentClassEditor student={s} onChanged={reload}/><StudentMobileEditor student={s}/><GuardianAccessLinkButton student={s}/></>}{canDeleteStudent&&<button type="button" className="student-delete-btn" disabled={deleteBusy===s.id} onClick={()=>archiveStudent(s)}>{deleteBusy===s.id?"جارٍ الحذف...":"حذف الطالب"}</button>}</div></td>}</tr>)}</tbody></table></div>:<Empty text={q?"لا يوجد طالب مطابق للبحث داخل هذا الفصل.":"لا يوجد طلاب في هذه القائمة."}/>} 
     </section>
   </main></>;
 }

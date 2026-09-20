@@ -20,7 +20,7 @@ const required=[
   "جيد جدًا",
   "api_archive_student",
   "حذف الطالب نهائيًا",
-  "student-row-actions"
+  "student-row-actions",\n  "api_add_student",\n  "إضافة طالب"
 ];
 const bundle=files.map(file=>readFileSync(`${dir}/${file}`,"utf8")).join("\n");
 const missing=required.filter(x=>!bundle.includes(x));

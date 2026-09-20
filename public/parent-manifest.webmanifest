@@ -1,0 +1,23 @@
+{
+  "id": "/student-excellence-bank/parent-portal",
+  "name": "بوابة ولي الأمر - متوسطة وثانوية مشكاة الشعلة",
+  "short_name": "ولي الأمر",
+  "description": "بوابة ولي الأمر لمتابعة الطالب في متوسطة وثانوية مشكاة الشعلة",
+  "lang": "ar",
+  "dir": "rtl",
+  "start_url": "/student-excellence-bank/?parent=1",
+  "scope": "/student-excellence-bank/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#ffffff",
+  "theme_color": "#0b6b58",
+  "prefer_related_applications": false,
+  "icons": [
+    {
+      "src": "/student-excellence-bank/school-logo.png",
+      "sizes": "1000x1000",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}

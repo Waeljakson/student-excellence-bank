@@ -40,61 +40,80 @@
 .student-delete-btn:disabled{opacity:.55;cursor:not-allowed}
 @media(max-width:700px){.student-delete-btn{padding:6px 8px;font-size:8px}}
 
-
-/* STUDENT_ROW_ACTIONS_LAYOUT_V43 */
+/* STUDENT_ROW_ACTIONS_LAYOUT_V44 */
 .student-wallet-panel .student-row-actions{
   display:grid;
-  grid-template-columns:repeat(4,minmax(102px,1fr));
-  gap:6px;
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:5px;
+  width:100%;
+  max-width:420px;
   align-items:stretch;
-  min-width:440px;
-  max-width:520px;
 }
 .student-wallet-panel .student-row-actions>button{
   width:100%;
-  min-width:0;
-  min-height:36px;
+  min-width:0 !important;
+  min-height:34px;
   margin:0;
-  padding:7px 8px;
+  padding:6px 6px;
   display:flex;
   align-items:center;
   justify-content:center;
   text-align:center;
   line-height:1.35;
-  white-space:nowrap;
+  white-space:normal;
+  overflow-wrap:anywhere;
   font-family:inherit;
-  font-size:9px;
+  font-size:8.5px;
   font-weight:800;
   border-radius:9px;
 }
+.student-wallet-panel .table-wrap{
+  max-width:100%;
+  overflow-x:auto;
+}
 .student-wallet-panel .table-wrap th:last-child,
 .student-wallet-panel .table-wrap td:last-child{
-  min-width:455px;
+  width:420px;
+  max-width:420px;
+  min-width:0;
 }
-@media(max-width:1200px){
+@media(max-width:1180px){
   .student-wallet-panel .student-row-actions{
-    grid-template-columns:repeat(2,minmax(120px,1fr));
-    min-width:260px;
-    max-width:300px;
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    max-width:250px;
   }
   .student-wallet-panel .table-wrap th:last-child,
   .student-wallet-panel .table-wrap td:last-child{
-    min-width:275px;
+    width:250px;
+    max-width:250px;
+    min-width:220px;
   }
 }
 @media(max-width:700px){
+  .student-wallet-panel{
+    overflow:hidden;
+  }
+  .student-wallet-panel .table-wrap{
+    width:100%;
+    max-width:100%;
+    overflow-x:auto;
+    -webkit-overflow-scrolling:touch;
+  }
   .student-wallet-panel .student-row-actions{
-    grid-template-columns:repeat(2,minmax(108px,1fr));
-    min-width:232px;
-    gap:5px;
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    width:210px;
+    max-width:210px;
+    gap:4px;
   }
   .student-wallet-panel .student-row-actions>button{
-    min-height:34px;
-    padding:6px 7px;
-    font-size:8px;
+    min-height:32px;
+    padding:5px 4px;
+    font-size:7.5px;
   }
   .student-wallet-panel .table-wrap th:last-child,
   .student-wallet-panel .table-wrap td:last-child{
-    min-width:245px;
+    width:218px;
+    min-width:218px;
+    max-width:218px;
   }
 }

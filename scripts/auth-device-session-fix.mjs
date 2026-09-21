@@ -70,7 +70,7 @@ function patchStudentLogin() {
 function patchApp() {
   const path = "src/App.tsx";
   let src = readFileSync(path, "utf8");
-  if (src.includes("AUTH_SESSION_STABILITY_V2_APP")) return;
+  if ((src.includes("fallbackUserId") && src.includes("AUTH_FALLBACK_EVENT")) || src.includes("AUTH_SESSION_STABILITY_V2_APP")) return;
 
   const unwrap = `function unwrapError(result: any) {\n  if (result?.error) throw new Error(result.error.message || result.error.code || "تعذر تنفيذ العملية");\n  return result;\n}`;
   if (!src.includes("async function ensureAppSessionReady")) {

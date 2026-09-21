@@ -127,7 +127,7 @@ export default function StudentPortal({cacheUserId=""}:{cacheUserId?:string}){
           <section className="student-home-grid">
             <article className="portal-panel student-home-card">
               <div className="portal-panel-title"><div><h3>آخر ملاحظة من المعلمين</h3><p>أحدث متابعة مسجلة لك</p></div><button className="student-link-btn" onClick={()=>setTab("followup")}>عرض الكل</button></div>
-              {recentNote?<div className={`guardian-note ${String(recentNote.note_kind||"general").toLowerCase()}`}><div><b>{recentNote.subject_ar||"متابعة"}</b><span>{recentNote.category_ar||"ملاحظة"}</span></div><p>{recentNote.note_text}</p><small>{new Date(recentNote.note_date).toLocaleDateString("ar-SA")} · {recentNote.teacher_name}</small></div>:<div className="empty">لا توجد ملاحظات مسجلة لك حتى الآن.</div>}
+              {recentNote?<div className={`guardian-note ${String(recentNote.note_kind||"general").toLowerCase()}`}><div><b>{recentNote.subject_ar||"متابعة"}</b><span>{String(recentNote.note_kind||"").toUpperCase()==="HOMEWORK"?"واجبات":(recentNote.category_ar||"ملاحظة")}</span></div><p>{recentNote.note_text}</p><small>{new Date(recentNote.note_date).toLocaleDateString("ar-SA")} · {recentNote.teacher_name}</small></div>:<div className="empty">لا توجد ملاحظات مسجلة لك حتى الآن.</div>}
             </article>
 
             <article className="portal-panel student-home-card">

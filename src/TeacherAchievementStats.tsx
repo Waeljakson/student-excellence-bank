@@ -172,7 +172,9 @@ export default function TeacherAchievementStats({roles}:{roles:string[]}){
   async function load(){
     setBusy(true);setError("");
     try{
-      const next=await rpc<AchievementData>("api_teacher_achievement_stats");
+      const envelope=await rpc<{achievement?:AchievementData}>("api_teacher_followup_data");
+      const next=envelope?.achievement;
+      if(!next)throw new Error("تعذر تحميل إحصائيات المعلمين.");
       if(next?.denied)throw new Error("لا توجد صلاحية لعرض إحصائيات المعلمين.");
       setData(next);
     }catch(e){setError(niceError(e))}

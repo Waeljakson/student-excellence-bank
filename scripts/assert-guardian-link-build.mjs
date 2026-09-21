@@ -7,6 +7,8 @@ const required=[
   "متوسطة وثانوية مشكاة الشعلة",
   "student-tabs",
   "ملاحظات المعلمين",
+  "كل الفصول",
+  "followup-note-scroll",
   "شيكات التميز",
   "api_delete_negative_followup_note",
   "حذف الملاحظة",

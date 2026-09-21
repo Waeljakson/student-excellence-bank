@@ -4,9 +4,82 @@ import { BetterAuthReactAdapter } from "@neondatabase/neon-js/auth/react/adapter
 export const AUTH_URL = "https://ep-green-bar-b2rjvdpo.neonauth.c-6.eu-central-1.aws.neon.tech/excellence_bank/auth";
 export const DATA_API_URL = "https://ep-green-bar-b2rjvdpo.apirest.c-6.eu-central-1.aws.neon.tech/excellence_bank/rest/v1";
 
+
+// IOS_AUTH_FALLBACK_V54
+const AUTH_FALLBACK_KEY="mishkat-ios-auth-v1";
+export const AUTH_FALLBACK_EVENT="mishkat-auth-fallback";
+
+type AuthFallback={token:string;userId:string;exp:number};
+
+function decodeJwtPayload(token:string):any|null{
+  try{
+    const parts=String(token||"").split(".");
+    if(parts.length!==3)return null;
+    let body=parts[1].replace(/-/g,"+").replace(/_/g,"/");
+    while(body.length%4)body+="=";
+    return JSON.parse(atob(body));
+  }catch{return null}
+}
+
+function readStoredFallback():AuthFallback|null{
+  const stores:any[]=[];
+  try{stores.push(window.localStorage)}catch{}
+  try{stores.push(window.sessionStorage)}catch{}
+  for(const store of stores){
+    try{
+      const raw=store.getItem(AUTH_FALLBACK_KEY);
+      if(!raw)continue;
+      const parsed=JSON.parse(raw) as AuthFallback;
+      if(!parsed?.token||!parsed?.userId||!parsed?.exp)continue;
+      if(parsed.exp*1000<=Date.now()+15000){
+        try{store.removeItem(AUTH_FALLBACK_KEY)}catch{}
+        continue;
+      }
+      return parsed;
+    }catch{}
+  }
+  return null;
+}
+
+export function getValidAuthFallback():AuthFallback|null{
+  return typeof window==="undefined"?null:readStoredFallback();
+}
+
+export function getFallbackAuthUserId():string{
+  return getValidAuthFallback()?.userId||"";
+}
+
+export function hasValidAuthFallback():boolean{
+  return !!getValidAuthFallback();
+}
+
+export function clearAuthFallback(){
+  if(typeof window==="undefined")return;
+  try{window.localStorage.removeItem(AUTH_FALLBACK_KEY)}catch{}
+  try{window.sessionStorage.removeItem(AUTH_FALLBACK_KEY)}catch{}
+  window.dispatchEvent(new Event(AUTH_FALLBACK_EVENT));
+}
+
+export function captureAuthResult(result:any):boolean{
+  if(typeof window==="undefined")return false;
+  const data=result?.data||result;
+  const token=String(data?.session?.token||"");
+  const payload=decodeJwtPayload(token);
+  const exp=Number(payload?.exp||0);
+  const userId=String(data?.user?.id||payload?.sub||"");
+  if(!token||!userId||!Number.isFinite(exp)||exp*1000<=Date.now()+15000)return false;
+  const stored:AuthFallback={token,userId,exp};
+  const raw=JSON.stringify(stored);
+  let saved=false;
+  try{window.localStorage.setItem(AUTH_FALLBACK_KEY,raw);saved=true}catch{}
+  try{window.sessionStorage.setItem(AUTH_FALLBACK_KEY,raw);saved=true}catch{}
+  if(saved)window.dispatchEvent(new Event(AUTH_FALLBACK_EVENT));
+  return saved;
+}
+
 export const neon: any = createClient({
   auth: {
-    adapter: BetterAuthReactAdapter(),
+    adapter: BetterAuthReactAdapter({fetchOptions:{credentials:"include"} as any}),
     url: AUTH_URL,
     allowAnonymous: true,
   },
@@ -15,13 +88,58 @@ export const neon: any = createClient({
   },
 });
 
-export async function rpc<T = any>(name: string, args: Record<string, unknown> = {}): Promise<T> {
-  const { data, error } = await neon.rpc(name, args);
-  if (error) {
-    const message = error?.message || error?.details || error?.hint || JSON.stringify(error);
-    throw new Error(message);
-  }
+const fallbackDataClient:any=createClient({
+  dataApi:{
+    url:DATA_API_URL,
+    getToken:async()=>getValidAuthFallback()?.token||null,
+  },
+} as any);
+
+const originalNeonSignOut=neon.auth.signOut.bind(neon.auth);
+neon.auth.signOut=async(...args:any[])=>{
+  try{return await originalNeonSignOut(...args)}
+  finally{clearAuthFallback()}
+};
+
+function rpcErrorMessage(error:any){
+  return error?.message||error?.details||error?.hint||String(error||"تعذر تنفيذ الطلب");
+}
+function isAuthSessionError(message:string){
+  return /AuthRequiredError|Authentication required|AUTH_REQUIRED|JWT expired|jwt expired|token.*expired|invalid.*jwt|invalid.*token|PGRST301|401|Unauthorized/i.test(message);
+}
+function isSchemaCacheError(message:string){
+  return /schema cache|Could not find the function/i.test(message);
+}
+async function runRpc<T>(client:any,name:string,args:Record<string,unknown>):Promise<T>{
+  const {data,error}=await client.rpc(name,args);
+  if(error)throw new Error(rpcErrorMessage(error));
   return data as T;
+}
+
+export async function rpc<T = any>(name: string, args: Record<string, unknown> = {}): Promise<T> {
+  let primaryError:unknown=null;
+  for(let attempt=0;attempt<4;attempt++){
+    try{
+      return await runRpc<T>(neon,name,args);
+    }catch(error){
+      primaryError=error;
+      const message=rpcErrorMessage(error);
+      const fallback=getValidAuthFallback();
+      if(fallback&&isAuthSessionError(message)){
+        try{
+          return await runRpc<T>(fallbackDataClient,name,args);
+        }catch(fallbackError){
+          const fallbackMessage=rpcErrorMessage(fallbackError);
+          if(isAuthSessionError(fallbackMessage))clearAuthFallback();
+          throw fallbackError;
+        }
+      }
+      const retryable=isSchemaCacheError(message)||/APP_USER_REQUIRED|APPROVAL_REQUIRED|JWT expired|token.*expired/i.test(message);
+      if(!retryable||attempt===3)throw error;
+      await new Promise(resolve=>setTimeout(resolve,250*(attempt+1)));
+    }
+  }
+  throw primaryError instanceof Error?primaryError:new Error("تعذر تنفيذ الطلب");
 }
 
 export function niceError(error: unknown) {

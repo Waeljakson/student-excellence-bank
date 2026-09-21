@@ -37,7 +37,7 @@ if(s.includes('function DashboardView({ data, checks, isSuperAdmin, onRefresh }:
 if(!s.includes('<TeacherHomeAchievementCard onOpen={onOpenTeacherStats}/>')){
   const marker='    <section className="stats-grid"><Stat label="الطلاب" value={data.students}/><Stat label="نقاط اليوم" value={data.today_points}/><Stat label="شيكات هذا الشهر" value={data.month_checks}/><Stat label="طلاب حصلوا على تعزيز" value={data.reinforced_students}/></section>';
   if(!s.includes(marker))throw new Error("teacher-achievement-upgrade: dashboard stats marker missing");
-  s=s.replace(marker,'    {isTeacher&&<TeacherHomeAchievementCard onOpen={onOpenTeacherStats}/>}\\n'+marker);
+  s=s.replace(marker,'    {isTeacher&&<TeacherHomeAchievementCard onOpen={onOpenTeacherStats}/>}\n'+marker);
 }
 
 const oldDashboardCall='{tab==="dashboard"&&<DashboardView data={dashboard} checks={checks} isSuperAdmin={profile.roles?.includes("SUPER_ADMIN")===true} onRefresh={()=>void syncData(["dashboard"],true)}/>}';

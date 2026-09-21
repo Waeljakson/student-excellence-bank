@@ -25,7 +25,9 @@ const required=[
   "api_archive_student",
   "حذف الطالب نهائيًا",
   "student-row-actions",
-  "إضافة طالب"
+  "إضافة طالب",
+  "mishkat-ios-auth-v1",
+  "mishkat-auth-fallback"
 ];
 const bundle=files.map(file=>readFileSync(`${dir}/${file}`,"utf8")).join("\n");
 const missing=required.filter(x=>!bundle.includes(x));

@@ -40,21 +40,24 @@ export default function StudentFollowupNotebook({roles=[]}:{roles?:string[]}){
   },[students]);
 
   useEffect(()=>{
-    if(canMonitor&&classes.length&&!classes.some(c=>c.id===classId))setClassId(classes[0].id);
+    if(canMonitor&&classes.length&&classId!=="ALL"&&!classes.some(c=>c.id===classId))setClassId("ALL");
   },[canMonitor,classes,classId]);
 
   const classNotes=useMemo(()=>{
     const term=q.trim().toLowerCase();
-    return notes.filter(n=>n.class_id===classId)
+    return notes.filter(n=>classId==="ALL"||n.class_id===classId)
       .filter(n=>monitorKind==="ALL"||n.note_kind===monitorKind)
       .filter(n=>!term||`${n.student_name||""} ${n.student_no||""} ${n.teacher_name||""} ${n.subject_ar||""} ${n.category_ar||""} ${n.note_text||""}`.toLowerCase().includes(term));
   },[notes,classId,monitorKind,q]);
 
-  const classNoteCount=(id:string)=>notes.filter(n=>n.class_id===id).length;
+  const classNoteCount=(id:string)=>id==="ALL"?notes.length:notes.filter(n=>n.class_id===id).length;
   const selectedClass=classes.find(c=>c.id===classId);
-  const classPositive=notes.filter(n=>n.class_id===classId&&n.note_kind==="POSITIVE").length;
-  const classNegative=notes.filter(n=>n.class_id===classId&&n.note_kind==="NEGATIVE").length;
-  const classGeneral=notes.filter(n=>n.class_id===classId&&n.note_kind==="GENERAL").length;
+  const isAllClasses=classId==="ALL";
+  const selectedStudentsCount=isAllClasses?students.length:(selectedClass?.students.length||0);
+  const classPositive=notes.filter(n=>(isAllClasses||n.class_id===classId)&&n.note_kind==="POSITIVE").length;
+  const classNegative=notes.filter(n=>(isAllClasses||n.class_id===classId)&&n.note_kind==="NEGATIVE").length;
+  const classGeneral=notes.filter(n=>(isAllClasses||n.class_id===classId)&&n.note_kind==="GENERAL").length;
+  const selectedLabel=isAllClasses?"كل الفصول":(selectedClass?.label||"");
 
   async function saveStudent(){if(!studentId||!text.trim())return;setBusy(true);setMsg("");try{await rpc("api_add_student_followup_note",{p_student_id:studentId,p_kind:kind,p_category_ar:category,p_note_text:text});setText("");setMsg("تم حفظ الملاحظة وإتاحتها لولي الأمر.");await load()}catch(e){setMsg(niceError(e))}finally{setBusy(false)}}
   async function saveClass(){if(!classId||!text.trim())return;setBusy(true);setMsg("");try{const r=await rpc<any>("api_add_class_followup_note",{p_class_id:classId,p_kind:kind,p_category_ar:category,p_note_text:text});setText("");setMsg(`تم إرسال الملاحظة إلى ${r.count||0} طالب في الفصل.`);await load()}catch(e){setMsg(niceError(e))}finally{setBusy(false)}}
@@ -77,25 +80,28 @@ export default function StudentFollowupNotebook({roles=[]}:{roles?:string[]}){
     <main className="content">
       <section className="panel">
         <div className="panel-title"><div><h3>ملاحظات المعلمين حسب الفصل</h3><p>اختر الفصل لمراجعة جميع الملاحظات المسجلة على طلابه مع اسم المعلم والمادة والتاريخ.</p></div><button className="mini-btn" type="button" onClick={()=>load()}>تحديث الآن</button></div>
-        <div className="periodic-class-tabs">{classes.map(c=><button key={c.id} className={classId===c.id?"active":""} onClick={()=>setClassId(c.id)}><b>{c.label}</b><small>{classNoteCount(c.id)} ملاحظة</small></button>)}</div>
-        {selectedClass&&<>
+        <div className="periodic-class-tabs followup-class-tabs">
+          <button className={classId==="ALL"?"active":""} onClick={()=>setClassId("ALL")}><b>كل الفصول</b><small>{notes.length} ملاحظة</small></button>
+          {classes.map(c=><button key={c.id} className={classId===c.id?"active":""} onClick={()=>setClassId(c.id)}><b>{c.label}</b><small>{classNoteCount(c.id)} ملاحظة</small></button>)}
+        </div>
+        {(isAllClasses||selectedClass)&&<>
           <div className="teacher-progress-summary">
-            <div><small>طلاب الفصل</small><b>{selectedClass.students.length}</b></div>
+            <div><small>{isAllClasses?"إجمالي الطلاب":"طلاب الفصل"}</small><b>{selectedStudentsCount}</b></div>
             <div className="done"><small>ملاحظات إيجابية</small><b>{classPositive}</b></div>
             <div className="not-started"><small>ملاحظات سلبية</small><b>{classNegative}</b></div>
             <div><small>ملاحظات عامة</small><b>{classGeneral}</b></div>
             <div className="remaining"><small>إجمالي الملاحظات</small><b>{classNoteCount(classId)}</b></div>
           </div>
           <div className="periodic-tools">
-            <div><b>{selectedClass.label}</b><span>تظهر أحدث الملاحظات أولًا.</span></div>
+            <div><b>{selectedLabel}</b><span>تظهر أحدث الملاحظات أولًا.</span></div>
             <div className="form-row">
               <select value={monitorKind} onChange={e=>setMonitorKind(e.target.value)}><option value="ALL">كل الأنواع</option><option value="POSITIVE">إيجابية</option><option value="NEGATIVE">سلبية</option><option value="GENERAL">عامة</option></select>
               <input value={q} onChange={e=>setQ(e.target.value)} placeholder="بحث باسم الطالب أو المعلم أو نص الملاحظة"/>
             </div>
           </div>
-          <div className="table-wrap"><table><thead><tr><th>الطالب</th><th>المعلم / المادة</th><th>النوع</th><th>التصنيف</th><th>الملاحظة</th><th>التاريخ</th>{isSuperAdmin&&<th>إجراء</th>}</tr></thead><tbody>
-            {classNotes.map(n=><tr key={n.id}><td><b>{n.student_name||"—"}</b><br/><small>{n.student_no||""}</small></td><td><b>{n.teacher_name||"—"}</b><br/><small>{n.subject_ar||"—"}</small></td><td><span className={`teacher-status ${n.note_kind==="POSITIVE"?"completed":n.note_kind==="NEGATIVE"?"not-started":"in-progress"}`}>{kindLabel(n.note_kind)}</span></td><td>{n.category_ar||"—"}</td><td style={{whiteSpace:"pre-wrap",minWidth:260}}>{n.note_text||"—"}</td><td>{new Date(n.note_date||n.created_at).toLocaleDateString("ar-SA")}</td>{isSuperAdmin&&<td>{n.note_kind==="NEGATIVE"?<button type="button" className="followup-delete-btn" disabled={deletingId===n.id} onClick={()=>deleteNegativeNote(n)}>{deletingId===n.id?"جارٍ الحذف...":"حذف الملاحظة"}</button>:<span className="followup-no-delete">—</span>}</td>}</tr>)}
-            {!classNotes.length&&<tr><td colSpan={isSuperAdmin?7:6} className="periodic-empty-row">لا توجد ملاحظات مطابقة في هذا الفصل حتى الآن.</td></tr>}
+          <div className="table-wrap followup-table-wrap"><table className="followup-notes-table"><thead><tr><th>الطالب</th><th>المعلم / المادة</th><th>النوع</th><th>التصنيف</th><th>الملاحظة</th><th>التاريخ</th>{isSuperAdmin&&<th>إجراء</th>}</tr></thead><tbody>
+            {classNotes.map(n=><tr key={n.id}><td className="followup-student-cell"><b>{n.student_name||"—"}</b><small>{n.student_no||""}</small></td><td className="followup-teacher-cell"><b>{n.teacher_name||"—"}</b><small>{n.subject_ar||"—"}</small></td><td className="followup-kind-cell"><span className={`teacher-status ${n.note_kind==="POSITIVE"?"completed":n.note_kind==="NEGATIVE"?"not-started":"in-progress"}`}>{kindLabel(n.note_kind)}</span></td><td className="followup-category-cell">{n.category_ar||"—"}</td><td className="followup-note-cell"><div className="followup-note-scroll">{n.note_text||"—"}</div></td><td className="followup-date-cell">{new Date(n.note_date||n.created_at).toLocaleDateString("ar-SA")}</td>{isSuperAdmin&&<td className="followup-action-cell">{n.note_kind==="NEGATIVE"?<button type="button" className="followup-delete-btn" disabled={deletingId===n.id} onClick={()=>deleteNegativeNote(n)}>{deletingId===n.id?"جارٍ الحذف...":"حذف الملاحظة"}</button>:<span className="followup-no-delete">—</span>}</td>}</tr>)}
+            {!classNotes.length&&<tr><td colSpan={isSuperAdmin?7:6} className="periodic-empty-row">{isAllClasses?"لا توجد ملاحظات مطابقة في جميع الفصول حتى الآن.":"لا توجد ملاحظات مطابقة في هذا الفصل حتى الآن."}</td></tr>}
           </tbody></table></div>
         </>}
         {!classes.length&&<div className="notice">لا توجد فصول متاحة للعرض.</div>}

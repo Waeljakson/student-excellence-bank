@@ -20,7 +20,8 @@ function DailyFollowup({child}:{child:Child}){
   const notes=(child.notes||[]).filter(n=>String(n.note_date||"").slice(0,10)===key);
   const positive=notes.filter(n=>String(n.note_kind).toUpperCase()==="POSITIVE");
   const negative=notes.filter(n=>String(n.note_kind).toUpperCase()==="NEGATIVE");
-  const general=notes.filter(n=>!["POSITIVE","NEGATIVE"].includes(String(n.note_kind).toUpperCase()));
+  const homework=notes.filter(n=>String(n.note_kind).toUpperCase()==="HOMEWORK");
+  const general=notes.filter(n=>String(n.note_kind).toUpperCase()==="GENERAL");
   const thursday=weekday==="Thu";
 
   let title="متابعة اليوم";
@@ -46,6 +47,13 @@ function DailyFollowup({child}:{child:Child}){
     title="ملاحظة اليوم تحتاج متابعة هادئة";
     body=`وردت اليوم ${negative.length} ملاحظة تحتاج إلى متابعة. الهدف هو مساعدة ابنكم على فهم ما حدث وتصحيح السلوك، وليس تحويل الموقف إلى مواجهة أو عقوبة مبالغ فيها.`;
     advice=["ابدأ بالسؤال والاستماع قبل إصدار الحكم.","ناقش السلوك نفسه بدون وصف الطالب بصفة سلبية.","اسأله: ما التصرف الأفضل الذي كان يمكن عمله؟","اتفقوا على خطوة عملية لليوم التالي، ثم تابعوا التحسن بهدوء.","إذا تكررت الملاحظة، تواصل مع المدرسة لمعرفة الصورة كاملة."];
+  }else if(homework.length){
+    tone="homework";
+    title="متابعة الواجبات اليوم";
+    body=homework.length===1
+      ?"وردت اليوم ملاحظة بخصوص الواجبات من أحد المعلمين. يمكنكم الاطلاع على تفاصيلها في دفتر المتابعة."
+      :`وردت اليوم ${homework.length} ملاحظات بخصوص الواجبات. يمكنكم الاطلاع على تفاصيلها في دفتر المتابعة.`;
+    advice=[];
   }else{
     tone="general";
     title="تنبيه أو معلومة عامة";
@@ -81,6 +89,11 @@ function guardianSubjectLabel(value?:string|null){
   if(v==="بدنية")return "التربية البدنية";
   if(v==="فنية")return "التربية الفنية";
   return v||"—";
+}
+
+function guardianNoteKindLabel(value?:string|null){
+  const key=String(value||"").toUpperCase();
+  return key==="POSITIVE"?"إيجابية":key==="NEGATIVE"?"سلبية":key==="HOMEWORK"?"واجبات":"عامة";
 }
 
 function FollowupTimeline({notes}:{notes:Note[]}){
@@ -120,7 +133,7 @@ function FollowupTimeline({notes}:{notes:Note[]}){
     <div className="guardian-followup-day-head"><div><span>ملاحظات هذا اليوم</span><strong>{dayLabel(selectedDay)}</strong></div><small>{notesForDay.length} {notesForDay.length===1?"ملاحظة":"ملاحظات"}</small></div>
     <div className="guardian-followup-day-notes">
       {notesForDay.map(n=><article className={`guardian-note ${String(n.note_kind||"general").toLowerCase()}`} key={n.id}>
-        <div><b>{n.subject_ar||"متابعة"}</b><span>{n.category_ar||"ملاحظة"}</span></div>
+        <div><b>{n.subject_ar||"متابعة"}</b><span>{guardianNoteKindLabel(n.note_kind)}{n.category_ar?` · ${n.category_ar}`:""}</span></div>
         <p>{n.note_text}</p>
         <small>{n.teacher_name||"المعلم"}</small>
       </article>)}

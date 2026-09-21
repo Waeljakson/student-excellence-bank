@@ -20,3 +20,21 @@
 .behavioral-participation-table .nominations-col strong{background:#e9f5f1;color:#0a715e}
 @media(max-width:900px){.behavioral-participation-table{min-width:700px!important}.behavioral-participation-table .col-teacher{width:24%}.behavioral-participation-table .col-status{width:14%}.behavioral-participation-table .col-classes{width:34%}.behavioral-participation-table .col-number{width:8%}.behavioral-participation-table .col-nominations{width:12%}}
 @media(max-width:600px){.behavioral-report-table{margin-inline:-4px;padding-bottom:4px}.behavioral-participation-table{min-width:650px!important}.behavioral-participation-table th,.behavioral-participation-table td{padding:7px 6px!important}.behavioral-teacher-cell b{font-size:10px}.participation-status{font-size:7.5px;min-height:28px}.behavioral-classes-cell{grid-template-columns:auto 1fr;gap:5px}.participation-classes{max-height:3.1em}.behavioral-participation-table .number-col strong,.behavioral-participation-table .nominations-col strong{min-width:27px;height:27px;font-size:11px}}
+
+/* BEHAVIORAL_TOP5_BY_GRADE_V1 */
+.behavioral-grade-top5-report{display:grid;gap:14px}
+.behavioral-grade-top5-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.behavioral-grade-card{border:1px solid #dce6ea;border-radius:15px;overflow:hidden;background:#fff;box-shadow:0 6px 18px rgba(19,54,73,.04)}
+.behavioral-grade-card:last-child:nth-child(odd){grid-column:1/-1}
+.behavioral-grade-card-head{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 12px;background:linear-gradient(135deg,#f4faf8,#f7fafc);border-bottom:1px solid #e2eaed}
+.behavioral-grade-card-head small{display:block;font-size:8px;color:#7a8c96}.behavioral-grade-card-head h4{margin:1px 0 0;font-size:14px;color:#173e52}.behavioral-grade-card-head>span{min-width:42px;height:28px;border-radius:9px;background:#e7f4ef;color:#0a715f;display:grid;place-items:center;font-size:10px;font-weight:900}
+.behavioral-grade-card table{width:100%;table-layout:fixed;border-collapse:collapse;font-size:9px}
+.behavioral-grade-card th,.behavioral-grade-card td{padding:7px 8px;border-bottom:1px solid #edf1f3;vertical-align:middle!important}
+.behavioral-grade-card th{background:#fbfcfd;color:#687b86;font-size:8px}.behavioral-grade-card th:first-child,.behavioral-grade-card td:first-child{width:12%;text-align:center}.behavioral-grade-card th:nth-child(2){width:48%}.behavioral-grade-card th:nth-child(3){width:20%}.behavioral-grade-card th:last-child,.behavioral-grade-card td:last-child{width:20%;text-align:center}
+.behavioral-grade-card tbody tr:last-child td{border-bottom:0}
+.grade-top-rank{width:28px;height:28px;border-radius:9px;display:inline-grid;place-items:center;background:#edf3f5;color:#38515e;font-weight:900}.grade-top-rank.rank-1{background:#fff1bf;color:#765400}.grade-top-rank.rank-2{background:#edf0f2;color:#4d5a62}.grade-top-rank.rank-3{background:#f3dfcf;color:#7a4e2c}
+.grade-top-student{min-width:0}.grade-top-student b,.grade-top-student small{display:-webkit-box;-webkit-box-orient:vertical;overflow:hidden}.grade-top-student b{-webkit-line-clamp:2;font-size:10px;line-height:1.45;color:#263f4d}.grade-top-student small{-webkit-line-clamp:1;font-size:8px;color:#7c8c96;margin-top:2px}
+.grade-top-class{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;font-size:9px;color:#566d78;line-height:1.4}.grade-top-count{display:inline-grid;place-items:center;min-width:31px;height:28px;padding:0 5px;border-radius:9px;background:#e7f4ef;color:#0a715f;font-size:12px}
+.behavioral-grade-empty{padding:20px;text-align:center;color:#81909a;font-size:10px}
+@media(max-width:900px){.behavioral-grade-top5-grid{grid-template-columns:1fr}.behavioral-grade-card:last-child:nth-child(odd){grid-column:auto}}
+@media(max-width:600px){.behavioral-grade-card th,.behavioral-grade-card td{padding:6px 5px}.behavioral-grade-card th:nth-child(2){width:46%}.behavioral-grade-card th:nth-child(3){width:22%}.behavioral-grade-card th:last-child,.behavioral-grade-card td:last-child{width:20%}}

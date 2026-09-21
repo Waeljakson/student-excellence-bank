@@ -1,1 +1,142 @@
 .periodic-board{display:flex;flex-direction:column;gap:16px}.periodic-head{align-items:flex-start}.periodic-overall{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.periodic-overall span,.periodic-overall b{padding:7px 10px;border-radius:999px;background:#f3f4f6;font-size:12px}.periodic-overall .done{background:#ecfdf3}.periodic-overall .pending{background:#fff7ed}.periodic-class-tabs{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px}.periodic-class-tabs button{min-width:190px;text-align:right;border:1px solid #e5e7eb;background:white;border-radius:14px;padding:10px 12px;cursor:pointer}.periodic-class-tabs button.active{border-color:#111827;box-shadow:0 0 0 1px #111827 inset}.periodic-class-tabs b,.periodic-class-tabs small{display:block}.periodic-class-tabs small{margin-top:4px;color:#6b7280}.periodic-tools{display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap;padding:12px 14px;background:#f9fafb;border-radius:14px}.periodic-tools>div b,.periodic-tools>div span{display:block}.periodic-tools>div span{font-size:12px;color:#6b7280;margin-top:3px}.periodic-pending-toggle{display:flex!important;align-items:center;gap:7px;font-size:13px}.periodic-pending-toggle input{width:auto!important}.periodic-table{min-width:1120px}.periodic-table th{white-space:nowrap}.periodic-table td{vertical-align:middle}.periodic-table select,.periodic-table input{min-width:210px}.periodic-table input{min-width:170px}.student-cell{min-width:220px}.student-cell b,.student-cell small{display:block}.student-cell small{margin-top:3px;color:#6b7280}.periodic-table tr.evaluated{background:#fbfffc}.periodic-table tr.not-evaluated{background:#fffdf8}.evaluation-status{display:inline-block;padding:6px 9px;border-radius:999px;font-size:12px;white-space:nowrap}.evaluation-status.done{background:#dcfce7}.evaluation-status.pending{background:#ffedd5}.periodic-empty-row{text-align:center!important;padding:24px!important;color:#6b7280}.teacher-progress-panel{display:flex;flex-direction:column;gap:16px}.teacher-progress-summary{display:grid;grid-template-columns:repeat(5,minmax(120px,1fr));gap:10px}.teacher-progress-summary>div{border:1px solid #e5e7eb;border-radius:14px;padding:13px;background:#f9fafb}.teacher-progress-summary small,.teacher-progress-summary b{display:block}.teacher-progress-summary small{color:#6b7280;font-size:12px}.teacher-progress-summary b{font-size:24px;margin-top:4px}.teacher-progress-summary .done{background:#f0fdf4}.teacher-progress-summary .progress{background:#eff6ff}.teacher-progress-summary .not-started{background:#fff7ed}.teacher-progress-summary .remaining{background:#fef2f2}.teacher-progress-table{min-width:1050px}.teacher-progress-table th{white-space:nowrap}.teacher-progress-table td{vertical-align:middle}.teacher-progress-row.not-started{background:#fffaf5}.teacher-progress-row.in-progress{background:#fbfdff}.teacher-progress-row.completed{background:#fbfffc}.remaining-count{display:inline-block;min-width:38px;text-align:center;padding:5px 8px;border-radius:999px;background:#fee2e2}.done-count{display:inline-block;min-width:38px;text-align:center;padding:5px 8px;border-radius:999px;background:#dcfce7}.progress-cell{display:flex;align-items:center;gap:8px;min-width:150px}.progress-cell>span{display:block;width:95px;height:8px;background:#e5e7eb;border-radius:999px;overflow:hidden}.progress-cell>span i{display:block;height:100%;background:#111827;border-radius:999px}.progress-cell>b{font-size:12px}.teacher-status{display:inline-block;padding:6px 9px;border-radius:999px;font-size:12px;white-space:nowrap}.teacher-status.completed{background:#dcfce7}.teacher-status.in-progress{background:#dbeafe}.teacher-status.not-started{background:#ffedd5}@media(max-width:900px){.teacher-progress-summary{grid-template-columns:repeat(2,minmax(120px,1fr))}}@media(max-width:800px){.periodic-class-tabs button{min-width:160px}.periodic-tools{align-items:flex-start}.periodic-table-wrap,.teacher-progress-table-wrap{margin-inline:-4px}.teacher-progress-summary{grid-template-columns:1fr 1fr}}
+
+
+/* FOLLOWUP_MONITOR_COMPACT_V52 */
+.followup-class-tabs{
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(138px,1fr));
+  gap:7px;
+  overflow:visible;
+  padding:2px 0 6px;
+}
+.followup-class-tabs button{
+  min-width:0;
+  width:100%;
+  min-height:68px;
+  padding:8px 10px;
+  border-radius:11px;
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+}
+.followup-class-tabs button b{
+  font-size:12px;
+  line-height:1.45;
+  white-space:normal;
+}
+.followup-class-tabs button small{
+  font-size:10px;
+  margin-top:3px;
+}
+.followup-class-tabs button.active{
+  border-color:#0b7180;
+  background:#f1faf9;
+  box-shadow:0 0 0 1px #0b7180 inset;
+}
+.followup-table-wrap{
+  width:100%;
+  max-width:100%;
+  overflow-x:auto;
+  border:1px solid #e2e8eb;
+  border-radius:12px;
+}
+.followup-notes-table{
+  width:100%;
+  min-width:900px;
+  table-layout:fixed;
+  border-collapse:collapse;
+}
+.followup-notes-table th,
+.followup-notes-table td{
+  padding:7px 6px;
+  vertical-align:middle;
+}
+.followup-notes-table th{
+  white-space:nowrap;
+  font-size:10px;
+}
+.followup-notes-table th:nth-child(1){width:17%}
+.followup-notes-table th:nth-child(2){width:16%}
+.followup-notes-table th:nth-child(3){width:8%}
+.followup-notes-table th:nth-child(4){width:10%}
+.followup-notes-table th:nth-child(5){width:31%}
+.followup-notes-table th:nth-child(6){width:9%}
+.followup-notes-table th:nth-child(7){width:9%}
+.followup-student-cell,
+.followup-teacher-cell{
+  overflow:hidden;
+}
+.followup-student-cell b,
+.followup-student-cell small,
+.followup-teacher-cell b,
+.followup-teacher-cell small{
+  display:block;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+.followup-student-cell small,
+.followup-teacher-cell small{
+  color:#6b7280;
+  margin-top:2px;
+  font-size:9px;
+}
+.followup-kind-cell,
+.followup-category-cell,
+.followup-date-cell,
+.followup-action-cell{
+  text-align:center;
+  white-space:nowrap;
+}
+.followup-kind-cell .teacher-status{
+  padding:4px 7px;
+  font-size:9px;
+}
+.followup-category-cell,
+.followup-date-cell{
+  font-size:9px;
+}
+.followup-note-cell{
+  padding:5px!important;
+}
+.followup-note-scroll{
+  height:64px;
+  max-height:64px;
+  overflow-y:auto;
+  overflow-x:hidden;
+  padding:6px 8px;
+  border:1px solid #e4eaed;
+  border-radius:8px;
+  background:#fbfcfd;
+  white-space:pre-wrap;
+  overflow-wrap:anywhere;
+  line-height:1.55;
+  font-size:10px;
+  scrollbar-width:thin;
+}
+.followup-action-cell .followup-delete-btn{
+  padding:5px 7px;
+  font-size:8px;
+  white-space:nowrap;
+}
+@media(max-width:900px){
+  .followup-class-tabs{
+    grid-template-columns:repeat(3,minmax(120px,1fr));
+  }
+  .followup-notes-table{min-width:820px}
+}
+@media(max-width:650px){
+  .followup-class-tabs{
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    gap:6px;
+  }
+  .followup-class-tabs button{
+    min-height:60px;
+    padding:7px 8px;
+  }
+  .followup-class-tabs button b{font-size:11px}
+  .followup-note-scroll{
+    height:58px;
+    max-height:58px;
+  }
+}

@@ -9,6 +9,8 @@ const required=[
   "ملاحظات المعلمين",
   "كل الفصول",
   "followup-note-scroll",
+  "HOMEWORK",
+  "متابعة الواجبات اليوم",
   "شيكات التميز",
   "api_delete_negative_followup_note",
   "حذف الملاحظة",

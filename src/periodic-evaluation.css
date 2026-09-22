@@ -140,9 +140,3 @@
     max-height:58px;
   }
 }
-
-/* PERIODIC_GUARDIAN_DISPLAY_NAME_V1 */
-.teacher-progress-table{min-width:1320px}
-.teacher-progress-table th:nth-child(1){width:15%}.teacher-progress-table th:nth-child(2){width:24%}
-.guardian-name-cell{min-width:260px}.guardian-name-editor{display:grid;grid-template-columns:minmax(150px,1fr) auto;gap:6px;align-items:center}.guardian-name-editor input{min-width:0!important;width:100%;padding:7px 8px;font-size:10px}.guardian-name-cell>small{display:block;margin-top:4px;color:#627985;font-size:8px}.guardian-name-reset{border:0;background:none;color:#0b7562;padding:3px 0;font-family:inherit;font-size:8px;cursor:pointer;text-decoration:underline}
-@media(max-width:800px){.teacher-progress-table{min-width:1180px}.guardian-name-cell{min-width:230px}}

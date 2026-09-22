@@ -150,6 +150,7 @@ export function niceError(error: unknown) {
   if (message.includes("TEACHER_BUDGET_SUPER_ADMIN_REQUIRED")) return "تعديل الحد الشهري للمعلم متاح لمدير النظام فقط.";
   if (message.includes("ISSUE_PERMISSION_REQUIRED")) return "لا توجد صلاحية إصدار لهذا الحساب.";
   if (message.includes("CLASS_SCOPE_REQUIRED")) return "هذا الفصل غير مسند لحسابك.";
+  if (message.includes("PERIODIC_SUBJECT_EXCLUDED")) return "التربية البدنية غير مشمولة في التقييم الدوري.";
   if (message.includes("MEGA_ONLY_ROLE")) return "مدير المدرسة والوكيل والموجه الطلابي مسموح لهم فقط بشيك التميز العملاق.";
   if (message.includes("MEGA_CHECK_RESTRICTED")) return "الشيك العملاق متاح فقط لمدير المدرسة أو الوكيل أو الموجه الطلابي.";
   if (message.includes("MONTHLY_POINT_LIMIT_EXCEEDED")) return "تم استهلاك الحد الشهري المسموح لإصدار النقاط. سيتجدد الرصيد تلقائيًا مع بداية الشهر القادم.";

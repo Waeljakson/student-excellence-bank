@@ -100,6 +100,8 @@ export default function PeriodicEvaluationCenter(){
   }
 
   return <><header className="topbar"><div><h1>التقييمات الدورية</h1><p>دورة تقييم تحصيلي وسلوكي للطلاب، ثم نشر النتائج لأولياء الأمور.</p></div></header><main className="content">
+    {data?.excluded_from_periodic&&<section className="panel empty"><b>التربية البدنية غير مشمولة في التقييم الدوري.</b><p>لا يُطلب من معلم التربية البدنية إدخال تقييمات دورية للطلاب.</p></section>}
+
     {data?.can_manage&&<section className="panel form-stack"><h3>إدارة دورة التقييم</h3><div className="referral-grid two"><label>اسم الدورة<input value={title} onChange={e=>setTitle(e.target.value)}/></label><label>بداية الدورة<input type="datetime-local" value={start} onChange={e=>setStart(e.target.value)}/></label><label>الموعد النهائي<input type="datetime-local" value={due} onChange={e=>setDue(e.target.value)}/></label><button className="btn primary" disabled={busy==="create"} onClick={createCycle}>إنشاء دورة</button></div>{cycles.map((c:any)=><div className="cycle-admin-row" key={c.id}><div><b>{c.title_ar}</b><small>{c.status} · حتى {new Date(c.due_at).toLocaleString("ar-SA")}</small></div><div>{c.status==="DRAFT"&&<button className="mini-btn" onClick={()=>action(c.id,"ACTIVATE")}>إطلاق الدورة</button>}{c.status==="ACTIVE"&&<button className="mini-btn" onClick={()=>action(c.id,"CLOSE")}>إغلاق التقييم</button>}{c.status==="CLOSED"&&<button className="mini-btn" onClick={()=>action(c.id,"PUBLISH")}>نشر لولي الأمر</button>}</div></div>)}</section>}
 
     {data?.can_manage&&active&&<section className="panel teacher-progress-panel">
@@ -131,7 +133,7 @@ export default function PeriodicEvaluationCenter(){
           {!currentStudents.length&&<tr><td colSpan={6} className="periodic-empty-row">{onlyPending?"تم تقييم جميع طلاب هذا الفصل ✓":"لا يوجد طلاب في هذا الفصل."}</td></tr>}
         </tbody></table></div>
       </>}
-    </section>:!active&&!data?.can_manage&&<section className="panel empty">لا توجد دورة تقييم دورية مفعلة حاليًا.</section>}
+    </section>:!data?.excluded_from_periodic&&!active&&!data?.can_manage&&<section className="panel empty">لا توجد دورة تقييم دورية مفعلة حاليًا.</section>}
     {msg&&<div className="notice">{msg}</div>}
   </main></>;
 }

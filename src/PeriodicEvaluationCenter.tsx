@@ -152,7 +152,7 @@ export default function PeriodicEvaluationCenter(){
           {!currentStudents.length&&<tr><td colSpan={6} className="periodic-empty-row">{onlyPending?"تم تقييم جميع طلاب هذا الفصل ✓":"لا يوجد طلاب في هذا الفصل."}</td></tr>}
         </tbody></table></div>
       </>}
-    </section>:!active&&!data?.can_manage&&<section className="panel empty">لا توجد دورة تقييم دورية مفعلة حاليًا.</section>}
+    </section>:!active&&!data?.can_monitor&&<section className="panel empty">لا توجد دورة تقييم دورية مفعلة حاليًا.</section>}
     {msg&&<div className="notice">{msg}</div>}
   </main></>;
 }

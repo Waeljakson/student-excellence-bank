@@ -27,7 +27,7 @@
 .guardian-followup-day-notes .guardian-note:first-child{margin-top:0}
 @media(max-width:760px){.guardian-followup-days{margin-left:-14px;margin-right:-14px;padding-right:14px;padding-left:14px}.guardian-followup-days button{min-width:96px}.guardian-followup-day-head{align-items:flex-start}}
 
-.guardian-eval-title{margin-bottom:14px}.guardian-eval-title h3{margin:0}.guardian-eval-title p{margin:5px 0 0;color:#70828b;font-size:11px}
+.guardian-eval-title{margin-bottom:14px;display:flex;justify-content:space-between;align-items:flex-start;gap:12px}.guardian-eval-title h3{margin:0}.guardian-eval-title p{margin:5px 0 0;color:#70828b;font-size:11px}
 .guardian-eval-table-wrap{width:100%;overflow-x:auto;border:1px solid #dce6ea;border-radius:14px;background:#fff}
 .guardian-eval-table{width:100%;min-width:760px;border-collapse:collapse;table-layout:auto;font-size:11px}
 .guardian-eval-table th,.guardian-eval-table td{padding:11px 12px;text-align:right;vertical-align:top;border-bottom:1px solid #e5ecef;border-left:1px solid #edf2f4}

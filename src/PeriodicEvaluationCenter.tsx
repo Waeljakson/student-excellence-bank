@@ -88,6 +88,24 @@ export default function PeriodicEvaluationCenter(){
     setBusy(a);setMsg("");
     try{await rpc("api_set_periodic_cycle_state",{p_cycle_id:id,p_action:a});setMsg(a==="ACTIVATE"?"تم إطلاق الدورة وإشعار المعلمين.":a==="PUBLISH"?"تم نشر النتائج في حسابات أولياء الأمور.":"تم إغلاق الدورة.");await load()}catch(e){setMsg(niceError(e))}finally{setBusy("")}
   }
+  async function extendCycle(c:any){
+    const current=new Date(c.due_at);
+    const currentLocal=new Date(current.getTime()-current.getTimezoneOffset()*60000).toISOString().slice(0,16);
+    const raw=window.prompt("اكتب الموعد النهائي الجديد بصيغة YYYY-MM-DDTHH:mm",currentLocal);
+    if(raw===null)return;
+    const next=new Date(raw);
+    if(Number.isNaN(next.getTime())){setMsg("الموعد الجديد غير صحيح.");return}
+    if(next.getTime()<=current.getTime()){setMsg("الموعد الجديد يجب أن يكون بعد الموعد النهائي الحالي.");return}
+    if(next.getTime()<=Date.now()){setMsg("الموعد الجديد يجب أن يكون في المستقبل.");return}
+    if(!window.confirm("سيتم تمديد التقييم حتى "+next.toLocaleString("ar-SA")+". هل تريد المتابعة؟"))return;
+    setBusy("extend:"+c.id);setMsg("");
+    try{
+      await rpc("api_set_periodic_cycle_state",{p_cycle_id:c.id,p_action:"EXTEND:"+next.toISOString()});
+      setMsg("تم تمديد الموعد النهائي وإشعار المعلمين بالموعد الجديد.");
+      await load();
+    }catch(e){setMsg(niceError(e))}finally{setBusy("")}
+  }
+
   async function saveStudent(student:S){
     if(!active)return;
     const d=drafts[student.id]||{academic:ACADEMIC[1],behavior:BEHAVIOR[0],notes:""};
@@ -102,7 +120,7 @@ export default function PeriodicEvaluationCenter(){
   return <><header className="topbar"><div><h1>التقييمات الدورية</h1><p>دورة تقييم تحصيلي وسلوكي للطلاب، ثم نشر النتائج لأولياء الأمور.</p></div></header><main className="content">
     {data?.excluded_from_periodic&&<section className="panel empty"><b>التربية البدنية غير مشمولة في التقييم الدوري.</b><p>لا يُطلب من معلم التربية البدنية إدخال تقييمات دورية للطلاب.</p></section>}
 
-    {data?.can_manage&&<section className="panel form-stack"><h3>إدارة دورة التقييم</h3><div className="referral-grid two"><label>اسم الدورة<input value={title} onChange={e=>setTitle(e.target.value)}/></label><label>بداية الدورة<input type="datetime-local" value={start} onChange={e=>setStart(e.target.value)}/></label><label>الموعد النهائي<input type="datetime-local" value={due} onChange={e=>setDue(e.target.value)}/></label><button className="btn primary" disabled={busy==="create"} onClick={createCycle}>إنشاء دورة</button></div>{cycles.map((c:any)=><div className="cycle-admin-row" key={c.id}><div><b>{c.title_ar}</b><small>{c.status} · حتى {new Date(c.due_at).toLocaleString("ar-SA")}</small></div><div>{c.status==="DRAFT"&&<button className="mini-btn" onClick={()=>action(c.id,"ACTIVATE")}>إطلاق الدورة</button>}{c.status==="ACTIVE"&&<button className="mini-btn" onClick={()=>action(c.id,"CLOSE")}>إغلاق التقييم</button>}{c.status==="CLOSED"&&<button className="mini-btn" onClick={()=>action(c.id,"PUBLISH")}>نشر لولي الأمر</button>}</div></div>)}</section>}
+    {data?.can_manage&&<section className="panel form-stack"><h3>إدارة دورة التقييم</h3><div className="referral-grid two"><label>اسم الدورة<input value={title} onChange={e=>setTitle(e.target.value)}/></label><label>بداية الدورة<input type="datetime-local" value={start} onChange={e=>setStart(e.target.value)}/></label><label>الموعد النهائي<input type="datetime-local" value={due} onChange={e=>setDue(e.target.value)}/></label><button className="btn primary" disabled={busy==="create"} onClick={createCycle}>إنشاء دورة</button></div>{cycles.map((c:any)=><div className="cycle-admin-row" key={c.id}><div><b>{c.title_ar}</b><small>{c.status} · حتى {new Date(c.due_at).toLocaleString("ar-SA")}</small></div><div>{c.status==="DRAFT"&&<button className="mini-btn" onClick={()=>action(c.id,"ACTIVATE")}>إطلاق الدورة</button>}{c.status==="ACTIVE"&&<><button className="mini-btn" disabled={busy==="extend:"+c.id} onClick={()=>extendCycle(c)}>{busy==="extend:"+c.id?"جارٍ التمديد...":"تمديد الموعد"}</button><button className="mini-btn" onClick={()=>action(c.id,"CLOSE")}>إغلاق التقييم</button></>}{c.status==="CLOSED"&&<button className="mini-btn" onClick={()=>action(c.id,"PUBLISH")}>نشر لولي الأمر</button>}</div></div>)}</section>}
 
     {data?.can_manage&&active&&<section className="panel teacher-progress-panel">
       <div className="panel-title"><div><h3>متابعة إنجاز المعلمين</h3><p>متابعة مباشرة لعدد الطلاب الذين قيّمهم كل معلم والمتبقي عليه في الدورة الحالية.</p></div><button className="mini-btn" type="button" onClick={()=>load()}>تحديث الآن</button></div>

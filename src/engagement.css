@@ -49,3 +49,8 @@
 /* BEHAVIORAL_EXTENSION_ACTIONS_V1 */
 .behavioral-guidance-actions{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
 @media(max-width:760px){.behavioral-guidance-actions{width:100%;display:grid;grid-template-columns:1fr 1fr}.behavioral-guidance-actions .btn:last-child{grid-column:1/-1}}
+
+
+/* BEHAVIORAL_TOP5_EXPORT_ACTIONS_V1 */
+.behavioral-top5-actions{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+@media(max-width:760px){.behavioral-top5-actions{width:100%}.behavioral-top5-actions .mini-btn{flex:1 1 160px}}

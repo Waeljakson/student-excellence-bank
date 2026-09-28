@@ -44,3 +44,8 @@
 .behavioral-publish-winners{display:flex;align-items:center;justify-content:space-between;gap:18px;border-color:#e5d29a;background:linear-gradient(135deg,#fffdf6,#fff8df)}
 .behavioral-publish-winners h3{margin:3px 0 5px;color:#5d4710}.behavioral-publish-winners p{margin:0;color:#665b3e;line-height:1.8}.behavioral-publish-winners small{display:block;margin-top:6px;color:#806c32}.behavioral-publish-winners .eyebrow{color:#9a7112}
 @media(max-width:760px){.behavioral-publish-winners{align-items:stretch;flex-direction:column}.behavioral-publish-winners .btn{width:100%}}
+
+
+/* BEHAVIORAL_EXTENSION_ACTIONS_V1 */
+.behavioral-guidance-actions{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+@media(max-width:760px){.behavioral-guidance-actions{width:100%;display:grid;grid-template-columns:1fr 1fr}.behavioral-guidance-actions .btn:last-child{grid-column:1/-1}}

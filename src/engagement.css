@@ -38,3 +38,9 @@
 .behavioral-grade-empty{padding:20px;text-align:center;color:#81909a;font-size:10px}
 @media(max-width:900px){.behavioral-grade-top5-grid{grid-template-columns:1fr}.behavioral-grade-card:last-child:nth-child(odd){grid-column:auto}}
 @media(max-width:600px){.behavioral-grade-card th,.behavioral-grade-card td{padding:6px 5px}.behavioral-grade-card th:nth-child(2){width:46%}.behavioral-grade-card th:nth-child(3){width:22%}.behavioral-grade-card th:last-child,.behavioral-grade-card td:last-child{width:20%}}
+
+
+/* BEHAVIORAL_PUBLISH_WINNERS_V1 */
+.behavioral-publish-winners{display:flex;align-items:center;justify-content:space-between;gap:18px;border-color:#e5d29a;background:linear-gradient(135deg,#fffdf6,#fff8df)}
+.behavioral-publish-winners h3{margin:3px 0 5px;color:#5d4710}.behavioral-publish-winners p{margin:0;color:#665b3e;line-height:1.8}.behavioral-publish-winners small{display:block;margin-top:6px;color:#806c32}.behavioral-publish-winners .eyebrow{color:#9a7112}
+@media(max-width:760px){.behavioral-publish-winners{align-items:stretch;flex-direction:column}.behavioral-publish-winners .btn{width:100%}}

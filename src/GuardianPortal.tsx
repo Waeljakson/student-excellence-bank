@@ -3,7 +3,7 @@ import {neon,niceError,rpc} from "./client";
 import "./guardian-portal.css";
 
 type Note={id:string;subject_ar?:string;note_kind?:string;category_ar?:string;note_text:string;note_date:string;teacher_name?:string};
-type Child={id:string;student_no:string;name:string;grade_name:string;class_name:string;points:number;notes:Note[];periodic_evaluations:any[];individual_evaluations:any[];competitions:any[]};
+type Child={id:string;student_no:string;name:string;grade_name:string;class_name:string;points:number;notes:Note[];periodic_evaluations:any[];individual_evaluations:any[];behavioral_awards:any[];competitions:any[]};
 
 function riyadhDay(){
   const now=new Date();
@@ -94,6 +94,11 @@ function guardianSubjectLabel(value?:string|null){
 function guardianNoteKindLabel(value?:string|null){
   const key=String(value||"").toUpperCase();
   return key==="POSITIVE"?"إيجابية":key==="NEGATIVE"?"سلبية":key==="HOMEWORK"?"واجبات":"عامة";
+}
+
+function behavioralRankLabel(value:any){
+  const n=Number(value||0);
+  return ({1:"الأول",2:"الثاني",3:"الثالث",4:"الرابع",5:"الخامس"} as Record<number,string>)[n]||String(n||"—");
 }
 
 type PeriodicAnalysis={cycle_id:string;cycle_title:string;summary:string;academic:string;behavior:string;strengths:string[];followups:string[];recommendation:string};
@@ -254,6 +259,16 @@ export default function GuardianPortal({token,studentNo,initialData}:{token?:str
       {!children.length&&<section className="portal-panel"><div className="empty">لا يوجد طالب مرتبط بهذه البيانات حاليًا.</div></section>}
       {c&&<>
         <section className="guardian-student-card"><div><h2>{c.name}</h2><p>{c.grade_name} — فصل {c.class_name} · رقم الطالب {c.student_no}</p></div><div><small>نقاط التميز</small><strong>{Number(c.points||0).toLocaleString("ar-SA")}</strong></div></section>
+        {(c.behavioral_awards||[]).map((award:any)=><section className="guardian-behavioral-winner" key={award.cycle_id}>
+          <div className="guardian-winner-icon">★</div>
+          <div className="guardian-winner-copy">
+            <span>جائزة التميز السلوكي</span>
+            <h3>تهانينا بتميز ابنكم {c.name} 🎉</h3>
+            <p>نبارك لكم فوز ابنكم <b>بالمركز {behavioralRankLabel(award.rank)}</b> على مستوى صف <b>{award.grade_name||c.grade_name}</b> في جائزة التميز السلوكي. هذا الإنجاز يعكس التزامه وسلوكه الإيجابي، ونتطلع إلى استمرار تميزه وقدوته الحسنة بين زملائه.</p>
+            <small>{award.cycle_title||"التميز السلوكي"} · {Number(award.nomination_count||0).toLocaleString("ar-SA")} ترشيح من المعلمين</small>
+          </div>
+          <div className="guardian-winner-rank"><small>المركز</small><strong>{behavioralRankLabel(award.rank)}</strong><span>على مستوى الصف</span></div>
+        </section>)}
         <DailyFollowup child={c}/>
         <nav className="guardian-tabs">
           <button className={tab==="overview"?"active":""} onClick={()=>setTab("overview")}>الرئيسية</button>

@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { niceError, rpc } from "./client";
+import * as XLSX from "xlsx";
 import "./engagement.css";
 
 type Student={id:string;student_no:string;name:string;grade_name:string;class_name:string;class_id?:string;points:number};
@@ -138,15 +139,94 @@ th:nth-child(8),td:nth-child(8){width:29%}
     const schoolLogo=new URL("school-logo.png",base).href;
     const guidanceLogo=new URL("guidance-logo.png",base).href;
     const printedAt=new Date().toLocaleString("ar-SA",{year:"numeric",month:"long",day:"numeric",hour:"numeric",minute:"2-digit"});
-    const blocks=gradeTopFive.map(g=>{
-      const rows=g.students.length?g.students.map((x:any)=>`<tr><td class="rank">${x.grade_rank}</td><td><b>${esc(x.student_name)}</b><small>${esc(x.student_no)}</small></td><td>${esc(x.class_name)}</td><td class="count">${Number(x.nomination_count).toLocaleString("ar-SA")}</td></tr>`).join(""):`<tr><td colspan="4" class="empty">لا توجد ترشيحات في هذا الصف حتى الآن.</td></tr>`;
-      return `<section class="grade-block"><h2>الصف ${esc(g.grade_name)}</h2><table><thead><tr><th>المركز</th><th>الطالب</th><th>الفصل</th><th>الترشيحات</th></tr></thead><tbody>${rows}</tbody></table></section>`;
+    const rows=gradeTopFive.map(group=>{
+      if(!group.students.length){
+        return `<tr class="grade-separator"><td colspan="6">الصف ${esc(group.grade_name)}</td></tr><tr><td colspan="6" class="empty">لا توجد ترشيحات في هذا الصف حتى الآن.</td></tr>`;
+      }
+      return `<tr class="grade-separator"><td colspan="6">الصف ${esc(group.grade_name)}</td></tr>`+
+        group.students.map((x:any)=>`<tr><td class="rank">${x.grade_rank}</td><td class="student"><b>${esc(x.student_name)}</b></td><td>${esc(x.student_no)}</td><td>${esc(x.class_name)}</td><td class="count">${Number(x.nomination_count).toLocaleString("ar-SA")}</td><td>${esc(group.grade_name)}</td></tr>`).join("");
     }).join("");
-    const w=window.open("","_blank","width=1200,height=850");if(!w)return;
+
+    const w=window.open("","_blank","width=1200,height=850");
+    if(!w){window.alert("تعذر فتح نافذة الطباعة. اسمح بالنوافذ المنبثقة لهذا الموقع ثم أعد المحاولة.");return}
+    w.document.open();
     w.document.write(`<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>أفضل 5 طلاب في كل صف — التميز السلوكي</title><style>
-      @page{size:A4 landscape;margin:9mm}*{box-sizing:border-box}body{font-family:"Cairo",Tahoma,Arial,sans-serif;margin:0;color:#17242c;background:#fff;-webkit-print-color-adjust:exact;print-color-adjust:exact}.report{width:100%}.head{display:grid;grid-template-columns:90px 1fr 90px;align-items:center;border-bottom:3px solid #0b7562;padding-bottom:9px;margin-bottom:9px}.head img{width:64px;height:64px;object-fit:contain;justify-self:center}.head div{text-align:center}.head h1{margin:2px 0 3px;font-size:20px;color:#153f62}.head h3{margin:0;font-size:10px;color:#0b7562}.head p{margin:3px 0 0;font-size:8px;color:#6f808a}.meta{display:flex;justify-content:space-between;gap:10px;padding:6px 9px;border:1px solid #dbe5e8;background:#f6f9fa;border-radius:8px;font-size:8px;margin-bottom:9px}.grades{display:grid;grid-template-columns:1fr 1fr;gap:8px}.grade-block{border:1px solid #d7e2e5;border-radius:10px;overflow:hidden;break-inside:avoid}.grade-block:nth-child(5){grid-column:1/-1}.grade-block h2{margin:0;padding:6px 9px;background:#eaf3f1;color:#124d45;font-size:12px}table{width:100%;border-collapse:collapse;table-layout:fixed;font-size:8px}th,td{border-top:1px solid #dde6e8;padding:4px 6px;text-align:right;vertical-align:middle}th{background:#f7fafb;color:#536b77;font-weight:800}.rank,.count{text-align:center;width:12%}td:nth-child(3){width:20%}td b,td small{display:block}td b{font-size:8.5px}td small{font-size:7px;color:#758791;margin-top:1px}.rank{font-weight:900;color:#0b7562}.count{font-weight:900;color:#153f62}.empty{text-align:center;color:#7b8b94;padding:10px}.footer{display:flex;justify-content:space-between;border-top:1px solid #d5e0e3;margin-top:9px;padding-top:6px;font-size:7px;color:#748690}.tools{text-align:center;margin-top:10px}.tools button{border:0;border-radius:8px;background:#0b7562;color:#fff;padding:8px 15px;font-family:inherit;font-weight:800}@media print{.tools{display:none}}
-    </style></head><body><main class="report"><header class="head"><img src="${esc(schoolLogo)}"><div><h3>مدارس المشكاة الأهلية — بنك التميز الطلابي</h3><h1>أفضل 5 طلاب في كل صف — التميز السلوكي</h1><p>${esc(data.cycle.title_ar)} · ${esc(fmt(data.cycle.starts_at))} — ${esc(fmt(data.cycle.ends_at))}</p></div><img src="${esc(guidanceLogo)}"></header><div class="meta"><span>التجميع: <b>على مستوى الصف الدراسي بالكامل</b></span><span>تاريخ إعداد التقرير: <b>${esc(printedAt)}</b></span></div><div class="grades">${blocks}</div><footer class="footer"><span>التوجيه الطلابي</span><span>تم إنشاء التقرير إلكترونيًا من نظام بنك التميز الطلابي</span></footer><div class="tools"><button onclick="window.print()">طباعة / حفظ PDF</button></div></main><script>window.addEventListener("load",()=>setTimeout(()=>{window.focus();window.print()},300));<\/script></body></html>`);
+@page{size:A4 landscape;margin:9mm}
+*{box-sizing:border-box}
+html,body{background:#fff!important;color:#17242c!important}
+body{margin:0;padding:0;font-family:"Cairo",Tahoma,Arial,sans-serif!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.report{display:block!important;width:100%!important;visibility:visible!important;opacity:1!important}
+.head{display:grid!important;grid-template-columns:90px 1fr 90px;align-items:center;gap:12px;border-bottom:3px solid #0b7562;padding:0 0 9px;margin-bottom:9px}
+.head img{width:64px;height:64px;object-fit:contain;justify-self:center}
+.head .center{text-align:center}.head h1{margin:2px 0 3px;font-size:20px;color:#153f62}.head h3{margin:0;font-size:10px;color:#0b7562}.head p{margin:3px 0 0;font-size:8px;color:#6f808a}
+.meta{display:flex!important;justify-content:space-between;gap:10px;padding:6px 9px;border:1px solid #dbe5e8;background:#f6f9fa!important;border-radius:8px;font-size:8px;margin-bottom:9px}
+.table-shell{display:block!important;width:100%!important;overflow:visible!important;visibility:visible!important}
+table{display:table!important;width:100%!important;border-collapse:collapse!important;table-layout:fixed!important;background:#fff!important;font-size:8.5px!important;visibility:visible!important;opacity:1!important}
+thead{display:table-header-group!important}tbody{display:table-row-group!important}tr{display:table-row!important;break-inside:avoid;page-break-inside:avoid}
+th,td{display:table-cell!important;border:1px solid #d5e0e3!important;padding:5px 6px!important;text-align:right!important;vertical-align:middle!important;color:#17242c!important;background:#fff!important;visibility:visible!important;opacity:1!important}
+th{background:#eaf3f1!important;color:#124d45!important;font-weight:800!important}
+.grade-separator td{background:#dff0ec!important;color:#124d45!important;font-weight:900!important;font-size:10px!important;padding:6px 8px!important}
+.rank,.count{text-align:center!important;font-weight:900!important}.rank{width:9%}.student{width:30%}
+.empty{text-align:center!important;color:#7b8b94!important;padding:10px!important}
+.footer{display:flex!important;justify-content:space-between;border-top:1px solid #d5e0e3;margin-top:9px;padding-top:6px;font-size:7px;color:#748690}
+.tools{text-align:center;margin-top:10px}.tools button{border:0;border-radius:8px;background:#0b7562;color:#fff;padding:8px 15px;font-family:inherit;font-weight:800}
+@media print{.tools{display:none!important}html,body,.report,.table-shell,table{display:block!important;visibility:visible!important;opacity:1!important}table{display:table!important}thead{display:table-header-group!important}tbody{display:table-row-group!important}tr{display:table-row!important}th,td{display:table-cell!important}}
+</style></head><body><main class="report">
+<header class="head"><img src="${esc(schoolLogo)}" alt="شعار المدرسة"><div class="center"><h3>متوسطة وثانوية مشكاة الشعلة الأهلية — بنك التميز الطلابي</h3><h1>أفضل 5 طلاب في كل صف — التميز السلوكي</h1><p>${esc(data.cycle.title_ar)} · ${esc(fmt(data.cycle.starts_at))} — ${esc(fmt(data.cycle.ends_at))}</p></div><img src="${esc(guidanceLogo)}" alt="شعار التوجيه الطلابي"></header>
+<div class="meta"><span>التجميع: <b>على مستوى الصف الدراسي بالكامل</b></span><span>تاريخ إعداد التقرير: <b>${esc(printedAt)}</b></span></div>
+<div class="table-shell"><table><thead><tr><th>المركز</th><th>الطالب</th><th>رقم الطالب</th><th>الفصل</th><th>الترشيحات</th><th>الصف الدراسي</th></tr></thead><tbody>${rows}</tbody></table></div>
+<footer class="footer"><span>التوجيه الطلابي</span><span>تم إنشاء التقرير إلكترونيًا من نظام بنك التميز الطلابي</span></footer>
+<div class="tools"><button type="button" onclick="window.print()">طباعة / حفظ PDF</button></div>
+</main><script>
+const doPrint=()=>setTimeout(()=>{window.focus();window.print()},800);
+const imgs=Array.from(document.images);
+Promise.all(imgs.map(img=>img.complete?Promise.resolve():new Promise(resolve=>{img.onload=resolve;img.onerror=resolve}))).then(doPrint);
+if(!imgs.length)doPrint();
+<\/script></body></html>`);
     w.document.close();
+  }
+
+  function exportGradeTopFiveExcel(){
+    if(!data?.cycle)return;
+    const generatedAt=new Date().toLocaleString("ar-SA",{year:"numeric",month:"long",day:"numeric",hour:"numeric",minute:"2-digit"});
+    const allRows:any[][]=[
+      ["تقرير أفضل 5 طلاب في كل صف — التميز السلوكي"],
+      [data.cycle.title_ar],
+      [`الفترة: ${fmt(data.cycle.starts_at)} — ${fmt(data.cycle.ends_at)}`],
+      [`تاريخ التصدير: ${generatedAt}`],
+      [],
+      ["الصف الدراسي","المركز","اسم الطالب","رقم الطالب","الفصل","عدد الترشيحات"]
+    ];
+    for(const group of gradeTopFive){
+      for(const x of group.students){
+        allRows.push([group.grade_name,x.grade_rank,x.student_name,x.student_no,x.class_name,x.nomination_count]);
+      }
+    }
+
+    const workbook=XLSX.utils.book_new();
+    const allSheet=XLSX.utils.aoa_to_sheet(allRows);
+    allSheet["!cols"]=[{wch:22},{wch:10},{wch:34},{wch:16},{wch:12},{wch:14}];
+    (allSheet as any)["!rtl"]=true;
+    XLSX.utils.book_append_sheet(workbook,allSheet,"جميع الصفوف");
+
+    for(const group of gradeTopFive){
+      const rows:any[][]=[
+        [`أفضل 5 طلاب — ${group.grade_name}`],
+        [data.cycle.title_ar],
+        [],
+        ["المركز","اسم الطالب","رقم الطالب","الفصل","عدد الترشيحات"]
+      ];
+      for(const x of group.students)rows.push([x.grade_rank,x.student_name,x.student_no,x.class_name,x.nomination_count]);
+      const sheet=XLSX.utils.aoa_to_sheet(rows);
+      sheet["!cols"]=[{wch:10},{wch:34},{wch:16},{wch:12},{wch:14}];
+      (sheet as any)["!rtl"]=true;
+      const safeName=group.grade_name.replace(/[\\/?*\[\]:]/g," ").slice(0,31)||"صف";
+      XLSX.utils.book_append_sheet(workbook,sheet,safeName);
+    }
+
+    const fileDate=new Date().toISOString().slice(0,10);
+    XLSX.writeFile(workbook,`فائزو-التميز-السلوكي-${fileDate}.xlsx`);
+    setMsg("تم تجهيز ملف Excel للفائزين في جميع الصفوف.");
   }
 
   if(!data)return <><header className="topbar"><div><h1>التميز السلوكي</h1><p>جارٍ تحميل البرنامج...</p></div></header><main className="content"><div className="panel empty">جارٍ التحميل...</div></main></>;
@@ -160,7 +240,7 @@ th:nth-child(8),td:nth-child(8){width:29%}
 
     {c&&(data.can_activate||data.can_manage)&&c.status!=="SCHEDULED"&&<section className="panel behavioral-participation-report"><div className="panel-title"><div><h3>تقرير متابعة ترشيحات المعلمين</h3><p>يعرض من أكمل ترشيح 3 طلاب في كل فصل مسند له، ومن لم يبدأ أو لم يكمل بعد.</p></div><div className="behavioral-report-actions no-print"><button className="mini-btn" onClick={()=>load()}>تحديث التقرير</button><button className="mini-btn" onClick={printParticipation}>طباعة التقرير</button></div></div><div className="behavioral-report-stats"><article><span>إجمالي المعلمين</span><strong>{participationStats.total}</strong></article><article className="complete"><span>أكملوا الترشيح</span><strong>{participationStats.complete}</strong></article><article className="partial"><span>ترشيح جزئي</span><strong>{participationStats.partial}</strong></article><article className="missing"><span>لم يرشحوا</span><strong>{participationStats.missing}</strong></article><article className="account"><span>بدون حساب مفعل</span><strong>{participationStats.noAccount}</strong></article></div><div className="behavioral-report-filters no-print"><button className={reportFilter==="ALL"?"active":""} onClick={()=>setReportFilter("ALL")}>الكل</button><button className={reportFilter==="NOT_NOMINATED"?"active":""} onClick={()=>setReportFilter("NOT_NOMINATED")}>لم يرشح</button><button className={reportFilter==="PARTIAL"?"active":""} onClick={()=>setReportFilter("PARTIAL")}>جزئي</button><button className={reportFilter==="COMPLETE"?"active":""} onClick={()=>setReportFilter("COMPLETE")}>مكتمل</button><button className={reportFilter==="NO_ACCOUNT"?"active":""} onClick={()=>setReportFilter("NO_ACCOUNT")}>بدون حساب</button></div>{filteredParticipation.length?<div className="table-wrap behavioral-report-table"><table className="behavioral-participation-table"><colgroup><col className="col-teacher"/><col className="col-status"/><col className="col-classes"/><col className="col-number"/><col className="col-number"/><col className="col-nominations"/></colgroup><thead><tr><th className="teacher-col">المعلم</th><th className="status-col">الحالة</th><th className="classes-col">الفصول</th><th className="number-col">المكتمل</th><th className="number-col">المتبقي</th><th className="nominations-col">المرشحون</th></tr></thead><tbody>{filteredParticipation.map(t=><tr key={t.staff_id} className={`participation-${t.status.toLowerCase()}`}><td className="teacher-col"><div className="behavioral-teacher-cell"><b title={t.teacher_name}>{t.teacher_name}</b><small title={t.subject_name||"—"}>{t.subject_name||"—"}</small></div></td><td className="status-col"><span className={`participation-status ${t.status.toLowerCase()}`}>{participationLabel(t.status)}</span></td><td className="classes-col"><div className="behavioral-classes-cell"><b>{t.assigned_classes} فصل</b>{t.classes?.length>0&&<div className="participation-classes">{t.classes.map(x=><span key={x.class_id} title={`${x.grade_name} / ${x.class_name}: ${x.nomination_count}/3`} className={x.complete?"done":"pending"}>{x.grade_name} / {x.class_name}: {x.nomination_count}/3</span>)}</div>}</div></td><td className="number-col"><strong>{t.completed_classes}</strong></td><td className="number-col"><strong>{t.remaining_classes}</strong></td><td className="nominations-col"><strong>{t.nomination_count}</strong></td></tr>)}</tbody></table></div>:<div className="empty">لا توجد نتائج مطابقة لهذا الفلتر.</div>}</section>}
 
-    {c&&(data.can_activate||data.can_manage)&&c.status!=="SCHEDULED"&&<section className="panel behavioral-grade-top5-report"><div className="panel-title"><div><h3>أفضل 5 طلاب في كل صف</h3><p>الترتيب محسوب على مستوى الصف الدراسي بالكامل، وليس على مستوى الفصل، حسب إجمالي ترشيحات المعلمين.</p></div><button className="mini-btn no-print" onClick={printGradeTopFive}>طباعة / حفظ PDF</button></div><div className="behavioral-grade-top5-grid">{gradeTopFive.map(group=><article className="behavioral-grade-card" key={group.grade_name}><div className="behavioral-grade-card-head"><div><small>الصف الدراسي</small><h4>{group.grade_name}</h4></div><span>{group.students.length}/5</span></div>{group.students.length?<table><thead><tr><th>المركز</th><th>الطالب</th><th>الفصل</th><th>الترشيحات</th></tr></thead><tbody>{group.students.map((x:any)=><tr key={x.student_id}><td><span className={"grade-top-rank rank-"+Math.min(x.grade_rank,4)}>{x.grade_rank}</span></td><td><div className="grade-top-student"><b>{x.student_name}</b><small>{x.student_no}</small></div></td><td><span className="grade-top-class">{x.class_name}</span></td><td><strong className="grade-top-count">{x.nomination_count}</strong></td></tr>)}</tbody></table>:<div className="behavioral-grade-empty">لا توجد ترشيحات في هذا الصف حتى الآن.</div>}</article>)}</div></section>}
+    {c&&(data.can_activate||data.can_manage)&&c.status!=="SCHEDULED"&&<section className="panel behavioral-grade-top5-report"><div className="panel-title"><div><h3>أفضل 5 طلاب في كل صف</h3><p>الترتيب محسوب على مستوى الصف الدراسي بالكامل، وليس على مستوى الفصل، حسب إجمالي ترشيحات المعلمين.</p></div><div className="behavioral-top5-actions no-print"><button className="mini-btn" onClick={printGradeTopFive}>طباعة / حفظ PDF</button><button className="mini-btn" onClick={exportGradeTopFiveExcel}>تصدير Excel لكل الصفوف</button></div></div><div className="behavioral-grade-top5-grid">{gradeTopFive.map(group=><article className="behavioral-grade-card" key={group.grade_name}><div className="behavioral-grade-card-head"><div><small>الصف الدراسي</small><h4>{group.grade_name}</h4></div><span>{group.students.length}/5</span></div>{group.students.length?<table><thead><tr><th>المركز</th><th>الطالب</th><th>الفصل</th><th>الترشيحات</th></tr></thead><tbody>{group.students.map((x:any)=><tr key={x.student_id}><td><span className={"grade-top-rank rank-"+Math.min(x.grade_rank,4)}>{x.grade_rank}</span></td><td><div className="grade-top-student"><b>{x.student_name}</b><small>{x.student_no}</small></div></td><td><span className="grade-top-class">{x.class_name}</span></td><td><strong className="grade-top-count">{x.nomination_count}</strong></td></tr>)}</tbody></table>:<div className="behavioral-grade-empty">لا توجد ترشيحات في هذا الصف حتى الآن.</div>}</article>)}</div></section>}
 
     {c&&data.is_teacher&&data.visible_to_teacher&&<section className="behavioral-nomination-area"><div className="section-intro"><div><h3>ترشيحاتك</h3><p>اختر 3 طلاب من كل فصل مسند لك. يمكنك تعديل الاختيارات وإعادة حفظها ما دامت الدورة مفتوحة.</p></div></div>{classGroups.length?<div className="behavioral-class-grid">{classGroups.map(group=>{const choices=selected[group.id]||[];return <article className="panel behavioral-class-card" key={group.id}><div className="behavioral-class-head"><div><span>{group.grade}</span><h4>فصل {group.name}</h4></div><b className={choices.length===3?"complete":""}>{choices.length}/3</b></div><div className="behavioral-student-picker">{group.students.map(s=><button type="button" key={s.id} className={choices.includes(s.id)?"selected":""} onClick={()=>toggle(group.id,s.id)}><span className="student-choice-mark">{choices.includes(s.id)?"✓":""}</span><div><b>{s.name}</b><small>{s.student_no}</small></div></button>)}</div><button className="btn primary full" disabled={busy===group.id||choices.length!==3} onClick={()=>saveClass(group.id)}>{busy===group.id?"جارٍ الحفظ...":"حفظ 3 ترشيحات"}</button></article>})}</div>:<div className="panel empty">لا توجد فصول مسندة لحسابك.</div>}</section>}
 

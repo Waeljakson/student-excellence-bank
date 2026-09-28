@@ -13,8 +13,9 @@ writeFileSync(competitionPath,competition);
 
 const behavioralPath="src/BehavioralExcellence.tsx";
 let behavioral=readFileSync(behavioralPath,"utf8");
-if(!behavioral.includes('from "./report-print"')) behavioral=behavioral.replace('import { niceError, rpc } from "./client";','import { niceError, rpc } from "./client";\nimport { printTableReport } from "./report-print";');
-behavioral=behavioral.replace('onClick={printParticipation}>طباعة التقرير</button>','onClick={()=>{const table=document.querySelector(".behavioral-report-table table") as HTMLTableElement|null;if(table)printTableReport(table,{title:"تقرير متابعة ترشيحات المعلمين — التميز السلوكي",subtitle:c?`${c.title_ar} · ${fmt(c.starts_at)} — ${fmt(c.ends_at)}`:"",orientation:"landscape"})}}>طباعة / حفظ PDF</button>');
+// Keep this report on its dedicated self-contained print path.
+// Replacing it with the generic DOM table printer can yield a blank print preview.
+behavioral=behavioral.replace('\nimport { printTableReport } from "./report-print";','');
 behavioral=behavioral.replace('className="panel behavioral-participation-report"','className="panel behavioral-participation-report" data-report-title="تقرير متابعة ترشيحات المعلمين — التميز السلوكي"');
 writeFileSync(behavioralPath,behavioral);
 

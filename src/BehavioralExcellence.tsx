@@ -49,9 +49,59 @@ export default function BehavioralExcellence({students}:Props){
   function printParticipation(){
     if(!data?.cycle)return;
     const esc=(v:any)=>String(v??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#039;"}[m]||m));
-    const rows=participation.map((t,i)=>`<tr><td>${i+1}</td><td><b>${esc(t.teacher_name)}</b><small>${esc(t.subject_name||"")}</small></td><td>${esc(participationLabel(t.status))}</td><td>${t.assigned_classes}</td><td>${t.completed_classes}</td><td>${t.remaining_classes}</td><td>${t.nomination_count}</td></tr>`).join("");
-    const w=window.open("","_blank","width=1100,height=800");if(!w)return;
-    w.document.write(`<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><title>تقرير متابعة ترشيحات التميز السلوكي</title><style>body{font-family:Arial,Tahoma,sans-serif;padding:24px;color:#1e2d36}h1{margin:0 0 5px;font-size:24px}p{margin:0 0 18px;color:#61737d}.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:14px 0}.stats div{border:1px solid #ccd8dd;border-radius:10px;padding:10px}.stats b{display:block;font-size:22px}table{width:100%;border-collapse:collapse;font-size:12px}th,td{border:1px solid #cfd9dd;padding:8px;text-align:right}th{background:#eef4f5}td small{display:block;color:#667983;margin-top:2px}@media print{body{padding:0}}</style></head><body><h1>تقرير متابعة ترشيحات التميز السلوكي</h1><p>${esc(data.cycle.title_ar)} · ${esc(fmt(data.cycle.starts_at))} — ${esc(fmt(data.cycle.ends_at))}</p><div class="stats"><div>إجمالي المعلمين<b>${participationStats.total}</b></div><div>أكملوا الترشيح<b>${participationStats.complete}</b></div><div>ترشيح جزئي<b>${participationStats.partial}</b></div><div>لم يرشحوا<b>${participationStats.missing}</b></div></div><table><thead><tr><th>#</th><th>المعلم</th><th>الحالة</th><th>الفصول المسندة</th><th>المكتمل</th><th>المتبقي</th><th>عدد الترشيحات</th></tr></thead><tbody>${rows}</tbody></table></body></html>`);w.document.close();w.focus();setTimeout(()=>w.print(),250);
+    const list=filteredParticipation;
+    const rows=list.map((t,i)=>{
+      const classText=(t.classes||[]).map(x=>`${x.grade_name} / ${x.class_name}: ${x.nomination_count}/3`).join("، ");
+      return `<tr><td class="num">${i+1}</td><td class="teacher"><b>${esc(t.teacher_name)}</b><small>${esc(t.subject_name||"—")}</small></td><td>${esc(participationLabel(t.status))}</td><td>${t.assigned_classes}</td><td>${t.completed_classes}</td><td>${t.remaining_classes}</td><td>${t.nomination_count}</td><td>${esc(classText||"—")}</td></tr>`;
+    }).join("");
+    const filterLabel=reportFilter==="ALL"?"الكل":participationLabel(reportFilter as TeacherParticipation["status"]);
+    const base=new URL(import.meta.env.BASE_URL,window.location.origin).href;
+    const schoolLogo=new URL("school-logo.png",base).href;
+    const guidanceLogo=new URL("guidance-logo.png",base).href;
+    const printedAt=new Date().toLocaleString("ar-SA",{year:"numeric",month:"long",day:"numeric",hour:"numeric",minute:"2-digit"});
+    const w=window.open("","_blank","width=1200,height=850");
+    if(!w){window.alert("تعذر فتح نافذة الطباعة. اسمح بالنوافذ المنبثقة لهذا الموقع ثم أعد المحاولة.");return}
+    w.document.open();
+    w.document.write(`<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>تقرير متابعة ترشيحات المعلمين — التميز السلوكي</title><style>
+@page{size:A4 landscape;margin:9mm}
+*{box-sizing:border-box}
+html,body{background:#fff!important;color:#17242c!important}
+body{margin:0;font-family:"Cairo",Tahoma,Arial,sans-serif;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.report{width:100%}
+.head{display:grid;grid-template-columns:90px 1fr 90px;align-items:center;gap:12px;border-bottom:3px solid #0b7562;padding-bottom:9px;margin-bottom:10px}
+.head img{width:64px;height:64px;object-fit:contain;justify-self:center}
+.head .center{text-align:center}
+.head h1{margin:2px 0 3px;font-size:20px;color:#153f62}
+.head h2{margin:0;font-size:10px;color:#0b7562}
+.head p{margin:3px 0 0;font-size:8px;color:#667983}
+.meta{display:flex;justify-content:space-between;gap:10px;padding:6px 9px;border:1px solid #dbe5e8;background:#f6f9fa;border-radius:8px;font-size:8px;margin-bottom:9px}
+.stats{display:grid;grid-template-columns:repeat(5,1fr);gap:7px;margin-bottom:9px}
+.stats div{border:1px solid #d8e2e6;border-radius:8px;padding:7px;text-align:center;background:#fafcfc}
+.stats small{display:block;color:#6b7d86;margin-bottom:2px}
+.stats b{font-size:15px;color:#153f62}
+table{display:table!important;width:100%!important;border-collapse:collapse!important;table-layout:fixed!important;font-size:8px!important;background:#fff!important;visibility:visible!important;opacity:1!important}
+thead{display:table-header-group!important}
+tbody{display:table-row-group!important}
+tr{display:table-row!important;break-inside:avoid;page-break-inside:avoid}
+th,td{display:table-cell!important;border:1px solid #cfdadd!important;padding:5px 6px!important;text-align:right!important;vertical-align:middle!important;color:#17242c!important;visibility:visible!important;opacity:1!important;overflow-wrap:anywhere}
+th{background:#eaf3f1!important;color:#124d45!important;font-weight:800!important}
+tbody tr:nth-child(even) td{background:#f9fbfb!important}
+td.num{text-align:center!important;width:4%}.teacher{width:18%}.teacher b,.teacher small{display:block}.teacher small{font-size:7px;color:#6d7d84;margin-top:2px}
+th:nth-child(3),td:nth-child(3){width:11%}th:nth-child(4),td:nth-child(4),th:nth-child(5),td:nth-child(5),th:nth-child(6),td:nth-child(6),th:nth-child(7),td:nth-child(7){width:8%}
+th:nth-child(8),td:nth-child(8){width:29%}
+.empty{text-align:center!important;padding:18px!important;color:#6d7d84}
+.footer{display:flex;justify-content:space-between;border-top:1px solid #d5e0e3;margin-top:9px;padding-top:6px;font-size:7px;color:#748690}
+.tools{text-align:center;margin-top:10px}.tools button{border:0;border-radius:8px;background:#0b7562;color:#fff;padding:8px 15px;font-family:inherit;font-weight:800}
+@media print{.tools{display:none!important}body{margin:0!important}.report{display:block!important;visibility:visible!important}table{display:table!important;visibility:visible!important}}
+</style></head><body><main class="report">
+<header class="head"><img src="${esc(schoolLogo)}" alt="شعار المدرسة"><div class="center"><h2>متوسطة وثانوية مشكاة الشعلة الأهلية — بنك التميز الطلابي</h2><h1>تقرير متابعة ترشيحات المعلمين — التميز السلوكي</h1><p>${esc(data.cycle.title_ar)} · ${esc(fmt(data.cycle.starts_at))} — ${esc(fmt(data.cycle.ends_at))}</p></div><img src="${esc(guidanceLogo)}" alt="شعار التوجيه الطلابي"></header>
+<div class="meta"><span>الفلتر الحالي: <b>${esc(filterLabel)}</b></span><span>عدد المعلمين المعروضين: <b>${list.length.toLocaleString("ar-SA")}</b></span><span>تاريخ الطباعة: <b>${esc(printedAt)}</b></span></div>
+<div class="stats"><div><small>إجمالي المعلمين</small><b>${participationStats.total}</b></div><div><small>أكملوا الترشيح</small><b>${participationStats.complete}</b></div><div><small>ترشيح جزئي</small><b>${participationStats.partial}</b></div><div><small>لم يرشحوا</small><b>${participationStats.missing}</b></div><div><small>بدون حساب مفعل</small><b>${participationStats.noAccount}</b></div></div>
+<table><thead><tr><th>#</th><th>المعلم</th><th>الحالة</th><th>الفصول المسندة</th><th>المكتمل</th><th>المتبقي</th><th>الترشيحات</th><th>تفاصيل الفصول</th></tr></thead><tbody>${rows||'<tr><td colspan="8" class="empty">لا توجد بيانات مطابقة للفلتر الحالي.</td></tr>'}</tbody></table>
+<footer class="footer"><span>التوجيه الطلابي</span><span>تم إنشاء التقرير إلكترونيًا من نظام بنك التميز الطلابي</span></footer>
+<div class="tools"><button type="button" onclick="window.print()">طباعة / حفظ PDF</button></div>
+</main><script>const startPrint=()=>setTimeout(()=>{window.focus();window.print()},650);if(document.readyState==="complete"){startPrint()}else{window.addEventListener("load",startPrint,{once:true})}<\/script></body></html>`);
+    w.document.close();
   }
   function printGradeTopFive(){
     if(!data?.cycle)return;

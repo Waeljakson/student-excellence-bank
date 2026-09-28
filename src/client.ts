@@ -168,6 +168,7 @@ export function niceError(error: unknown) {
   if (message.includes("BEHAVIORAL_NOT_SCHEDULED")) return "هذه الدورة ليست في حالة انتظار التفعيل.";
   if (message.includes("BEHAVIORAL_PERIOD_ENDED")) return "انتهت مدة هذه الدورة ولا يمكن تفعيلها.";
   if (message.includes("BEHAVIORAL_ALREADY_CLOSED")) return "هذه الدورة مغلقة بالفعل.";
+  if (message.includes("BEHAVIORAL_EXTEND_FORBIDDEN")) return "تمديد التميز السلوكي متاح للموجه الطلابي أو مدير النظام فقط.";
   if (message.includes("BEHAVIORAL_MUST_CLOSE_FIRST")) return "يجب إغلاق دورة التميز السلوكي أولًا قبل نشر الفائزين.";
   if (message.includes("BEHAVIORAL_WINNERS_ALREADY_PUBLISHED")) return "تم نشر الفائزين لهذه الدورة بالفعل.";
   if (message.includes("BEHAVIORAL_NO_WINNERS")) return "لا توجد ترشيحات كافية لاعتماد فائزين في هذه الدورة.";

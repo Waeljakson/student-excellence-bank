@@ -3,7 +3,7 @@ import { niceError, rpc } from "./client";
 import "./engagement.css";
 
 type Student={id:string;student_no:string;name:string;grade_name:string;class_name:string;class_id?:string;points:number};
-type Cycle={id:string;title_ar:string;description_ar:string;starts_at:string;ends_at:string;status:"SCHEDULED"|"ACTIVE"|"CLOSED";activated_at?:string|null;closed_at?:string|null};
+type Cycle={id:string;title_ar:string;description_ar:string;starts_at:string;ends_at:string;status:"SCHEDULED"|"ACTIVE"|"CLOSED";activated_at?:string|null;closed_at?:string|null;winners_published_at?:string|null;winners_count?:number};
 type Nomination={class_id:string;student_ids:string[]};
 type Leader={student_id:string;student_name:string;student_no:string;grade_name:string;class_name:string;nomination_count:number;rank:number};
 type ParticipationClass={class_id:string;grade_name:string;class_name:string;nomination_count:number;complete:boolean};
@@ -45,7 +45,21 @@ export default function BehavioralExcellence({students}:Props){
   },[data?.leaderboard]);
   function toggle(classId:string,studentId:string){setMsg("");setSelected(v=>{const current=v[classId]||[];if(current.includes(studentId))return{...v,[classId]:current.filter(x=>x!==studentId)};if(current.length>=3){setMsg("لكل فصل 3 ترشيحات فقط. ألغِ اختيار طالب أولًا لتختار غيره.");return v}return{...v,[classId]:[...current,studentId]}})}
   async function saveClass(classId:string){const ids=selected[classId]||[];if(ids.length!==3){setMsg("اختر 3 طلاب بالضبط من هذا الفصل قبل الحفظ.");return}if(!data?.cycle)return;setBusy(classId);setMsg("");try{await rpc("api_behavioral_nominate",{p_cycle_id:data.cycle.id,p_class_id:classId,p_student_ids:ids});setMsg("تم حفظ ترشيحات التميز السلوكي لهذا الفصل.");await load()}catch(e){setMsg(niceError(e))}finally{setBusy("")}}
-  async function cycleAction(action:"ACTIVATE"|"CLOSE"){if(!data?.cycle)return;setBusy(action);setMsg("");try{await rpc("api_behavioral_set_cycle_state",{p_cycle_id:data.cycle.id,p_action:action});setMsg(action==="ACTIVATE"?"تم تفعيل البرنامج. سيظهر للمعلمين داخل المدة المحددة، وأصبح تقرير متابعة الترشيحات متاحًا لك.":"تم إغلاق الدورة وإيقاف الترشيحات.");await load();window.dispatchEvent(new Event("behavioral-status-changed"))}catch(e){setMsg(niceError(e))}finally{setBusy("")}}
+  async function cycleAction(action:"ACTIVATE"|"CLOSE"|"PUBLISH_WINNERS"){
+    if(!data?.cycle)return;
+    if(action==="PUBLISH_WINNERS"&&!window.confirm("سيتم اعتماد أفضل 5 طلاب على مستوى كل صف ونشر التهنئة لأولياء أمور الفائزين. لا يمكن إعادة احتساب المراكز بعد النشر. هل تريد المتابعة؟"))return;
+    setBusy(action);setMsg("");
+    try{
+      const result=await rpc<any>("api_behavioral_set_cycle_state",{p_cycle_id:data.cycle.id,p_action:action});
+      setMsg(action==="ACTIVATE"
+        ?"تم تفعيل البرنامج. سيظهر للمعلمين داخل المدة المحددة، وأصبح تقرير متابعة الترشيحات متاحًا لك."
+        :action==="CLOSE"
+          ?"تم إغلاق الدورة وإيقاف الترشيحات. راجع النتائج ثم انشر الفائزين لأولياء الأمور."
+          :`تم اعتماد ونشر الفائزين لأولياء الأمور (${Number(result?.published_winners||0).toLocaleString("ar-SA")} طالبًا).`);
+      await load();
+      window.dispatchEvent(new Event("behavioral-status-changed"));
+    }catch(e){setMsg(niceError(e))}finally{setBusy("")}
+  }
   function printParticipation(){
     if(!data?.cycle)return;
     const esc=(v:any)=>String(v??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#039;"}[m]||m));

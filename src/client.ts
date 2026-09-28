@@ -168,6 +168,10 @@ export function niceError(error: unknown) {
   if (message.includes("BEHAVIORAL_NOT_SCHEDULED")) return "هذه الدورة ليست في حالة انتظار التفعيل.";
   if (message.includes("BEHAVIORAL_PERIOD_ENDED")) return "انتهت مدة هذه الدورة ولا يمكن تفعيلها.";
   if (message.includes("BEHAVIORAL_ALREADY_CLOSED")) return "هذه الدورة مغلقة بالفعل.";
+  if (message.includes("BEHAVIORAL_MUST_CLOSE_FIRST")) return "يجب إغلاق دورة التميز السلوكي أولًا قبل نشر الفائزين.";
+  if (message.includes("BEHAVIORAL_WINNERS_ALREADY_PUBLISHED")) return "تم نشر الفائزين لهذه الدورة بالفعل.";
+  if (message.includes("BEHAVIORAL_NO_WINNERS")) return "لا توجد ترشيحات كافية لاعتماد فائزين في هذه الدورة.";
+  if (message.includes("BEHAVIORAL_PUBLISH_FORBIDDEN")) return "نشر الفائزين متاح للموجه الطلابي أو مدير النظام فقط.";
   if (message.includes("BEHAVIORAL_NOT_ACTIVE")) return "التميز السلوكي غير مفتوح للترشيح الآن.";
   if (message.includes("BEHAVIORAL_THREE_REQUIRED") || message.includes("BEHAVIORAL_THREE_UNIQUE_REQUIRED")) return "يجب اختيار 3 طلاب مختلفين بالضبط من الفصل.";
   if (message.includes("BEHAVIORAL_STUDENT_SCOPE_INVALID")) return "أحد الطلاب المختارين لا يتبع هذا الفصل.";

@@ -1,5 +1,5 @@
 import { FormEvent, useState } from "react";
-import { captureAuthResult, neon, niceError, prepareAuthenticatedSession, rpc } from "./client";
+import { captureAuthResult, clearLogoutGuard, neon, niceError, prepareAuthenticatedSession, rpc } from "./client";
 import "./feature-upgrade.css";
 
 type Lookup = { exists: boolean; claimed: boolean; staff_name?:string; job_title?:string };
@@ -30,6 +30,7 @@ export default function TeacherLogin() {
         try {
           const signed = await neon.auth.signIn.email({ email, password });
           authError(signed);
+          clearLogoutGuard();
           captureAuthResult(signed);
           if(!await prepareAuthenticatedSession(8))throw new Error("AUTH_REQUIRED");
           window.dispatchEvent(new Event("mishkat-auth-success"));
@@ -46,12 +47,14 @@ export default function TeacherLogin() {
       try {
         const created = await neon.auth.signUp.email({ name: lookup.staff_name || "موظف", email, password });
         authError(created);
+        clearLogoutGuard();
         captureAuthResult(created);
         ready = true;
       } catch (createErr) {
         try {
           const signed = await neon.auth.signIn.email({ email, password });
           authError(signed);
+          clearLogoutGuard();
           captureAuthResult(signed);
           ready = true;
         } catch {
@@ -63,6 +66,7 @@ export default function TeacherLogin() {
       try {
         const signed = await neon.auth.signIn.email({ email, password });
         authError(signed);
+        clearLogoutGuard();
         captureAuthResult(signed);
       } catch {
         // signUp قد ينشئ الجلسة تلقائيًا.

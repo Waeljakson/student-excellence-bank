@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import * as XLSX from "xlsx";
 import { niceError, rpc } from "./client";
+import { getCurrentSchoolName } from "./school-brand";
 import "./student-importer.css";
 
 type Department = { id: string; name: string };
@@ -18,10 +19,17 @@ type ColMap = { studentNo: number; studentName: number; grade: number; className
 type StageKind = "secondary" | "middle" | "";
 
 const EMPTY_MAP: ColMap = { studentNo: -1, studentName: -1, grade: -1, className: -1 };
-const MISHKAT_DEPARTMENTS: Department[] = [
-  { id: "bd67db56-4910-440e-b78a-ea23c4d12998", name: "متوسطة مشكاة الشعلة" },
-  { id: "d7fe2e14-9943-4d1b-bdb8-084108579e79", name: "ثانوية مشكاة الشعلة" },
-];
+
+function schoolStageName(schoolName:string,kind:"middle"|"secondary"){
+  const clean=String(schoolName||"").trim();
+  const base=clean
+    .replace(/^مدارس\s+/,"")
+    .replace(/^متوسطة\s+وثانوية\s+/,"")
+    .replace(/^ثانوية\s+ومتوسطة\s+/,"")
+    .replace(/^متوسطة\s+/,"")
+    .replace(/^ثانوية\s+/,"");
+  return kind==="middle"?`متوسطة ${base}`:`ثانوية ${base}`;
+}
 
 const aliases: Record<keyof ColMap, string[]> = {
   studentNo: ["رقم الطالب", "رقم الطالب/ة", "رقم الطالبـ", "رقم الطالب / الطالبة", "الرقم التعريفي", "student no", "student number", "student id"],
@@ -166,6 +174,7 @@ function unwrapImportResult(value: any): ImportResult {
 }
 
 export default function StudentExcelImporter({ onImported }: { onImported: () => Promise<void> | void }) {
+  const schoolName=getCurrentSchoolName();
   const [options, setOptions] = useState<ImportOptions | null>(null);
   const [departmentId, setDepartmentId] = useState("");
   const [departmentHint, setDepartmentHint] = useState<StageKind>("");
@@ -180,23 +189,30 @@ export default function StudentExcelImporter({ onImported }: { onImported: () =>
   const [message, setMessage] = useState("");
   const [result, setResult] = useState<ImportResult | null>(null);
 
-  const availableDepartments = useMemo(() => {
-    const merged = new Map<string, Department>();
-    MISHKAT_DEPARTMENTS.forEach(d => merged.set(d.id, d));
-    (options?.departments || []).forEach(d => merged.set(d.id, d));
-    return Array.from(merged.values());
-  }, [options]);
+  const availableDepartments = useMemo(() => options?.departments || [], [options]);
 
   useEffect(() => {
-    rpc<any>("api_student_import_options").then(raw => {
-      const o = unwrapOptions(raw);
-      if (!o) return;
-      setOptions(o);
-      if (o.departments.length === 1) setDepartmentId(o.departments[0].id);
-    }).catch(() => {
-      // القسمان الأساسيان موجودان كـ fallback؛ لا نعطل الاستيراد بسبب تأخر خيارات Neon.
-    });
-  }, []);
+    let alive=true;
+    async function loadOptions(){
+      let lastError:unknown=null;
+      for(let attempt=0;attempt<3;attempt++){
+        try{
+          const raw=await rpc<any>("api_student_import_options");
+          const o=unwrapOptions(raw);
+          if(o&&alive){
+            setOptions(o);
+            if(o.departments.length===1)setDepartmentId(o.departments[0].id);
+            setMessage(prev=>prev.startsWith("تعذر تحميل أقسام")?"":prev);
+            return;
+          }
+        }catch(e){lastError=e}
+        await new Promise(resolve=>setTimeout(resolve,250*(attempt+1)));
+      }
+      if(alive)setMessage(`تعذر تحميل أقسام ${schoolName}. ${niceError(lastError)}`);
+    }
+    void loadOptions();
+    return()=>{alive=false};
+  }, [schoolName]);
 
   useEffect(() => {
     const d = stageDepartment(departmentHint, availableDepartments);
@@ -306,14 +322,22 @@ export default function StudentExcelImporter({ onImported }: { onImported: () =>
 
     let importDepartmentId = departmentId || stageDepartment(departmentHint, availableDepartments)?.id || "";
     if (!importDepartmentId && departmentHint) {
-      const fallback = stageDepartment(departmentHint, MISHKAT_DEPARTMENTS);
-      if (fallback) {
-        importDepartmentId = fallback.id;
-        setDepartmentId(fallback.id);
-      }
+      try{
+        const raw=await rpc<any>("api_student_import_options");
+        const fresh=unwrapOptions(raw);
+        if(fresh){
+          setOptions(fresh);
+          const resolved=stageDepartment(departmentHint,fresh.departments);
+          if(resolved){
+            importDepartmentId=resolved.id;
+            setDepartmentId(resolved.id);
+          }
+        }
+      }catch{}
     }
     if (!importDepartmentId) {
-      setMessage("اختر القسم / المرحلة قبل الاستيراد.");
+      const wanted=departmentHint==="secondary"?schoolStageName(schoolName,"secondary"):departmentHint==="middle"?schoolStageName(schoolName,"middle"):"القسم / المرحلة";
+      setMessage(`تعذر تحديد ${wanted} من أقسام المدرسة الحالية. أعد تحميل الصفحة ثم حاول مرة أخرى.`);
       return;
     }
 
@@ -364,7 +388,7 @@ export default function StudentExcelImporter({ onImported }: { onImported: () =>
     <div className="panel-title excel-import-title">
       <div>
         <h3>إضافة / تحديث الطلاب من Excel</h3>
-        <p>يدعم XLSX وXLS القديم. يقرأ بيانات المدرسة من الشيت الأول ويبحث عن شيت الطلاب تلقائيًا.</p>
+        <p>المدرسة الحالية: {schoolName}. يدعم XLSX وXLS القديم ويبحث عن شيت الطلاب تلقائيًا.</p>
       </div>
       <button type="button" className="mini-btn" onClick={downloadTemplate}>تحميل نموذج Excel</button>
     </div>
@@ -381,7 +405,10 @@ export default function StudentExcelImporter({ onImported }: { onImported: () =>
         <label>القسم / المرحلة
           <select value={departmentId} onChange={e => setDepartmentId(e.target.value)}>
             <option value="">اختر القسم</option>
-            {availableDepartments.map(d => <option value={d.id} key={d.id}>{d.name}</option>)}
+            {availableDepartments.length?availableDepartments.map(d => <option value={d.id} key={d.id}>{d.name}</option>):<>
+              <option value="" disabled>{schoolStageName(schoolName,"middle")} — جارٍ تحميل القسم</option>
+              <option value="" disabled>{schoolStageName(schoolName,"secondary")} — جارٍ تحميل القسم</option>
+            </>}
           </select>
           {departmentHint && <small>تم تحديد {departmentHint === "secondary" ? "المرحلة الثانوية" : "المرحلة المتوسطة"} تلقائيًا.</small>}
         </label>

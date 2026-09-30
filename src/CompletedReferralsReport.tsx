@@ -1,3 +1,4 @@
+import { getCurrentSchoolName } from "./school-brand";
 type Referral={
   id:string;
   referral_no:string;

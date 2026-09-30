@@ -33,8 +33,7 @@ export default function TeacherLogin() {
           captureAuthResult(signed);
           if(!await prepareAuthenticatedSession(8))throw new Error("AUTH_REQUIRED");
           window.dispatchEvent(new Event("mishkat-auth-success"));
-          window.dispatchEvent(new Event("mishkat-auth-success"));
-      window.location.reload();
+          window.location.reload();
           return;
         } catch {
           throw new Error("رقم المستخدم أو كلمة المرور غير صحيحة، أو أن هذا الموظف مرتبط بحساب إدارة مختلف.");
@@ -76,6 +75,7 @@ export default function TeacherLogin() {
       } else {
         await rpc("api_claim_student_account", { p_student_no: staffKey });
       }
+      window.dispatchEvent(new Event("mishkat-auth-success"));
       window.location.reload();
     } catch (err) {
       setMessage(niceError(err));

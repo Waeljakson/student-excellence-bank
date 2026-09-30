@@ -129,7 +129,7 @@
 // SYSTEM_FEATURES_V2
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import QRCode from "qrcode";
-import { AUTH_FALLBACK_EVENT, AUTH_URL, captureAuthResult, captureCurrentAuthJwt, forceSignOut, getFallbackAuthUserId, isUsableAuthUserId, neon, niceError, prepareAuthenticatedSession, rpc } from "./client";
+import { AUTH_FALLBACK_EVENT, AUTH_URL, captureAuthResult, captureCurrentAuthJwt, clearLogoutGuard, forceSignOut, getFallbackAuthUserId, isLogoutGuarded, isUsableAuthUserId, neon, niceError, prepareAuthenticatedSession, rpc } from "./client";
 import StudentExcelImporter from "./StudentExcelImporter";
 import StudentLogin from "./StudentLogin";
 import TeacherLogin from "./TeacherLogin";
@@ -269,7 +269,7 @@ function AuthScreen() {
     e.preventDefault(); setBusy(true); setMessage("");
     try {
       const result = await neon.auth.signIn.emailOtp({ email: email.trim(), otp: otp.trim() });
-      unwrapError(result); captureAuthResult(result); await captureCurrentAuthJwt(); window.dispatchEvent(new Event("mishkat-auth-success")); setMessage("تم تسجيل الدخول.");
+      unwrapError(result); clearLogoutGuard(); captureAuthResult(result); await captureCurrentAuthJwt(); window.dispatchEvent(new Event("mishkat-auth-success")); setMessage("تم تسجيل الدخول.");
     } catch (e) { setMessage(niceError(e)); } finally { setBusy(false); }
   }
 
@@ -277,7 +277,7 @@ function AuthScreen() {
     e.preventDefault(); setBusy(true); setMessage("");
     try {
       const result = await neon.auth.signUp.email({ name: name.trim(), email: email.trim(), password });
-      unwrapError(result); captureAuthResult(result); await captureCurrentAuthJwt(); setMessage("تم إنشاء الحساب. بعد الدخول سيظهر طلبك للإدارة لاعتماد صلاحية المعلم.");
+      unwrapError(result); clearLogoutGuard(); captureAuthResult(result); await captureCurrentAuthJwt(); setMessage("تم إنشاء الحساب. بعد الدخول سيظهر طلبك للإدارة لاعتماد صلاحية المعلم.");
     } catch (e) { setMessage(niceError(e)); } finally { setBusy(false); }
   }
 
@@ -286,6 +286,7 @@ function AuthScreen() {
     try {
       const result = await neon.auth.signIn.email({ email: email.trim(), password });
       unwrapError(result);
+      clearLogoutGuard();
       const fallbackReady=captureAuthResult(result) || await captureCurrentAuthJwt();
       // IOS_AUTH_FALLBACK_V54: persist the real JWT; Better Auth session.token is opaque.
       const sessionReady = fallbackReady || await ensureAppSessionReady();
@@ -694,14 +695,21 @@ export default function App(){
   const guardianToken=new URLSearchParams(window.location.search).get("guardian");
   const parentPortal=new URLSearchParams(window.location.search).get("parent");
   const sessionState=neon.auth.useSession();
+  const logoutGuarded=isLogoutGuarded();
   // AUTH_SESSION_BRIDGE_V3_APP: use getSession as the source-of-truth fallback instead of reloading the page.
   const [verifiedSession,setVerifiedSession]=useState<any>(null);
   const [sessionProbeDone,setSessionProbeDone]=useState(false);
   const [fallbackUserId,setFallbackUserId]=useState(()=>getFallbackAuthUserId());
-  const liveSessionUserId=isUsableAuthUserId(sessionState?.data?.user?.id)?sessionState?.data?.user?.id:"";
-  const verifiedUserId=isUsableAuthUserId(verifiedSession?.user?.id)?verifiedSession?.user?.id:"";
-  const sessionUserId=liveSessionUserId||verifiedUserId||fallbackUserId;
+  const liveSessionUserId=!logoutGuarded&&isUsableAuthUserId(sessionState?.data?.user?.id)?sessionState?.data?.user?.id:"";
+  const verifiedUserId=!logoutGuarded&&isUsableAuthUserId(verifiedSession?.user?.id)?verifiedSession?.user?.id:"";
+  const sessionUserId=logoutGuarded?"":(liveSessionUserId||verifiedUserId||fallbackUserId);
   async function probeSession(){
+    if(isLogoutGuarded()){
+      setVerifiedSession(null);
+      setFallbackUserId("");
+      setSessionProbeDone(true);
+      return;
+    }
     try{
       const current=await neon.auth.getSession();
       if(isUsableAuthUserId(current?.data?.user?.id)){captureAuthResult(current);await captureCurrentAuthJwt()}
@@ -722,6 +730,7 @@ export default function App(){
     return()=>{window.removeEventListener("mishkat-auth-success",onAuthSuccess);window.removeEventListener(AUTH_FALLBACK_EVENT,onFallback)};
   },[]);
   useEffect(()=>{
+    if(isLogoutGuarded()){setVerifiedSession(null);setFallbackUserId("");setSessionProbeDone(true);return}
     if(isUsableAuthUserId(sessionState?.data?.user?.id)){captureAuthResult(sessionState.data);void captureCurrentAuthJwt().then(()=>setFallbackUserId(getFallbackAuthUserId()));setFallbackUserId(getFallbackAuthUserId());setVerifiedSession(sessionState.data);setSessionProbeDone(true);return}
     if(sessionProbeDone)void probeSession();
   },[sessionState?.data?.user?.id]);
@@ -754,6 +763,7 @@ export default function App(){
   if(parentPortal)return <GuardianLogin standalone/>;
   if(guardianToken)return <GuardianPortal token={guardianToken}/>;
   if(verifyNonce)return <VerifyView nonce={verifyNonce}/>;
+  if(logoutGuarded)return <AuthScreen/>;
   if((sessionState?.isPending||!sessionProbeDone)&&!sessionUserId)return <Loading text="جارٍ التحقق من الجلسة..."/>;
   if(!sessionUserId)return <AuthScreen/>;
   if(profileLoading&&!profile)return <Loading text="جارٍ تحميل صلاحيات الحساب..."/>;

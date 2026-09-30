@@ -124,9 +124,11 @@ const subjectLabel = (value: string) => {
 export default function StudentEvaluationReports({
   roles,
   students,
+  schoolName="مدارس المشكاة الأهلية",
 }: {
   roles: string[];
   students: Student[];
+  schoolName?: string;
 }) {
   const isTeacher = roles.includes("TEACHER");
   const canVice = roles.includes("VICE_PRINCIPAL") || roles.includes("SUPER_ADMIN");
@@ -338,7 +340,7 @@ th{background:#eef3f7;color:#0b3a65;-webkit-print-color-adjust:exact;print-color
 </head>
 <body>
 <h1>تقرير عن المستوى السلوكي والتحصيلي</h1>
-<div class="school">متوسطة وثانوية مشكاة الشعلة</div>
+<div class="school">${esc(schoolName)}</div>
 <div class="info">
   <div><span class="label">الطالب</span><div class="value">${esc(report.student_name)} — ${esc(report.student_no)}</div></div>
   <div><span class="label">الصف</span><div class="value">${esc(report.grade_name)}</div></div>

@@ -10,12 +10,12 @@ type Leader={student_id:string;student_name:string;student_no:string;grade_name:
 type ParticipationClass={class_id:string;grade_name:string;class_name:string;nomination_count:number;complete:boolean};
 type TeacherParticipation={staff_id:string;teacher_name:string;subject_name?:string|null;user_id?:string|null;account_ready:boolean;assigned_classes:number;started_classes:number;completed_classes:number;remaining_classes:number;nomination_count:number;classes:ParticipationClass[];status:"COMPLETE"|"PARTIAL"|"NOT_NOMINATED"|"NO_ACCOUNT"|"NO_CLASSES"};
 type Data={is_teacher:boolean;can_activate:boolean;can_manage:boolean;visible_to_teacher:boolean;cycle:Cycle|null;cycles:Cycle[];assigned_class_ids:string[];my_nominations:Nomination[];leaderboard:Leader[];teacher_participation?:TeacherParticipation[]};
-type Props={students:Student[]};
+type Props={students:Student[];schoolName?:string};
 const fmt=(v?:string|null)=>v?new Date(v).toLocaleString("ar-SA",{year:"numeric",month:"short",day:"numeric",hour:"numeric",minute:"2-digit"}):"—";
 const statusLabel=(s?:string)=>s==="ACTIVE"?"مفعلة":s==="SCHEDULED"?"بانتظار تفعيل الموجه":s==="CLOSED"?"منتهية":"غير مجدولة";
 const participationLabel=(s:TeacherParticipation["status"])=>s==="COMPLETE"?"أكمل الترشيح":s==="PARTIAL"?"رشّح جزئيًا":s==="NOT_NOMINATED"?"لم يرشح":s==="NO_ACCOUNT"?"لا يوجد حساب مفعل":"لا توجد فصول مسندة";
 
-export default function BehavioralExcellence({students}:Props){
+export default function BehavioralExcellence({students,schoolName="مدارس المشكاة الأهلية"}:Props){
   const[data,setData]=useState<Data|null>(null);const[selected,setSelected]=useState<Record<string,string[]>>({});const[busy,setBusy]=useState("");const[msg,setMsg]=useState("");const[reportFilter,setReportFilter]=useState<"ALL"|TeacherParticipation["status"]>("ALL");
   async function load(){try{const d=await rpc<Data>("api_behavioral_excellence");setData(d);const initial:Record<string,string[]>={};for(const n of d.my_nominations||[])initial[n.class_id]=(n.student_ids||[]).map(String);setSelected(initial)}catch(e){setMsg(niceError(e))}}
   useEffect(()=>{load()},[]);
@@ -123,7 +123,7 @@ th:nth-child(8),td:nth-child(8){width:29%}
 .tools{text-align:center;margin-top:10px}.tools button{border:0;border-radius:8px;background:#0b7562;color:#fff;padding:8px 15px;font-family:inherit;font-weight:800}
 @media print{.tools{display:none!important}body{margin:0!important}.report{display:block!important;visibility:visible!important}table{display:table!important;visibility:visible!important}}
 </style></head><body><main class="report">
-<header class="head"><img src="${esc(schoolLogo)}" alt="شعار المدرسة"><div class="center"><h2>متوسطة وثانوية مشكاة الشعلة الأهلية — بنك التميز الطلابي</h2><h1>تقرير متابعة ترشيحات المعلمين — التميز السلوكي</h1><p>${esc(data.cycle.title_ar)} · ${esc(fmt(data.cycle.starts_at))} — ${esc(fmt(data.cycle.ends_at))}</p></div><img src="${esc(guidanceLogo)}" alt="شعار التوجيه الطلابي"></header>
+<header class="head"><img src="${esc(schoolLogo)}" alt="شعار المدرسة"><div class="center"><h2>${esc(schoolName)} — بنك التميز الطلابي</h2><h1>تقرير متابعة ترشيحات المعلمين — التميز السلوكي</h1><p>${esc(data.cycle.title_ar)} · ${esc(fmt(data.cycle.starts_at))} — ${esc(fmt(data.cycle.ends_at))}</p></div><img src="${esc(guidanceLogo)}" alt="شعار التوجيه الطلابي"></header>
 <div class="meta"><span>الفلتر الحالي: <b>${esc(filterLabel)}</b></span><span>عدد المعلمين المعروضين: <b>${list.length.toLocaleString("ar-SA")}</b></span><span>تاريخ الطباعة: <b>${esc(printedAt)}</b></span></div>
 <div class="stats"><div><small>إجمالي المعلمين</small><b>${participationStats.total}</b></div><div><small>أكملوا الترشيح</small><b>${participationStats.complete}</b></div><div><small>ترشيح جزئي</small><b>${participationStats.partial}</b></div><div><small>لم يرشحوا</small><b>${participationStats.missing}</b></div><div><small>بدون حساب مفعل</small><b>${participationStats.noAccount}</b></div></div>
 <table><thead><tr><th>#</th><th>المعلم</th><th>الحالة</th><th>الفصول المسندة</th><th>المكتمل</th><th>المتبقي</th><th>الترشيحات</th><th>تفاصيل الفصول</th></tr></thead><tbody>${rows||'<tr><td colspan="8" class="empty">لا توجد بيانات مطابقة للفلتر الحالي.</td></tr>'}</tbody></table>
@@ -172,7 +172,7 @@ th{background:#eaf3f1!important;color:#124d45!important;font-weight:800!importan
 .tools{text-align:center;margin-top:10px}.tools button{border:0;border-radius:8px;background:#0b7562;color:#fff;padding:8px 15px;font-family:inherit;font-weight:800}
 @media print{.tools{display:none!important}html,body,.report,.table-shell,table{display:block!important;visibility:visible!important;opacity:1!important}table{display:table!important}thead{display:table-header-group!important}tbody{display:table-row-group!important}tr{display:table-row!important}th,td{display:table-cell!important}}
 </style></head><body><main class="report">
-<header class="head"><img src="${esc(schoolLogo)}" alt="شعار المدرسة"><div class="center"><h3>متوسطة وثانوية مشكاة الشعلة الأهلية — بنك التميز الطلابي</h3><h1>أفضل 5 طلاب في كل صف — التميز السلوكي</h1><p>${esc(data.cycle.title_ar)} · ${esc(fmt(data.cycle.starts_at))} — ${esc(fmt(data.cycle.ends_at))}</p></div><img src="${esc(guidanceLogo)}" alt="شعار التوجيه الطلابي"></header>
+<header class="head"><img src="${esc(schoolLogo)}" alt="شعار المدرسة"><div class="center"><h3>${esc(schoolName)} — بنك التميز الطلابي</h3><h1>أفضل 5 طلاب في كل صف — التميز السلوكي</h1><p>${esc(data.cycle.title_ar)} · ${esc(fmt(data.cycle.starts_at))} — ${esc(fmt(data.cycle.ends_at))}</p></div><img src="${esc(guidanceLogo)}" alt="شعار التوجيه الطلابي"></header>
 <div class="meta"><span>التجميع: <b>على مستوى الصف الدراسي بالكامل</b></span><span>تاريخ إعداد التقرير: <b>${esc(printedAt)}</b></span></div>
 <div class="table-shell"><table><thead><tr><th>المركز</th><th>الطالب</th><th>رقم الطالب</th><th>الفصل</th><th>الترشيحات</th><th>الصف الدراسي</th></tr></thead><tbody>${rows}</tbody></table></div>
 <footer class="footer"><span>التوجيه الطلابي</span><span>تم إنشاء التقرير إلكترونيًا من نظام بنك التميز الطلابي</span></footer>

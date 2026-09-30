@@ -155,6 +155,7 @@ import PeriodicEvaluationCenter from "./PeriodicEvaluationCenter";
 import TeacherAchievementStats from "./TeacherAchievementStats";
 import TeacherHomeAchievementCard from "./TeacherHomeAchievementCard";
 import { readDataCache, writeDataCache, sameCacheVersion, type CacheVersions } from "./data-cache";
+import { DEFAULT_SCHOOL_NAME, setCurrentSchoolBrand } from "./school-brand";
 
 type Profile = {
   status: "PENDING" | "APPROVED" | "DISABLED";
@@ -163,6 +164,9 @@ type Profile = {
   name?: string;
   email?: string;
   avatar?: string | null;
+  school_id?: string;
+  school_name?: string;
+  school_code?: string;
   roles: string[];
   can_issue: boolean;
   monthly_limit?: number | null;
@@ -367,16 +371,17 @@ function AppShell({ profile, children, tab, setTab }: { profile: Profile; childr
   nav.push(["account","حسابي","◉"]);
   if(isAdmin) nav.push(["admin","الهيئة والصلاحيات","⚙"]);
   if(profile.roles?.includes("SUPER_ADMIN")) nav.push(["system","إعدادات النظام","◆"]);
-  return <div className="app-shell"><aside className="sidebar"><div className="brand"><div className="brand-logos"><img src={SCHOOL_LOGO}/><img src={GUIDANCE_LOGO}/></div><div><b>بنك التميز</b><span>مدارس المشكاة الأهلية</span></div></div><nav>{nav.map(([id,label,icon])=><button key={id} className={tab===id?"active":""} onClick={()=>setTab(id)}><span>{icon}</span>{label}{id==="referrals"&&referralCount>0&&<i className="nav-notification">{referralCount>99?"99+":referralCount}</i>}</button>)}</nav><div className="issuer-card"><div className="issuer-profile-line"><div className="issuer-avatar">{profile.avatar?<img src={profile.avatar} alt="الصورة الشخصية"/>:<span>{profile.name?.trim()?.charAt(0)||"م"}</span>}</div><div><small>المستخدم</small><b>{profile.name}</b></div></div><span>{profile.roles?.includes("TEACHER")?"معلم معتمد":"إدارة"}</span>{profile.can_issue && <><small>المتاح هذا الشهر</small><strong>{profile.is_unlimited?"غير محدود":profile.remaining ?? "—"} نقطة</strong></>}</div><button className="signout" onClick={()=>neon.auth.signOut()}>تسجيل الخروج</button></aside><div className="main-area"><NotificationCenter/>{children}<footer><span>برمجة وتنفيذ: محمد صلاح الدين محمد الجمل</span><span>جميع الحقوق محفوظة © مدارس المشكاة الأهلية</span></footer></div></div>;
+  const schoolName=profile.school_name||DEFAULT_SCHOOL_NAME;
+  return <div className="app-shell"><aside className="sidebar"><div className="brand"><div className="brand-logos"><img src={SCHOOL_LOGO}/><img src={GUIDANCE_LOGO}/></div><div><b>بنك التميز</b><span>{schoolName}</span></div></div><nav>{nav.map(([id,label,icon])=><button key={id} className={tab===id?"active":""} onClick={()=>setTab(id)}><span>{icon}</span>{label}{id==="referrals"&&referralCount>0&&<i className="nav-notification">{referralCount>99?"99+":referralCount}</i>}</button>)}</nav><div className="issuer-card"><div className="issuer-profile-line"><div className="issuer-avatar">{profile.avatar?<img src={profile.avatar} alt="الصورة الشخصية"/>:<span>{profile.name?.trim()?.charAt(0)||"م"}</span>}</div><div><small>المستخدم</small><b>{profile.name}</b></div></div><span>{profile.roles?.includes("TEACHER")?"معلم معتمد":"إدارة"}</span>{profile.can_issue && <><small>المتاح هذا الشهر</small><strong>{profile.is_unlimited?"غير محدود":profile.remaining ?? "—"} نقطة</strong></>}</div><button className="signout" onClick={()=>neon.auth.signOut()}>تسجيل الخروج</button></aside><div className="main-area"><NotificationCenter/>{children}<footer><span>برمجة وتنفيذ: محمد صلاح الدين محمد الجمل</span><span>جميع الحقوق محفوظة © {schoolName}</span></footer></div></div>;
 }
-function DashboardView({ data, checks, isSuperAdmin, isTeacher, onRefresh, onOpenTeacherStats }: { data: Dashboard|null; checks: Check[]; isSuperAdmin:boolean; isTeacher:boolean; onRefresh:()=>void; onOpenTeacherStats:()=>void }) {
+function DashboardView({ data, checks, schoolName, isSuperAdmin, isTeacher, onRefresh, onOpenTeacherStats }: { data: Dashboard|null; checks: Check[]; schoolName:string; isSuperAdmin:boolean; isTeacher:boolean; onRefresh:()=>void; onOpenTeacherStats:()=>void }) {
   if(!data) return <Loading/>;
   const guardianUnique=Number(data.guardian_unique_visitors||0);
   const guardianToday=Number(data.guardian_visits_today||0);
   const guardianTotal=Number(data.guardian_total_visits||0);
   const guardianCoverage=Number(data.guardian_coverage_pct||0);
   return <><Header title="لوحة بنك التميز الطلابي" subtitle="بيانات مباشرة وآمنة من Neon"/><main className="content">
-    <section className="hero"><div><span className="eyebrow">مدارس المشكاة الأهلية</span><h2>التميز يُرى، يُقاس، ويُكافأ.</h2><p>شيكات تميز رقمية، محافظ طلابية، ترتيب فوري، ومتابعة عادلة للفصول.</p></div><div className="point-value"><small>قيمة نقطة التميز</small><strong>{Number(data.point_value_sar).toLocaleString("ar-SA")} ر.س</strong></div></section>
+    <section className="hero"><div><span className="eyebrow">{schoolName}</span><h2>التميز يُرى، يُقاس، ويُكافأ.</h2><p>شيكات تميز رقمية، محافظ طلابية، ترتيب فوري، ومتابعة عادلة للفصول.</p></div><div className="point-value"><small>قيمة نقطة التميز</small><strong>{Number(data.point_value_sar).toLocaleString("ar-SA")} ر.س</strong></div></section>
     {isTeacher&&<TeacherHomeAchievementCard onOpen={onOpenTeacherStats}/>}\n    <section className="stats-grid"><Stat label="الطلاب" value={data.students}/><Stat label="نقاط اليوم" value={data.today_points}/><Stat label="شيكات هذا الشهر" value={data.month_checks}/><Stat label="طلاب حصلوا على تعزيز" value={data.reinforced_students}/></section>
     {isSuperAdmin&&<section className="panel guardian-visit-panel">
       <div className="panel-title"><div><h3>متابعة أولياء الأمور</h3><p>قياس استخدام بوابة ولي الأمر منذ تفعيل العداد. العدد الأساسي يمثل أرقام الطلاب التي فُتحت بوابتهم بنجاح.</p></div><button className="mini-btn" type="button" onClick={onRefresh}>تحديث الآن</button></div>
@@ -583,7 +588,9 @@ function BankApp({ profile, refreshProfile }: { profile: Profile; refreshProfile
   const [loading,setLoading]=useState(true);
   const pending:PendingUser[]=[];
   const isAdmin=profile.roles?.some(r=>["SUPER_ADMIN","SCHOOL_ADMIN","PRINCIPAL"].includes(r));
-  const cacheScope="staff:"+(profile.app_user_id||profile.auth_user_id||profile.email||"unknown");
+  const schoolName=profile.school_name||DEFAULT_SCHOOL_NAME;
+  useEffect(()=>{setCurrentSchoolBrand(schoolName,profile.school_code)},[schoolName,profile.school_code]);
+  const cacheScope="staff:"+(profile.school_id||profile.school_code||"school")+":"+(profile.app_user_id||profile.auth_user_id||profile.email||"unknown");
 
   function applyCached(data:any){
     if(data?.dashboard!==undefined)setDashboard(data.dashboard||null);
@@ -671,7 +678,7 @@ function BankApp({ profile, refreshProfile }: { profile: Profile; refreshProfile
   async function refreshAdmin(){await syncData(["admin","students","rules"],true)}
   async function afterIssued(){await Promise.all([syncData(["dashboard","checks","students","rankings"],true),refreshProfile()])}
 
-  return <AppShell profile={profile} tab={tab} setTab={setTab}>{loading&&!dashboard?<Loading/>:<>{error&&<div className="notice error global-error">{error}</div>}{tab==="dashboard"&&<DashboardView data={dashboard} checks={checks} isSuperAdmin={profile.roles?.includes("SUPER_ADMIN")===true} isTeacher={profile.roles?.includes("TEACHER")===true} onRefresh={()=>void syncData(["dashboard"],true)} onOpenTeacherStats={()=>setTab("teacher-stats")}/>} {tab==="checks"&&<><ChecksView students={students} rules={rules} onIssued={afterIssued}/>{profile.roles?.includes("TEACHER")&&<main className="content teacher-check-manager-wrap"><TeacherCheckManager onChanged={afterIssued}/></main>}</>} {tab==="students"&&<StudentsView students={students} roles={profile.roles||[]} reload={refreshStudents} onDeleted={removeStudentLocally}/>} {tab==="rankings"&&<RankingsView data={rankings}/>} {tab==="rewards"&&<><RewardsView rewards={rewards}/>{profile.roles?.some(r=>["SUPER_ADMIN","SCHOOL_ADMIN","PRINCIPAL","REWARD_OFFICER"].includes(r))&&<main className="content reward-admin-wrap"><RewardManagementPanel onChanged={refreshRewards}/></main>}</>} {tab==="referrals"&&<ReferralCenter roles={profile.roles} students={students} profileName={profile.name||""}/>} {tab==="redemption"&&profile.roles?.includes("GUIDANCE_COUNSELOR")&&<GuidanceRedemptionCenter/>} {tab==="student-evaluations"&&<StudentEvaluationReports roles={profile.roles} students={students}/>} {tab==="followup"&&<StudentFollowupNotebook roles={profile.roles}/>} {tab==="periodic-evaluations"&&<PeriodicEvaluationCenter/>} {tab==="behavioral"&&<BehavioralExcellence students={students}/>} {tab==="khameesna"&&<KhameesnaCompetition isSuperAdmin={profile.roles?.includes("SUPER_ADMIN")===true}/>} {tab==="teacher-stats"&&<TeacherAchievementStats roles={profile.roles||[]}/>} {tab==="account"&&<UserAccount profile={profile} onProfileChanged={refreshProfile}/>} {tab==="system"&&profile.roles?.includes("SUPER_ADMIN")&&<SystemControlPanel/>} {tab==="admin"&&isAdmin&&<AdminView pending={pending} users={users} staff={staff} classes={adminClasses} reload={refreshAdmin} isSuperAdmin={profile.roles?.includes("SUPER_ADMIN")===true}/>}</>}</AppShell>;
+  return <AppShell profile={profile} tab={tab} setTab={setTab}>{loading&&!dashboard?<Loading/>:<>{error&&<div className="notice error global-error">{error}</div>}{tab==="dashboard"&&<DashboardView data={dashboard} checks={checks} schoolName={schoolName} isSuperAdmin={profile.roles?.includes("SUPER_ADMIN")===true} isTeacher={profile.roles?.includes("TEACHER")===true} onRefresh={()=>void syncData(["dashboard"],true)} onOpenTeacherStats={()=>setTab("teacher-stats")}/>} {tab==="checks"&&<><ChecksView students={students} rules={rules} onIssued={afterIssued}/>{profile.roles?.includes("TEACHER")&&<main className="content teacher-check-manager-wrap"><TeacherCheckManager onChanged={afterIssued}/></main>}</>} {tab==="students"&&<StudentsView students={students} roles={profile.roles||[]} reload={refreshStudents} onDeleted={removeStudentLocally}/>} {tab==="rankings"&&<RankingsView data={rankings}/>} {tab==="rewards"&&<><RewardsView rewards={rewards}/>{profile.roles?.some(r=>["SUPER_ADMIN","SCHOOL_ADMIN","PRINCIPAL","REWARD_OFFICER"].includes(r))&&<main className="content reward-admin-wrap"><RewardManagementPanel onChanged={refreshRewards}/></main>}</>} {tab==="referrals"&&<ReferralCenter roles={profile.roles} students={students} profileName={profile.name||""}/>} {tab==="redemption"&&profile.roles?.includes("GUIDANCE_COUNSELOR")&&<GuidanceRedemptionCenter/>} {tab==="student-evaluations"&&<StudentEvaluationReports roles={profile.roles} students={students} schoolName={schoolName}/>} {tab==="followup"&&<StudentFollowupNotebook roles={profile.roles}/>} {tab==="periodic-evaluations"&&<PeriodicEvaluationCenter/>} {tab==="behavioral"&&<BehavioralExcellence students={students} schoolName={schoolName}/>} {tab==="khameesna"&&<KhameesnaCompetition isSuperAdmin={profile.roles?.includes("SUPER_ADMIN")===true}/>} {tab==="teacher-stats"&&<TeacherAchievementStats roles={profile.roles||[]}/>} {tab==="account"&&<UserAccount profile={profile} onProfileChanged={refreshProfile}/>} {tab==="system"&&profile.roles?.includes("SUPER_ADMIN")&&<SystemControlPanel/>} {tab==="admin"&&isAdmin&&<AdminView pending={pending} users={users} staff={staff} classes={adminClasses} reload={refreshAdmin} isSuperAdmin={profile.roles?.includes("SUPER_ADMIN")===true}/>}</>}</AppShell>;
 }
 
 export default function App(){

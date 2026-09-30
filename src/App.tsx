@@ -125,7 +125,7 @@
 // SYSTEM_FEATURES_V2
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import QRCode from "qrcode";
-import { AUTH_FALLBACK_EVENT, AUTH_URL, captureAuthResult, getFallbackAuthUserId, neon, niceError, rpc } from "./client";
+import { AUTH_FALLBACK_EVENT, AUTH_URL, captureAuthResult, captureCurrentAuthJwt, getFallbackAuthUserId, neon, niceError, rpc } from "./client";
 import StudentExcelImporter from "./StudentExcelImporter";
 import StudentLogin from "./StudentLogin";
 import TeacherLogin from "./TeacherLogin";
@@ -265,7 +265,7 @@ function AuthScreen() {
     e.preventDefault(); setBusy(true); setMessage("");
     try {
       const result = await neon.auth.signIn.emailOtp({ email: email.trim(), otp: otp.trim() });
-      unwrapError(result); captureAuthResult(result); window.dispatchEvent(new Event("mishkat-auth-success")); setMessage("تم تسجيل الدخول.");
+      unwrapError(result); captureAuthResult(result); await captureCurrentAuthJwt(); window.dispatchEvent(new Event("mishkat-auth-success")); setMessage("تم تسجيل الدخول.");
     } catch (e) { setMessage(niceError(e)); } finally { setBusy(false); }
   }
 
@@ -273,7 +273,7 @@ function AuthScreen() {
     e.preventDefault(); setBusy(true); setMessage("");
     try {
       const result = await neon.auth.signUp.email({ name: name.trim(), email: email.trim(), password });
-      unwrapError(result); captureAuthResult(result); setMessage("تم إنشاء الحساب. بعد الدخول سيظهر طلبك للإدارة لاعتماد صلاحية المعلم.");
+      unwrapError(result); captureAuthResult(result); await captureCurrentAuthJwt(); setMessage("تم إنشاء الحساب. بعد الدخول سيظهر طلبك للإدارة لاعتماد صلاحية المعلم.");
     } catch (e) { setMessage(niceError(e)); } finally { setBusy(false); }
   }
 
@@ -282,8 +282,8 @@ function AuthScreen() {
     try {
       const result = await neon.auth.signIn.email({ email: email.trim(), password });
       unwrapError(result);
-      const fallbackReady=captureAuthResult(result);
-      // IOS_AUTH_FALLBACK_V54: Safari may create the session server-side but block the cross-site cookie.
+      const fallbackReady=captureAuthResult(result) || await captureCurrentAuthJwt();
+      // IOS_AUTH_FALLBACK_V54: persist the real JWT; Better Auth session.token is opaque.
       const sessionReady = fallbackReady || await ensureAppSessionReady();
       if (!sessionReady) throw new Error("تم قبول بيانات الدخول، لكن الجلسة لم تكتمل. أعد المحاولة بعد لحظات.");
       sessionStorage.removeItem("mishkat-login-succeeded");
@@ -698,7 +698,7 @@ export default function App(){
   async function probeSession(){
     try{
       const current=await neon.auth.getSession();
-      if(current?.data?.user?.id)captureAuthResult(current);
+      if(current?.data?.user?.id){captureAuthResult(current);await captureCurrentAuthJwt()}
       setVerifiedSession(current?.data?.user?.id?current.data:null);
       setFallbackUserId(getFallbackAuthUserId());
     }catch{
@@ -716,7 +716,7 @@ export default function App(){
     return()=>{window.removeEventListener("mishkat-auth-success",onAuthSuccess);window.removeEventListener(AUTH_FALLBACK_EVENT,onFallback)};
   },[]);
   useEffect(()=>{
-    if(sessionState?.data?.user?.id){captureAuthResult(sessionState.data);setFallbackUserId(getFallbackAuthUserId());setVerifiedSession(sessionState.data);setSessionProbeDone(true);return}
+    if(sessionState?.data?.user?.id){captureAuthResult(sessionState.data);void captureCurrentAuthJwt().then(()=>setFallbackUserId(getFallbackAuthUserId()));setFallbackUserId(getFallbackAuthUserId());setVerifiedSession(sessionState.data);setSessionProbeDone(true);return}
     if(sessionProbeDone)void probeSession();
   },[sessionState?.data?.user?.id]);
   const [profile,setProfile]=useState<Profile|null>(null);const[profileError,setProfileError]=useState("");const[profileLoading,setProfileLoading]=useState(false);

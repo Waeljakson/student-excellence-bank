@@ -89,6 +89,8 @@ edit("src/StudentLogin.tsx",s=>{
     s=s.replace('  const [studentNo, setStudentNo] = useState("");\n  const [password, setPassword] = useState("");',
       '  const [studentNo, setStudentNo] = useState("");\n  const [password, setPassword] = useState("");\n  const [schools,setSchools]=useState<SchoolOption[]>([]);\n  const [schoolCode,setSchoolCode]=useState("MISHKAT");');
   }
+  // Collapse duplicate school selector state if an earlier prebuild transform preserved a prior copy.
+  s=s.replace(/(\s*const \[schools\s*,\s*setSchools\]\s*=\s*useState<SchoolOption\[\]>\(\[\]\);\s*\n\s*const \[schoolCode\s*,\s*setSchoolCode\]\s*=\s*useState\("MISHKAT"\);\s*\n)(?:\s*const \[schools\s*,\s*setSchools\]\s*=\s*useState<SchoolOption\[\]>\(\[\]\);\s*\n\s*const \[schoolCode\s*,\s*setSchoolCode\]\s*=\s*useState\("MISHKAT"\);\s*\n)+/g,"$1");
   if(!s.includes('rpc<SchoolOption[]>("api_public_schools")')){
     s=s.replace('  const [message, setMessage] = useState("");',
       '  const [message, setMessage] = useState("");\n\n  useEffect(()=>{\n    rpc<SchoolOption[]>("api_public_schools").then(rows=>{\n      const list=Array.isArray(rows)?rows:[];\n      setSchools(list);\n      if(list.length&&!list.some(x=>x.code===schoolCode))setSchoolCode(list[0].code);\n    }).catch(()=>{});\n  },[]);');

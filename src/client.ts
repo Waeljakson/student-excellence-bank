@@ -207,7 +207,7 @@ export function niceError(error: unknown) {
   if (message.includes("STAFF_NAME_INVALID")) return "اسم المعلم غير صالح. اكتب الاسم الصحيح كاملًا.";
   if (message.includes("STAFF_NAME_EXISTS")) return "يوجد موظف آخر مسجل بنفس الاسم.";
   if (message.includes("STAFF_NOT_FOUND")) return "لم يتم العثور على الموظف في دليل الهيئة.";
-  if (message.includes("CLASS_NOT_FOUND")) return "الفصل غير موجود أو لا يتبع العام الدراسي الحالي.";
+  if (message.includes("STUDENT_SCHOOL_NOT_FOUND")) return "تعذر تحديد المدرسة المرتبطة بحساب الطالب.";\n  if (message.includes("CLASS_NOT_FOUND")) return "الفصل غير موجود أو لا يتبع العام الدراسي الحالي.";
   if (message.includes("DEPARTMENT_NOT_FOUND")) return "القسم المختار غير موجود أو غير متاح لهذه المدرسة.";
   if (message.includes("CURRENT_ACADEMIC_YEAR_NOT_FOUND")) return "لا يوجد عام دراسي حالي مضبوط في النظام.";
   if (message.includes("STUDENT_NO_10_DIGITS_REQUIRED")) return "رقم الطالب يجب أن يتكون من 10 أرقام.";

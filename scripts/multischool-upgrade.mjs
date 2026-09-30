@@ -195,5 +195,8 @@ edit("src/StudentExcelImporter.tsx",s=>{
   if(!s.includes("getCurrentSchoolName")||!s.includes("schoolStageName")){
     throw new Error("multischool-upgrade: student importer is not scoped to current school");
   }
+  if(!s.includes("api_student_class_options")||!s.includes("departmentsFromClasses")){
+    throw new Error("multischool-upgrade: student importer is missing current-school class fallback");
+  }
   return s;
 });

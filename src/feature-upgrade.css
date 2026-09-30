@@ -260,3 +260,22 @@
   .student-add-card{width:calc(100vw - 18px);padding:14px;max-height:92vh}
   .student-add-actions{display:grid;grid-template-columns:1fr 1fr}
 }
+
+
+/* KHAMEESNA_WINNER_CONSENT_V1 */
+.kh-winner-row{background:#fff9e9}
+.kh-winner-badge{display:inline-flex;align-items:center;padding:5px 9px;border-radius:999px;background:#e5f5ee;color:#08705d;font-weight:800;font-size:9px}
+.kh-winner-panel{border:1px solid #e1cf8f;background:linear-gradient(135deg,#fffdf7,#fff9e2)}
+.kh-winner-title{display:flex;justify-content:space-between;align-items:center;gap:18px}
+.kh-winner-title>div:first-child>span{font-size:10px;font-weight:800;color:#9b700d}
+.kh-winner-title h3{margin:4px 0;color:#173f52;font-size:20px}
+.kh-winner-title p{margin:0;color:#5e6f77;font-size:10px;line-height:1.8}
+.kh-winner-title>div:last-child{min-width:160px;text-align:center;padding:12px;border:1px solid #eadca9;border-radius:14px;background:#fff}
+.kh-winner-title>div:last-child small{display:block;color:#816617;font-size:9px}.kh-winner-title>div:last-child strong{display:block;margin-top:3px;color:#a26c00;font-size:15px}
+.kh-consent-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:16px 0}
+.kh-consent-stats article{padding:13px;border:1px solid #e1e8e5;border-radius:13px;background:#fff;display:grid;gap:3px}
+.kh-consent-stats span{font-size:9px;color:#70838a}.kh-consent-stats b{font-size:22px;color:#0b705e}
+.kh-consent-list{margin-top:12px}.kh-consent-list-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:10px}
+.kh-consent-list-head>b{color:#173f52}.kh-consent-ok{display:inline-flex;padding:4px 8px;border-radius:999px;background:#e5f5ee;color:#08705d;font-weight:800;font-size:9px}
+.kh-consent-wait{display:inline-flex;padding:4px 8px;border-radius:999px;background:#fff0d6;color:#8e650d;font-weight:800;font-size:9px}
+@media(max-width:760px){.kh-winner-title{align-items:stretch;flex-direction:column}.kh-winner-title>div:last-child{min-width:0}.kh-consent-stats{grid-template-columns:1fr 1fr}.kh-consent-stats article:last-child{grid-column:1/-1}.kh-consent-list-head{align-items:stretch;flex-direction:column}.kh-consent-list-head .btn{width:100%}}

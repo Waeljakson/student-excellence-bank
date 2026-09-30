@@ -11,7 +11,7 @@ permissions:
   id-token: write
 
 concurrency:
-  group: github-pages-v2
+  group: github-pages-v3-authfix
   cancel-in-progress: true
 
 jobs:

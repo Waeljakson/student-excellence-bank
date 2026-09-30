@@ -35,7 +35,8 @@ export default function TeacherLogin() {
     setBusy(true);
     setMessage("");
     try {
-      const lookup = await rpc<Lookup>("api_staff_lookup_school", { p_mobile: phone, p_school_code: schoolCode });
+      const staffKey = "T:"+schoolCode+":"+phone;
+      const lookup = await rpc<Lookup>("api_student_lookup", { p_student_no: staffKey });
       if (!lookup.exists) throw new Error("رقم المستخدم غير موجود ضمن الهيئة المسجلة في النظام.");
 
       if (lookup.claimed) {
@@ -86,7 +87,7 @@ export default function TeacherLogin() {
 
       if(!await prepareAuthenticatedSession(8))throw new Error("AUTH_REQUIRED");
 
-      await rpc("api_claim_staff_account_school", { p_mobile: phone, p_school_code: schoolCode });
+      await rpc("api_claim_student_account", { p_student_no: staffKey });
       window.dispatchEvent(new Event("mishkat-auth-success"));
       window.location.reload();
     } catch (err) {

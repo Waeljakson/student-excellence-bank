@@ -126,7 +126,7 @@
 // SYSTEM_FEATURES_V2
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import QRCode from "qrcode";
-import { AUTH_FALLBACK_EVENT, AUTH_URL, captureAuthResult, captureCurrentAuthJwt, getFallbackAuthUserId, neon, niceError, rpc } from "./client";
+import { AUTH_FALLBACK_EVENT, AUTH_URL, captureAuthResult, captureCurrentAuthJwt, forceSignOut, getFallbackAuthUserId, isUsableAuthUserId, neon, niceError, prepareAuthenticatedSession, rpc } from "./client";
 import StudentExcelImporter from "./StudentExcelImporter";
 import StudentLogin from "./StudentLogin";
 import TeacherLogin from "./TeacherLogin";
@@ -341,7 +341,7 @@ function PendingAccount({ profile, onRefresh }: { profile: Profile; onRefresh: (
   async function repair(){if(!portalKey||busy)return;setBusy(true);setMessage("");try{if(portalKey.startsWith("T:")){const mobile=portalKey.slice(2);const lookup=await rpc("api_student_lookup",{p_student_no:portalKey});if(lookup?.job_title==="معلم")await rpc("api_claim_teacher_account",{p_mobile:mobile});else await rpc("api_claim_student_account",{p_student_no:portalKey})}else await rpc("api_claim_student_account",{p_student_no:portalKey});await onRefresh()}catch(e){setMessage(niceError(e))}finally{setBusy(false)}}
   useEffect(()=>{if(portalKey)void repair()},[portalKey]);
   const linking=Boolean(portalKey)&&!message;
-  return <div className="full-center"><div className="pending-card"><div className="logos"><img src={SCHOOL_LOGO}/><img src={GUIDANCE_LOGO}/></div><span className="pending-icon">{linking?"⏳":"!"}</span><h1>{linking?"جارٍ ربط الحساب بالنظام":"تعذر إكمال ربط الحساب"}</h1><p>{linking?"يتم الآن التحقق من بيانات حسابك وربطه تلقائيًا بالمدرسة.":profile.name||profile.email}</p>{message&&<div className="notice error">{message}</div>}{portalKey&&message&&<button className="btn primary" disabled={busy} onClick={repair}>{busy?"جارٍ الربط...":"إعادة محاولة ربط الحساب"}</button>}<button className="btn ghost" onClick={()=>neon.auth.signOut()}>تسجيل الخروج</button></div></div>;
+  return <div className="full-center"><div className="pending-card"><div className="logos"><img src={SCHOOL_LOGO}/><img src={GUIDANCE_LOGO}/></div><span className="pending-icon">{linking?"⏳":"!"}</span><h1>{linking?"جارٍ ربط الحساب بالنظام":"تعذر إكمال ربط الحساب"}</h1><p>{linking?"يتم الآن التحقق من بيانات حسابك وربطه تلقائيًا بالمدرسة.":profile.name||profile.email}</p>{message&&<div className="notice error">{message}</div>}{portalKey&&message&&<button className="btn primary" disabled={busy} onClick={repair}>{busy?"جارٍ الربط...":"إعادة محاولة ربط الحساب"}</button>}<button className="btn ghost" onClick={()=>void forceSignOut()}>تسجيل الخروج</button></div></div>;
 }
 
 function AppShell({ profile, children, tab, setTab }: { profile: Profile; children: any; tab: Tab; setTab:(t:Tab)=>void }) {
@@ -377,7 +377,7 @@ function AppShell({ profile, children, tab, setTab }: { profile: Profile; childr
   if(isAdmin) nav.push(["admin","الهيئة والصلاحيات","⚙"]);
   if(profile.roles?.includes("SUPER_ADMIN")) nav.push(["system","إعدادات النظام","◆"]);
   const schoolName=profile.school_name||DEFAULT_SCHOOL_NAME;
-  return <div className="app-shell"><aside className="sidebar"><div className="brand"><div className="brand-logos"><img src={SCHOOL_LOGO}/><img src={GUIDANCE_LOGO}/></div><div><b>بنك التميز</b><span>{schoolName}</span></div></div><nav>{nav.map(([id,label,icon])=><button key={id} className={tab===id?"active":""} onClick={()=>setTab(id)}><span>{icon}</span>{label}{id==="referrals"&&referralCount>0&&<i className="nav-notification">{referralCount>99?"99+":referralCount}</i>}</button>)}</nav><div className="issuer-card"><div className="issuer-profile-line"><div className="issuer-avatar">{profile.avatar?<img src={profile.avatar} alt="الصورة الشخصية"/>:<span>{profile.name?.trim()?.charAt(0)||"م"}</span>}</div><div><small>المستخدم</small><b>{profile.name}</b></div></div><span>{profile.roles?.includes("TEACHER")?"معلم معتمد":"إدارة"}</span>{profile.can_issue && <><small>المتاح هذا الشهر</small><strong>{profile.is_unlimited?"غير محدود":profile.remaining ?? "—"} نقطة</strong></>}</div><button className="signout" onClick={()=>neon.auth.signOut()}>تسجيل الخروج</button></aside><div className="main-area"><NotificationCenter/>{children}<footer><span>برمجة وتنفيذ: محمد صلاح الدين محمد الجمل</span><span>جميع الحقوق محفوظة © {schoolName}</span></footer></div></div>;
+  return <div className="app-shell"><aside className="sidebar"><div className="brand"><div className="brand-logos"><img src={SCHOOL_LOGO}/><img src={GUIDANCE_LOGO}/></div><div><b>بنك التميز</b><span>{schoolName}</span></div></div><nav>{nav.map(([id,label,icon])=><button key={id} className={tab===id?"active":""} onClick={()=>setTab(id)}><span>{icon}</span>{label}{id==="referrals"&&referralCount>0&&<i className="nav-notification">{referralCount>99?"99+":referralCount}</i>}</button>)}</nav><div className="issuer-card"><div className="issuer-profile-line"><div className="issuer-avatar">{profile.avatar?<img src={profile.avatar} alt="الصورة الشخصية"/>:<span>{profile.name?.trim()?.charAt(0)||"م"}</span>}</div><div><small>المستخدم</small><b>{profile.name}</b></div></div><span>{profile.roles?.includes("TEACHER")?"معلم معتمد":"إدارة"}</span>{profile.can_issue && <><small>المتاح هذا الشهر</small><strong>{profile.is_unlimited?"غير محدود":profile.remaining ?? "—"} نقطة</strong></>}</div><button className="signout" onClick={()=>void forceSignOut()}>تسجيل الخروج</button></aside><div className="main-area"><NotificationCenter/>{children}<footer><span>برمجة وتنفيذ: محمد صلاح الدين محمد الجمل</span><span>جميع الحقوق محفوظة © {schoolName}</span></footer></div></div>;
 }
 function DashboardView({ data, checks, schoolName, isSuperAdmin, isTeacher, onRefresh, onOpenTeacherStats }: { data: Dashboard|null; checks: Check[]; schoolName:string; isSuperAdmin:boolean; isTeacher:boolean; onRefresh:()=>void; onOpenTeacherStats:()=>void }) {
   if(!data) return <Loading/>;
@@ -695,12 +695,14 @@ export default function App(){
   const [verifiedSession,setVerifiedSession]=useState<any>(null);
   const [sessionProbeDone,setSessionProbeDone]=useState(false);
   const [fallbackUserId,setFallbackUserId]=useState(()=>getFallbackAuthUserId());
-  const sessionUserId=sessionState?.data?.user?.id||verifiedSession?.user?.id||fallbackUserId;
+  const liveSessionUserId=isUsableAuthUserId(sessionState?.data?.user?.id)?sessionState?.data?.user?.id:"";
+  const verifiedUserId=isUsableAuthUserId(verifiedSession?.user?.id)?verifiedSession?.user?.id:"";
+  const sessionUserId=liveSessionUserId||verifiedUserId||fallbackUserId;
   async function probeSession(){
     try{
       const current=await neon.auth.getSession();
-      if(current?.data?.user?.id){captureAuthResult(current);await captureCurrentAuthJwt()}
-      setVerifiedSession(current?.data?.user?.id?current.data:null);
+      if(isUsableAuthUserId(current?.data?.user?.id)){captureAuthResult(current);await captureCurrentAuthJwt()}
+      setVerifiedSession(isUsableAuthUserId(current?.data?.user?.id)?current.data:null);
       setFallbackUserId(getFallbackAuthUserId());
     }catch{
       setVerifiedSession(null);
@@ -717,11 +719,34 @@ export default function App(){
     return()=>{window.removeEventListener("mishkat-auth-success",onAuthSuccess);window.removeEventListener(AUTH_FALLBACK_EVENT,onFallback)};
   },[]);
   useEffect(()=>{
-    if(sessionState?.data?.user?.id){captureAuthResult(sessionState.data);void captureCurrentAuthJwt().then(()=>setFallbackUserId(getFallbackAuthUserId()));setFallbackUserId(getFallbackAuthUserId());setVerifiedSession(sessionState.data);setSessionProbeDone(true);return}
+    if(isUsableAuthUserId(sessionState?.data?.user?.id)){captureAuthResult(sessionState.data);void captureCurrentAuthJwt().then(()=>setFallbackUserId(getFallbackAuthUserId()));setFallbackUserId(getFallbackAuthUserId());setVerifiedSession(sessionState.data);setSessionProbeDone(true);return}
     if(sessionProbeDone)void probeSession();
   },[sessionState?.data?.user?.id]);
   const [profile,setProfile]=useState<Profile|null>(null);const[profileError,setProfileError]=useState("");const[profileLoading,setProfileLoading]=useState(false);
-  async function refreshProfile(){setProfileLoading(true);setProfileError("");try{let next:Profile|null=null;for(let attempt=0;attempt<4;attempt++){next=await rpc<Profile>("api_profile");if(next?.status!=="PENDING")break;if(attempt<3)await new Promise(resolve=>setTimeout(resolve,300*(attempt+1)))}setProfile(next)}catch(e){setProfileError(niceError(e))}finally{setProfileLoading(false)}}
+  async function refreshProfile(){
+    setProfileLoading(true);setProfileError("");
+    try{
+      await prepareAuthenticatedSession(8);
+      let next:Profile|null=null;
+      let lastError:unknown=null;
+      for(let attempt=0;attempt<6;attempt++){
+        try{
+          next=await rpc<Profile>("api_profile");
+          lastError=null;
+          if(next?.status!=="PENDING")break;
+        }catch(e){
+          lastError=e;
+          const raw=e instanceof Error?e.message:String(e);
+          if(!/AUTH_REQUIRED|Authentication required|Unauthorized|401|anonymous/i.test(raw))throw e;
+          await prepareAuthenticatedSession(4);
+        }
+        if(attempt<5)await new Promise(resolve=>setTimeout(resolve,250*(attempt+1)));
+      }
+      if(lastError)throw lastError;
+      setProfile(next);
+    }catch(e){setProfileError(niceError(e))}
+    finally{setProfileLoading(false)}
+  }
   useEffect(()=>{if(sessionUserId){sessionStorage.removeItem("mishkat-login-succeeded");sessionStorage.removeItem("mishkat-session-recovery-count");refreshProfile()}else setProfile(null)},[sessionUserId]);
   if(parentPortal)return <GuardianLogin standalone/>;
   if(guardianToken)return <GuardianPortal token={guardianToken}/>;
@@ -729,7 +754,7 @@ export default function App(){
   if((sessionState?.isPending||!sessionProbeDone)&&!sessionUserId)return <Loading text="جارٍ التحقق من الجلسة..."/>;
   if(!sessionUserId)return <AuthScreen/>;
   if(profileLoading&&!profile)return <Loading text="جارٍ تحميل صلاحيات الحساب..."/>;
-  if(profileError&&!profile)return <div className="full-center"><div className="pending-card"><h1>تعذر تحميل الصلاحيات</h1><p>{profileError}</p><button className="btn primary" onClick={refreshProfile}>إعادة المحاولة</button><button className="btn ghost" onClick={()=>neon.auth.signOut()}>تسجيل الخروج</button></div></div>;
+  if(profileError&&!profile)return <div className="full-center"><div className="pending-card"><h1>تعذر تحميل الصلاحيات</h1><p>{profileError}</p><button className="btn primary" onClick={refreshProfile}>إعادة المحاولة</button><button className="btn ghost" onClick={()=>void forceSignOut()}>تسجيل الخروج</button></div></div>;
   if(!profile)return <Loading/>;
   if(profile.status!=="APPROVED")return <PendingAccount profile={profile} onRefresh={refreshProfile}/>;
   if(profile.roles?.includes("STUDENT"))return <StudentPortal cacheUserId={profile.app_user_id||profile.auth_user_id||profile.email||""}/>;

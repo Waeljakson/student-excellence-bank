@@ -18,7 +18,7 @@ function replaceReloadFallbacks(src) {
 
 function patchPortalLogin(path, marker) {
   let src = readFileSync(path, "utf8");
-  if (src.includes(marker)) return;
+  if (src.includes(marker) || src.includes("prepareAuthenticatedSession")) return;
   const result = replaceReloadFallbacks(src);
   if (!result.changed) throw new Error(`${path}: V2 auth reload block not found`);
   src = result.src.replace("export default function", `// ${marker}\nexport default function`);

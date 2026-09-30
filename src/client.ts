@@ -60,14 +60,12 @@ export function clearAuthFallback(){
   window.dispatchEvent(new Event(AUTH_FALLBACK_EVENT));
 }
 
-export function captureAuthResult(result:any):boolean{
+function persistAuthJwt(token:string):boolean{
   if(typeof window==="undefined")return false;
-  const data=result?.data||result;
-  const token=String(data?.session?.token||"");
   const payload=decodeJwtPayload(token);
   const exp=Number(payload?.exp||0);
-  const userId=String(data?.user?.id||payload?.sub||"");
-  if(!token||!userId||!Number.isFinite(exp)||exp*1000<=Date.now()+15000)return false;
+  const userId=String(payload?.sub||"");
+  if(!token||!userId||userId==="anonymous"||!Number.isFinite(exp)||exp*1000<=Date.now()+15000)return false;
   const stored:AuthFallback={token,userId,exp};
   const raw=JSON.stringify(stored);
   let saved=false;
@@ -75,6 +73,30 @@ export function captureAuthResult(result:any):boolean{
   try{window.sessionStorage.setItem(AUTH_FALLBACK_KEY,raw);saved=true}catch{}
   if(saved)window.dispatchEvent(new Event(AUTH_FALLBACK_EVENT));
   return saved;
+}
+
+export function captureAuthResult(result:any):boolean{
+  // Better Auth session.token is an opaque session identifier, not the JWT used by Data API.
+  // Keep this only as a compatibility fallback in case a provider explicitly returns a JWT here.
+  const data=result?.data||result;
+  const token=String(data?.session?.token||"");
+  return persistAuthJwt(token);
+}
+
+async function getLiveAuthJwt():Promise<string|null>{
+  try{
+    const token=String(await neon.auth.getJWTToken?.()||"");
+    const payload=decodeJwtPayload(token);
+    const exp=Number(payload?.exp||0);
+    const userId=String(payload?.sub||"");
+    if(!token||!userId||userId==="anonymous"||!Number.isFinite(exp)||exp*1000<=Date.now()+15000)return null;
+    return token;
+  }catch{return null}
+}
+
+export async function captureCurrentAuthJwt():Promise<boolean>{
+  const token=await getLiveAuthJwt();
+  return token?persistAuthJwt(token):false;
 }
 
 export const neon: any = createClient({
@@ -87,6 +109,13 @@ export const neon: any = createClient({
     url: DATA_API_URL,
   },
 });
+
+const liveJwtDataClient:any=createClient({
+  dataApi:{
+    url:DATA_API_URL,
+    getToken:async()=>await getLiveAuthJwt(),
+  },
+} as any);
 
 const fallbackDataClient:any=createClient({
   dataApi:{
@@ -124,14 +153,27 @@ export async function rpc<T = any>(name: string, args: Record<string, unknown> =
     }catch(error){
       primaryError=error;
       const message=rpcErrorMessage(error);
-      const fallback=getValidAuthFallback();
-      if(fallback&&isAuthSessionError(message)){
+      if(isAuthSessionError(message)){
         try{
-          return await runRpc<T>(fallbackDataClient,name,args);
-        }catch(fallbackError){
-          const fallbackMessage=rpcErrorMessage(fallbackError);
-          if(isAuthSessionError(fallbackMessage))clearAuthFallback();
-          throw fallbackError;
+          const liveToken=await getLiveAuthJwt();
+          if(liveToken){
+            persistAuthJwt(liveToken);
+            return await runRpc<T>(liveJwtDataClient,name,args);
+          }
+        }catch{}
+        const fallback=getValidAuthFallback();
+        if(fallback){
+          try{
+            return await runRpc<T>(fallbackDataClient,name,args);
+          }catch(fallbackError){
+            const fallbackMessage=rpcErrorMessage(fallbackError);
+            if(isAuthSessionError(fallbackMessage))clearAuthFallback();
+            if(attempt===3)throw fallbackError;
+          }
+        }
+        if(attempt<3){
+          await new Promise(resolve=>setTimeout(resolve,250*(attempt+1)));
+          continue;
         }
       }
       const retryable=isSchemaCacheError(message)||/APP_USER_REQUIRED|APPROVAL_REQUIRED|JWT expired|token.*expired/i.test(message);

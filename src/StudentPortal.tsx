@@ -1,5 +1,5 @@
 import { FormEvent, useEffect, useState } from "react";
-import { neon, niceError, rpc } from "./client";
+import { forceSignOut, neon, niceError, rpc } from "./client";
 import { readDataCache, writeDataCache, sameCacheVersion, type CacheVersions } from "./data-cache";
 import "./feature-upgrade.css";
 import "./student-account.css";
@@ -75,7 +75,7 @@ export default function StudentPortal({cacheUserId=""}:{cacheUserId?:string}){
     catch(err){setPasswordMsg(niceError(err))}finally{setPasswordBusy(false)}
   }
 
-  if(error)return <div className="full-center"><div className="pending-card"><h1>تعذر تحميل بوابة الطالب</h1><p>{error}</p><button className="btn ghost" onClick={()=>neon.auth.signOut()}>تسجيل الخروج</button></div></div>;
+  if(error)return <div className="full-center"><div className="pending-card"><h1>تعذر تحميل بوابة الطالب</h1><p>{error}</p><button className="btn ghost" onClick={()=>void forceSignOut()}>تسجيل الخروج</button></div></div>;
   if(!data)return <div className="full-center"><div className="loader"/><p>جارٍ تحميل بوابة الطالب...</p></div>;
 
   const s=data.student;
@@ -98,7 +98,7 @@ export default function StudentPortal({cacheUserId=""}:{cacheUserId?:string}){
   return <div className="student-portal">
     <header className="student-portal-head">
       <div className="student-brand"><div className="logos"><img src={SCHOOL_LOGO}/><img src={GUIDANCE_LOGO}/></div><div><span>{data.school_name||"مدارس المشكاة الأهلية"}</span><h1>بوابة الطالب — بنك التميز</h1></div></div>
-      <button className="btn ghost" onClick={()=>neon.auth.signOut()}>تسجيل الخروج</button>
+      <button className="btn ghost" onClick={()=>void forceSignOut()}>تسجيل الخروج</button>
     </header>
 
     <main className="student-portal-content">

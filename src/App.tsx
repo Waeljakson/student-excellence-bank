@@ -728,10 +728,10 @@ export default function App(){
   async function refreshProfile(){
     setProfileLoading(true);setProfileError("");
     try{
-      await prepareAuthenticatedSession(8);
+      await prepareAuthenticatedSession(3);
       let next:Profile|null=null;
       let lastError:unknown=null;
-      for(let attempt=0;attempt<6;attempt++){
+      for(let attempt=0;attempt<3;attempt++){
         try{
           next=await rpc<Profile>("api_profile");
           lastError=null;
@@ -740,9 +740,9 @@ export default function App(){
           lastError=e;
           const raw=e instanceof Error?e.message:String(e);
           if(!/AUTH_REQUIRED|Authentication required|Unauthorized|401|anonymous/i.test(raw))throw e;
-          await prepareAuthenticatedSession(4);
+          await prepareAuthenticatedSession(2);
         }
-        if(attempt<5)await new Promise(resolve=>setTimeout(resolve,250*(attempt+1)));
+        if(attempt<2)await new Promise(resolve=>setTimeout(resolve,220*(attempt+1)));
       }
       if(lastError)throw lastError;
       setProfile(next);

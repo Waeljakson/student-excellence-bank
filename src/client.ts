@@ -45,8 +45,14 @@ export function getValidAuthFallback():AuthFallback|null{
   return typeof window==="undefined"?null:readStoredFallback();
 }
 
+export function isUsableAuthUserId(value:any):boolean{
+  const id=String(value||"").trim();
+  return !!id&&id!=="anonymous"&&id!=="null"&&id!=="undefined";
+}
+
 export function getFallbackAuthUserId():string{
-  return getValidAuthFallback()?.userId||"";
+  const id=getValidAuthFallback()?.userId||"";
+  return isUsableAuthUserId(id)?id:"";
 }
 
 export function hasValidAuthFallback():boolean{
@@ -89,7 +95,7 @@ async function getLiveAuthJwt():Promise<string|null>{
     const payload=decodeJwtPayload(token);
     const exp=Number(payload?.exp||0);
     const userId=String(payload?.sub||"");
-    if(!token||!userId||userId==="anonymous"||!Number.isFinite(exp)||exp*1000<=Date.now()+15000)return null;
+    if(!token||!isUsableAuthUserId(userId)||!Number.isFinite(exp)||exp*1000<=Date.now()+15000)return null;
     return token;
   }catch{return null}
 }
@@ -97,6 +103,23 @@ async function getLiveAuthJwt():Promise<string|null>{
 export async function captureCurrentAuthJwt():Promise<boolean>{
   const token=await getLiveAuthJwt();
   return token?persistAuthJwt(token):false;
+}
+
+export async function prepareAuthenticatedSession(attempts=8):Promise<boolean>{
+  for(let attempt=0;attempt<attempts;attempt++){
+    try{
+      const current=await neon.auth.getSession();
+      const userId=current?.data?.user?.id;
+      if(isUsableAuthUserId(userId)){
+        if(await captureCurrentAuthJwt())return true;
+        // The unified Neon client can still have a valid authenticated session while its JWT cache warms up.
+        if(attempt>=2)return true;
+      }
+    }catch{}
+    if(getValidAuthFallback())return true;
+    await new Promise(resolve=>setTimeout(resolve,150*(attempt+1)));
+  }
+  return !!getValidAuthFallback();
 }
 
 export const neon: any = createClient({
@@ -130,6 +153,18 @@ neon.auth.signOut=async(...args:any[])=>{
   finally{clearAuthFallback()}
 };
 
+export async function forceSignOut(){
+  clearAuthFallback();
+  try{sessionStorage.removeItem("mishkat-login-succeeded")}catch{}
+  try{sessionStorage.removeItem("mishkat-session-recovery-count")}catch{}
+  try{await originalNeonSignOut()}catch{}
+  clearAuthFallback();
+  if(typeof window!=="undefined"){
+    const base=new URL(import.meta.env.BASE_URL,window.location.origin).toString();
+    window.location.replace(base);
+  }
+}
+
 function rpcErrorMessage(error:any){
   return error?.message||error?.details||error?.hint||String(error||"تعذر تنفيذ الطلب");
 }
@@ -155,6 +190,7 @@ export async function rpc<T = any>(name: string, args: Record<string, unknown> =
       const message=rpcErrorMessage(error);
       if(isAuthSessionError(message)){
         try{
+          await prepareAuthenticatedSession(4);
           const liveToken=await getLiveAuthJwt();
           if(liveToken){
             persistAuthJwt(liveToken);

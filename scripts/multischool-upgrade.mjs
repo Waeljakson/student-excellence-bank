@@ -85,8 +85,10 @@ edit("src/StudentEvaluationReports.tsx",s=>{
 edit("src/StudentLogin.tsx",s=>{
   s=s.replace('import { FormEvent, useState } from "react";','import { FormEvent, useEffect, useState } from "react";');
   if(!s.includes("type SchoolOption="))s=s.replace('type Lookup = { exists: boolean; claimed: boolean };','type Lookup = { exists: boolean; claimed: boolean; school_code?:string; school_name?:string };\ntype SchoolOption={code:string;name_ar:string};');
-  s=s.replace('  const [studentNo, setStudentNo] = useState("");\n  const [password, setPassword] = useState("");',
-    '  const [studentNo, setStudentNo] = useState("");\n  const [password, setPassword] = useState("");\n  const [schools,setSchools]=useState<SchoolOption[]>([]);\n  const [schoolCode,setSchoolCode]=useState("MISHKAT");');
+  if(!s.includes("const [schools,setSchools]")){
+    s=s.replace('  const [studentNo, setStudentNo] = useState("");\n  const [password, setPassword] = useState("");',
+      '  const [studentNo, setStudentNo] = useState("");\n  const [password, setPassword] = useState("");\n  const [schools,setSchools]=useState<SchoolOption[]>([]);\n  const [schoolCode,setSchoolCode]=useState("MISHKAT");');
+  }
   if(!s.includes('rpc<SchoolOption[]>("api_public_schools")')){
     s=s.replace('  const [message, setMessage] = useState("");',
       '  const [message, setMessage] = useState("");\n\n  useEffect(()=>{\n    rpc<SchoolOption[]>("api_public_schools").then(rows=>{\n      const list=Array.isArray(rows)?rows:[];\n      setSchools(list);\n      if(list.length&&!list.some(x=>x.code===schoolCode))setSchoolCode(list[0].code);\n    }).catch(()=>{});\n  },[]);');
@@ -174,7 +176,7 @@ edit("src/StudentAddModal.tsx",s=>{
 });
 
 edit("src/CompletedReferralsReport.tsx",s=>{
-  s=once(s,'import { niceError, rpc } from "./client";','import { niceError, rpc } from "./client";\nimport { getCurrentSchoolName } from "./school-brand";');
+  if(!s.includes('from "./school-brand"'))s='import { getCurrentSchoolName } from "./school-brand";\n'+s;
   s=s.replace('<div class="school">متوسطة وثانوية مشكاة الشعلة</div>','<div class="school">${esc(getCurrentSchoolName())}</div>');
   s=s.replace('<div class="head"><h1>تحويل طالب</h1><h2>متوسطة وثانوية مشكاة الشعلة</h2>',
     '<div class="head"><h1>تحويل طالب</h1><h2>${esc(getCurrentSchoolName())}</h2>');

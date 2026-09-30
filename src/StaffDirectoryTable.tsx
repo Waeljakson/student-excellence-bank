@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import "./staff-directory-table.css";
+import { getCurrentSchoolName } from "./school-brand";
 
 type StaffMember = {
   id: string;
@@ -31,13 +32,13 @@ function subjectOrTitle(s: StaffMember) {
   return normalizeSubject(s.teaching_subject_ar);
 }
 
-function administration(s: StaffMember) {
+function administration(s: StaffMember, schoolName=getCurrentSchoolName()) {
   const classes = (s.assigned_classes || []).join(" ");
   const hasMiddle = classes.includes("المتوسط");
   const hasSecondary = classes.includes("الثانوي");
-  if (hasMiddle && hasSecondary) return "متوسطة وثانوية مشكاة الشعلة";
-  if (hasSecondary) return "ثانوية مشكاة الشعلة";
-  if (hasMiddle) return "متوسطة مشكاة الشعلة";
+  if (hasMiddle && hasSecondary) return schoolName;
+  if (hasSecondary) return schoolName.replace(/^متوسطة وثانوية\s*/,"ثانوية ");
+  if (hasMiddle) return schoolName.replace(/^متوسطة وثانوية\s*/,"متوسطة ");
   if (s.job_title_ar !== "معلم") return "الإدارة المدرسية";
   return "غير محدد";
 }
@@ -107,7 +108,7 @@ export default function StaffDirectoryTable({ staff }: { staff: StaffMember[] })
 <body>
   <div class="print-head">
     <h1>جدول بيانات الهيئة الإدارية والتعليمية</h1>
-    <p>متوسطة وثانوية مشكاة الشعلة</p>
+    <p>${escapeHtml(getCurrentSchoolName())}</p>
     <div class="count">عدد السجلات: ${rows.length}</div>
   </div>
   <table>

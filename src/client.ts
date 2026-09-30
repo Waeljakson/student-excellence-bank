@@ -335,6 +335,10 @@ export function niceError(error: unknown) {
   if (message.includes("KHAMEESNA_WEEK_CLOSED")) return "خميسنا غير مغلقة يومي الجمعة والسبت. يبدأ أسبوع جديد يوم الأحد.";
   if (message.includes("KHAMEESNA_POINTS_RANGE")) return "نقاط خميسنا غير للإضافة الواحدة من 1 إلى 10 نقاط.";
   if (message.includes("KHAMEESNA_LESSON_RANGE")) return "رقم الحصة يجب أن يكون من 1 إلى 8.";
+  if (message.includes("KHAMEESNA_WINNER_INVALID")) return "تعذر تحديد الفصل الفائز. أعد تحميل الصفحة وحاول مرة أخرى.";
+  if (message.includes("KHAMEESNA_COMPETITION_NOT_FOUND")) return "أسبوع خميسنا غير المطلوب غير موجود أو لا يتبع مدرستك.";
+  if (message.includes("KHAMEESNA_CONSENT_NOT_AVAILABLE")) return "نموذج الموافقة غير متاح لهذا الطالب حاليًا.";
+  if (message.includes("KHAMEESNA_CONSENT_INVALID")) return "تعذر تسجيل الموافقة. أعد فتح بوابة ولي الأمر وحاول مرة أخرى.";
   if (message.includes("STAFF_CLASS_REQUIRED") || message.includes("TEACHER_CLASS_REQUIRED")) return "يجب تحديد فصل واحد على الأقل لهذا الموظف.";
   if (message.includes("STAFF_CLASS_ROLE_REQUIRED") || message.includes("TEACHER_ONLY_ASSIGNMENT")) return "تسكين الفصول متاح للمعلم ومدير المدرسة والوكيل والموجه الطلابي.";
   if (message.includes("STAFF_ALREADY_LINKED")) return "هذا الاسم مرتبط بحساب مستخدم آخر بالفعل.";

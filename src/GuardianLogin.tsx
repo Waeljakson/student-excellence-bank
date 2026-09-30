@@ -36,7 +36,7 @@ function LoginForm({onSuccess}:{onSuccess:(studentNo:string,data:any)=>void}){
   return <form onSubmit={submit} className="form-stack guardian-login-form">
     <div className="guardian-login-title">
       <div className="guardian-login-logos"><img src={SCHOOL_LOGO} alt="شعار المدرسة"/><img src={GUIDANCE_LOGO} alt="شعار التوجيه الطلابي"/></div>
-      <span>متوسطة وثانوية مشكاة الشعلة</span>
+      <span>مدارس المشكاة الأهلية</span>
       <h2>بوابة ولي الأمر</h2>
     </div>
     <p>أدخل <b>رقم هوية / رقم الطالب المسجل بالمدرسة</b> فقط. لا تحتاج إلى كلمة مرور.</p>
@@ -58,7 +58,7 @@ export default function GuardianLogin({standalone=false}:{standalone?:boolean}){
   return <div className="auth-page">
     <div className="auth-brand guardian-public-brand">
       <div className="logos"><img src={SCHOOL_LOGO} alt="شعار المدرسة"/><img src={GUIDANCE_LOGO} alt="شعار التوجيه الطلابي"/></div>
-      <span>متوسطة وثانوية مشكاة الشعلة</span>
+      <span>مدارس المشكاة الأهلية</span>
       <h1>بوابة ولي الأمر</h1>
       <p>متابعة يومية لملاحظات المعلمين والتقييمات والتميز الطلابي.</p>
     </div>

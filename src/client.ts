@@ -7,6 +7,7 @@ export const DATA_API_URL = "https://ep-green-bar-b2rjvdpo.apirest.c-6.eu-centra
 
 // IOS_AUTH_FALLBACK_V54
 const AUTH_FALLBACK_KEY="mishkat-ios-auth-v1";
+const AUTH_LOGOUT_GUARD_KEY="mishkat-manual-logout-v1";
 export const AUTH_FALLBACK_EVENT="mishkat-auth-fallback";
 
 type AuthFallback={token:string;userId:string;exp:number};
@@ -51,8 +52,28 @@ function readStoredFallback():AuthFallback|null{
   return null;
 }
 
+export function isLogoutGuarded():boolean{
+  if(typeof window==="undefined")return false;
+  try{if(window.localStorage.getItem(AUTH_LOGOUT_GUARD_KEY)==="1")return true}catch{}
+  try{if(window.sessionStorage.getItem(AUTH_LOGOUT_GUARD_KEY)==="1")return true}catch{}
+  return false;
+}
+
+export function markLogoutGuard(){
+  if(typeof window==="undefined")return;
+  try{window.localStorage.setItem(AUTH_LOGOUT_GUARD_KEY,"1")}catch{}
+  try{window.sessionStorage.setItem(AUTH_LOGOUT_GUARD_KEY,"1")}catch{}
+}
+
+export function clearLogoutGuard(){
+  if(typeof window==="undefined")return;
+  try{window.localStorage.removeItem(AUTH_LOGOUT_GUARD_KEY)}catch{}
+  try{window.sessionStorage.removeItem(AUTH_LOGOUT_GUARD_KEY)}catch{}
+}
+
 export function getValidAuthFallback():AuthFallback|null{
-  return typeof window==="undefined"?null:readStoredFallback();
+  if(typeof window==="undefined"||isLogoutGuarded())return null;
+  return readStoredFallback();
 }
 
 export function isUsableAuthUserId(value:any):boolean{
@@ -77,7 +98,7 @@ export function clearAuthFallback(){
 }
 
 function persistAuthJwt(token:string):boolean{
-  if(typeof window==="undefined")return false;
+  if(typeof window==="undefined"||isLogoutGuarded())return false;
   const payload=decodeJwtPayload(token);
   const exp=Number(payload?.exp||0);
   const userId=String(payload?.sub||"");
@@ -111,11 +132,13 @@ async function getLiveAuthJwt():Promise<string|null>{
 }
 
 export async function captureCurrentAuthJwt():Promise<boolean>{
+  if(isLogoutGuarded())return false;
   const token=await getLiveAuthJwt();
   return token?persistAuthJwt(token):false;
 }
 
 export async function prepareAuthenticatedSession(attempts=4):Promise<boolean>{
+  if(isLogoutGuarded())return false;
   if(getValidAuthFallback())return true;
   for(let attempt=0;attempt<Math.min(attempts,4);attempt++){
     try{
@@ -159,11 +182,13 @@ const fallbackDataClient:any=createClient({
 
 const originalNeonSignOut=neon.auth.signOut.bind(neon.auth);
 neon.auth.signOut=async(...args:any[])=>{
+  markLogoutGuard();
   try{return await originalNeonSignOut(...args)}
   finally{clearAuthFallback()}
 };
 
 export async function forceSignOut(){
+  markLogoutGuard();
   clearAuthFallback();
   try{sessionStorage.removeItem("mishkat-login-succeeded")}catch{}
   try{sessionStorage.removeItem("mishkat-session-recovery-count")}catch{}

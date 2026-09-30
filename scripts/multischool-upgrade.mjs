@@ -186,3 +186,14 @@ edit("src/CompletedReferralsReport.tsx",s=>{
 });
 
 console.log("multi-school branding applied");
+
+
+edit("src/StudentExcelImporter.tsx",s=>{
+  if(/bd67db56-4910-440e-b78a-ea23c4d12998|d7fe2e14-9943-4d1b-bdb8-084108579e79|متوسطة مشكاة الشعلة|ثانوية مشكاة الشعلة/.test(s)){
+    throw new Error("multischool-upgrade: student importer still contains Shaala-only department fallback");
+  }
+  if(!s.includes("getCurrentSchoolName")||!s.includes("schoolStageName")){
+    throw new Error("multischool-upgrade: student importer is not scoped to current school");
+  }
+  return s;
+});

@@ -48,8 +48,7 @@ export default function StudentLogin() {
           captureAuthResult(signed);
           if(!await prepareAuthenticatedSession(8))throw new Error("AUTH_REQUIRED");
           window.dispatchEvent(new Event("mishkat-auth-success"));
-          window.dispatchEvent(new Event("mishkat-auth-success"));
-      window.location.reload();
+          window.location.reload();
           return;
         } catch {
           throw new Error("رقم الطالب أو كلمة المرور غير صحيحة.");
@@ -90,6 +89,7 @@ export default function StudentLogin() {
 
       if(!await prepareAuthenticatedSession(8))throw new Error("AUTH_REQUIRED");
       await rpc("api_claim_student_account", { p_student_no: no });
+      window.dispatchEvent(new Event("mishkat-auth-success"));
       window.location.reload();
     } catch (err) {
       setMessage(niceError(err));

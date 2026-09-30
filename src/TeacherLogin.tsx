@@ -1,5 +1,5 @@
 import { FormEvent, useState } from "react";
-import { neon, niceError, rpc } from "./client";
+import { captureAuthResult, neon, niceError, prepareAuthenticatedSession, rpc } from "./client";
 import "./feature-upgrade.css";
 
 type Lookup = { exists: boolean; claimed: boolean; staff_name?:string; job_title?:string };
@@ -30,6 +30,11 @@ export default function TeacherLogin() {
         try {
           const signed = await neon.auth.signIn.email({ email, password });
           authError(signed);
+          captureAuthResult(signed);
+          if(!await prepareAuthenticatedSession(8))throw new Error("AUTH_REQUIRED");
+          window.dispatchEvent(new Event("mishkat-auth-success"));
+          window.dispatchEvent(new Event("mishkat-auth-success"));
+      window.location.reload();
           return;
         } catch {
           throw new Error("رقم المستخدم أو كلمة المرور غير صحيحة، أو أن هذا الموظف مرتبط بحساب إدارة مختلف.");
@@ -42,11 +47,13 @@ export default function TeacherLogin() {
       try {
         const created = await neon.auth.signUp.email({ name: lookup.staff_name || "موظف", email, password });
         authError(created);
+        captureAuthResult(created);
         ready = true;
       } catch (createErr) {
         try {
           const signed = await neon.auth.signIn.email({ email, password });
           authError(signed);
+          captureAuthResult(signed);
           ready = true;
         } catch {
           throw createErr;
@@ -57,9 +64,12 @@ export default function TeacherLogin() {
       try {
         const signed = await neon.auth.signIn.email({ email, password });
         authError(signed);
+        captureAuthResult(signed);
       } catch {
         // signUp قد ينشئ الجلسة تلقائيًا.
       }
+
+      if(!await prepareAuthenticatedSession(8))throw new Error("AUTH_REQUIRED");
 
       if (lookup.job_title === "معلم") {
         await rpc("api_claim_teacher_account", { p_mobile: phone });

@@ -101,6 +101,16 @@ function behavioralRankLabel(value:any){
   return ({1:"الأول",2:"الثاني",3:"الثالث",4:"الرابع",5:"الخامس"} as Record<number,string>)[n]||String(n||"—");
 }
 
+function guardianTripWhen(value?:string|null){
+  if(!value)return "الخميس";
+  const today=riyardDayFix().key;
+  const base=new Date(today+"T12:00:00+03:00");
+  base.setDate(base.getDate()+1);
+  const tomorrow=new Intl.DateTimeFormat("en-CA",{timeZone:"Asia/Riyadh",year:"numeric",month:"2-digit",day:"2-digit"}).format(base);
+  const pretty=new Date(value+"T12:00:00+03:00").toLocaleDateString("ar-SA",{timeZone:"Asia/Riyadh",weekday:"long",day:"numeric",month:"long"});
+  return value===tomorrow?"غدًا الخميس":pretty;
+}
+
 type PeriodicAnalysis={cycle_id:string;cycle_title:string;summary:string;academic:string;behavior:string;strengths:string[];followups:string[];recommendation:string};
 
 function periodicAnalysis(items:any[]):PeriodicAnalysis[]{
@@ -200,6 +210,9 @@ export default function GuardianPortal({token,studentNo,initialData}:{token?:str
   const[data,setData]=useState<any>(null);
   const[error,setError]=useState("");
   const[childId,setChildId]=useState("");
+  const[trip,setTrip]=useState<any>(null);
+  const[tripBusy,setTripBusy]=useState(false);
+  const[tripMessage,setTripMessage]=useState("");
   const[tab,setTab]=useState<"overview"|"followup"|"periodic"|"individual"|"competitions">("overview");
   const tokenMode=!!token;
   const identityMode=!!studentNo;
@@ -216,6 +229,26 @@ export default function GuardianPortal({token,studentNo,initialData}:{token?:str
         :rpc<any>("api_guardian_portal");
     request.then(d=>{setData(d);setChildId(d.children?.[0]?.id||"")}).catch(e=>setError(niceError(e)));
   },[token,studentNo,tokenMode,identityMode,initialData]);
+
+  useEffect(()=>{
+    const child=(data?.children||[]).find((x:any)=>x.id===childId)||(data?.children||[])[0];
+    if(!child?.student_no){setTrip(null);return}
+    setTripMessage("");
+    rpc<any>("api_guardian_lookup",{p_mobile:"TRIP:"+child.student_no})
+      .then(x=>setTrip(x?.trip||null))
+      .catch(()=>setTrip(null));
+  },[data,childId]);
+
+  async function approveTrip(){
+    const child=(data?.children||[]).find((x:any)=>x.id===childId)||(data?.children||[])[0];
+    if(!child?.student_no||!trip?.competition_id||tripBusy)return;
+    setTripBusy(true);setTripMessage("");
+    try{
+      const result:any=await rpc("api_guardian_lookup",{p_mobile:"CONSENT:"+child.student_no+":"+trip.competition_id});
+      setTrip((current:any)=>({...current,approved:true,approved_at:result?.approved_at||new Date().toISOString()}));
+      setTripMessage("تم استلام موافقتكم بنجاح. شكرًا لتعاونكم، ونتمنى لأبنائنا رحلة ممتعة وآمنة.");
+    }catch(e){setTripMessage(niceError(e))}finally{setTripBusy(false)}
+  }
 
   function printPeriodicReport(child:Child){
     const items=child.periodic_evaluations||[];
@@ -269,6 +302,18 @@ export default function GuardianPortal({token,studentNo,initialData}:{token?:str
           </div>
           <div className="guardian-winner-rank"><small>المركز</small><strong>{behavioralRankLabel(award.rank)}</strong><span>على مستوى الصف</span></div>
         </section>)}
+        {trip&&<section className="guardian-kh-trip">
+          <div className="guardian-kh-trip-icon">🏆</div>
+          <div className="guardian-kh-trip-copy">
+            <span>مسابقة خميسنا غير</span>
+            <h3>تهانينا بفوز فصل ابنكم 🎉</h3>
+            <p>يسرنا أن نبارك لكم فوز فصل ابنكم <b>{c.grade_name} — فصل {c.class_name}</b> في مسابقة <b>خميسنا غير</b> بين فصول المدرسة، واستحقاقه <b>رحلة ترفيهية مجانية {guardianTripWhen(trip.trip_date)}</b>. يسعدنا مشاركة ابنكم في هذه الرحلة، ونأمل التكرم بتأكيد موافقتكم إلكترونيًا.</p>
+            {!trip.approved?<button type="button" className="guardian-trip-approve" disabled={tripBusy} onClick={approveTrip}>{tripBusy?"جارٍ تسجيل الموافقة...":"موافق على مشاركة ابني في الرحلة"}</button>:<div className="guardian-trip-approved"><b>✓ تم استلام موافقتكم</b><small>{trip.approved_at?new Date(trip.approved_at).toLocaleString("ar-SA"):""}</small></div>}
+            {tripMessage&&<div className={trip.approved?"guardian-trip-message success":"guardian-trip-message"}>{tripMessage}</div>}
+            <small className="guardian-trip-note">بالضغط على زر الموافقة يتم تسجيل موافقتكم إلكترونيًا في سجل المدرسة.</small>
+          </div>
+          <div className="guardian-kh-trip-date"><small>موعد الرحلة</small><strong>{guardianTripWhen(trip.trip_date)}</strong><span>{trip.trip_date?new Date(trip.trip_date+"T12:00:00+03:00").toLocaleDateString("ar-SA",{day:"numeric",month:"long"}):""}</span></div>
+        </section>}
         <DailyFollowup child={c}/>
         <nav className="guardian-tabs">
           <button className={tab==="overview"?"active":""} onClick={()=>setTab("overview")}>الرئيسية</button>

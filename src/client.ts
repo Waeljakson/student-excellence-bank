@@ -105,7 +105,7 @@ function rpcErrorMessage(error:any){
   return error?.message||error?.details||error?.hint||String(error||"تعذر تنفيذ الطلب");
 }
 function isAuthSessionError(message:string){
-  return /AuthRequiredError|Authentication required|AUTH_REQUIRED|JWT expired|jwt expired|token.*expired|invalid.*jwt|invalid.*token|PGRST301|401|Unauthorized/i.test(message);
+  return /AuthRequiredError|Authentication required|AUTH_REQUIRED|JWT expired|jwt expired|token.*expired|invalid.*jwt|invalid.*token|invalid input syntax for type uuid:\s*["']anonymous["']|PGRST301|401|Unauthorized/i.test(message);
 }
 function isSchemaCacheError(message:string){
   return /schema cache|Could not find the function/i.test(message);
@@ -144,6 +144,7 @@ export async function rpc<T = any>(name: string, args: Record<string, unknown> =
 
 export function niceError(error: unknown) {
   const message = error instanceof Error ? error.message : String(error);
+  if (/invalid input syntax for type uuid:\\s*["\']anonymous["\']/i.test(message)) return "جلسة الدخول غير مكتملة. أعد المحاولة بعد لحظات.";
   if (message.includes("APPROVAL_REQUIRED")) return "الحساب غير مرتبط بالنظام. استخدم طريقة الدخول المخصصة لك.";
   if (message.includes("SUPER_ADMIN_REQUIRED")) return "هذه الإعدادات متاحة لمدير النظام فقط.";
   if (message.includes("ADMIN_REQUIRED")) return "هذه العملية متاحة لإدارة النظام فقط.";

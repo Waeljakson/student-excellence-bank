@@ -11,6 +11,16 @@ export const AUTH_FALLBACK_EVENT="mishkat-auth-fallback";
 
 type AuthFallback={token:string;userId:string;exp:number};
 
+function withTimeout<T>(promise:Promise<T>,ms:number,code="REQUEST_TIMEOUT"):Promise<T>{
+  return new Promise<T>((resolve,reject)=>{
+    const timer=setTimeout(()=>reject(new Error(code)),ms);
+    promise.then(
+      value=>{clearTimeout(timer);resolve(value)},
+      error=>{clearTimeout(timer);reject(error)}
+    );
+  });
+}
+
 function decodeJwtPayload(token:string):any|null{
   try{
     const parts=String(token||"").split(".");
@@ -91,7 +101,7 @@ export function captureAuthResult(result:any):boolean{
 
 async function getLiveAuthJwt():Promise<string|null>{
   try{
-    const token=String(await neon.auth.getJWTToken?.()||"");
+    const token=String(await withTimeout(Promise.resolve(neon.auth.getJWTToken?.()),2200,"AUTH_JWT_TIMEOUT")||"");
     const payload=decodeJwtPayload(token);
     const exp=Number(payload?.exp||0);
     const userId=String(payload?.sub||"");
@@ -105,19 +115,19 @@ export async function captureCurrentAuthJwt():Promise<boolean>{
   return token?persistAuthJwt(token):false;
 }
 
-export async function prepareAuthenticatedSession(attempts=8):Promise<boolean>{
-  for(let attempt=0;attempt<attempts;attempt++){
+export async function prepareAuthenticatedSession(attempts=4):Promise<boolean>{
+  if(getValidAuthFallback())return true;
+  for(let attempt=0;attempt<Math.min(attempts,4);attempt++){
     try{
-      const current=await neon.auth.getSession();
+      const current=await withTimeout(Promise.resolve(neon.auth.getSession()),1800,"AUTH_SESSION_TIMEOUT");
       const userId=current?.data?.user?.id;
       if(isUsableAuthUserId(userId)){
         if(await captureCurrentAuthJwt())return true;
-        // The unified Neon client can still have a valid authenticated session while its JWT cache warms up.
-        if(attempt>=2)return true;
+        if(attempt>=1)return true;
       }
     }catch{}
     if(getValidAuthFallback())return true;
-    await new Promise(resolve=>setTimeout(resolve,150*(attempt+1)));
+    await new Promise(resolve=>setTimeout(resolve,120*(attempt+1)));
   }
   return !!getValidAuthFallback();
 }
@@ -180,22 +190,37 @@ function isSchemaCacheError(message:string){
   return /schema cache|Could not find the function/i.test(message);
 }
 async function runRpc<T>(client:any,name:string,args:Record<string,unknown>):Promise<T>{
-  const {data,error}=await client.rpc(name,args);
+  const {data,error}=await withTimeout(Promise.resolve(client.rpc(name,args)),5500,"RPC_TIMEOUT");
   if(error)throw new Error(rpcErrorMessage(error));
   return data as T;
 }
 
 export async function rpc<T = any>(name: string, args: Record<string, unknown> = {}): Promise<T> {
   let primaryError:unknown=null;
-  for(let attempt=0;attempt<4;attempt++){
+
+  // Authenticated calls should use the durable JWT first. This avoids waiting on a stale
+  // Better Auth hook/session after refresh while keeping public RPCs available anonymously.
+  const stored=getValidAuthFallback();
+  if(stored){
+    try{
+      return await runRpc<T>(fallbackDataClient,name,args);
+    }catch(error){
+      primaryError=error;
+      const message=rpcErrorMessage(error);
+      if(isAuthSessionError(message))clearAuthFallback();
+      else if(!/RPC_TIMEOUT/i.test(message))throw error;
+    }
+  }
+
+  for(let attempt=0;attempt<3;attempt++){
     try{
       return await runRpc<T>(neon,name,args);
     }catch(error){
       primaryError=error;
       const message=rpcErrorMessage(error);
-      if(isAuthSessionError(message)){
+      if(isAuthSessionError(message)||/RPC_TIMEOUT/i.test(message)){
         try{
-          await prepareAuthenticatedSession(4);
+          await prepareAuthenticatedSession(3);
           const liveToken=await getLiveAuthJwt();
           if(liveToken){
             persistAuthJwt(liveToken);
@@ -204,22 +229,21 @@ export async function rpc<T = any>(name: string, args: Record<string, unknown> =
         }catch{}
         const fallback=getValidAuthFallback();
         if(fallback){
-          try{
-            return await runRpc<T>(fallbackDataClient,name,args);
-          }catch(fallbackError){
+          try{return await runRpc<T>(fallbackDataClient,name,args)}
+          catch(fallbackError){
             const fallbackMessage=rpcErrorMessage(fallbackError);
             if(isAuthSessionError(fallbackMessage))clearAuthFallback();
-            if(attempt===3)throw fallbackError;
+            primaryError=fallbackError;
           }
         }
-        if(attempt<3){
-          await new Promise(resolve=>setTimeout(resolve,250*(attempt+1)));
+        if(attempt<2){
+          await new Promise(resolve=>setTimeout(resolve,220*(attempt+1)));
           continue;
         }
       }
       const retryable=isSchemaCacheError(message)||/APP_USER_REQUIRED|APPROVAL_REQUIRED|JWT expired|token.*expired/i.test(message);
-      if(!retryable||attempt===3)throw error;
-      await new Promise(resolve=>setTimeout(resolve,250*(attempt+1)));
+      if(!retryable||attempt===2)throw error;
+      await new Promise(resolve=>setTimeout(resolve,220*(attempt+1)));
     }
   }
   throw primaryError instanceof Error?primaryError:new Error("تعذر تنفيذ الطلب");
@@ -227,6 +251,7 @@ export async function rpc<T = any>(name: string, args: Record<string, unknown> =
 
 export function niceError(error: unknown) {
   const message = error instanceof Error ? error.message : String(error);
+  if (/RPC_TIMEOUT|AUTH_SESSION_TIMEOUT|AUTH_JWT_TIMEOUT/i.test(message)) return "تعذر الاتصال بالخدمة في الوقت المحدد. أعد المحاولة أو سجل الخروج ثم ادخل مرة أخرى.";
   if (/invalid input syntax for type uuid:\\s*["\']anonymous["\']/i.test(message)) return "جلسة الدخول غير مكتملة. أعد المحاولة بعد لحظات.";
   if (message.includes("APPROVAL_REQUIRED")) return "الحساب غير مرتبط بالنظام. استخدم طريقة الدخول المخصصة لك.";
   if (message.includes("SUPER_ADMIN_REQUIRED")) return "هذه الإعدادات متاحة لمدير النظام فقط.";

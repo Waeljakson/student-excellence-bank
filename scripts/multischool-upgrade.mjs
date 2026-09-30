@@ -211,3 +211,18 @@ edit("src/TeacherLogin.tsx",s=>{
   }
   return s;
 });
+
+
+edit("src/KhameesnaCompetition.tsx",s=>{
+  for(const marker of ["APPROVE_WINNER|","printConsents","kh-winner-panel","consent_count"]){
+    if(!s.includes(marker))throw new Error("multischool-upgrade: Khameesna guardian-consent admin UI missing "+marker);
+  }
+  return s;
+});
+
+edit("src/GuardianPortal.tsx",s=>{
+  for(const marker of ['"TRIP:"+child.student_no','"CONSENT:"+child.student_no', "guardian-kh-trip", "موافق على مشاركة ابني في الرحلة"]){
+    if(!s.includes(marker))throw new Error("multischool-upgrade: guardian Khameesna consent UI missing "+marker);
+  }
+  return s;
+});

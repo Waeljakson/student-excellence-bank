@@ -200,3 +200,11 @@ edit("src/StudentExcelImporter.tsx",s=>{
   }
   return s;
 });
+
+
+edit("src/TeacherLogin.tsx",s=>{
+  for(const marker of ["api_staff_lookup_school","api_claim_staff_account_school","SchoolOption","p_school_code"]){
+    if(!s.includes(marker))throw new Error("multischool-upgrade: school-aware staff login missing "+marker);
+  }
+  return s;
+});

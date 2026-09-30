@@ -208,7 +208,7 @@ export async function rpc<T = any>(name: string, args: Record<string, unknown> =
       primaryError=error;
       const message=rpcErrorMessage(error);
       if(isAuthSessionError(message))clearAuthFallback();
-      else if(!/RPC_TIMEOUT/i.test(message))throw error;
+      else throw error;
     }
   }
 

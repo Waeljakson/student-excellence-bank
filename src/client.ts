@@ -157,7 +157,12 @@ export async function forceSignOut(){
   clearAuthFallback();
   try{sessionStorage.removeItem("mishkat-login-succeeded")}catch{}
   try{sessionStorage.removeItem("mishkat-session-recovery-count")}catch{}
-  try{await originalNeonSignOut()}catch{}
+  try{
+    await Promise.race([
+      Promise.resolve(originalNeonSignOut()).catch(()=>undefined),
+      new Promise(resolve=>setTimeout(resolve,900))
+    ]);
+  }catch{}
   clearAuthFallback();
   if(typeof window!=="undefined"){
     const base=new URL(import.meta.env.BASE_URL,window.location.origin).toString();

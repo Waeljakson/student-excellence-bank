@@ -331,7 +331,9 @@ function PendingAccount({ profile, onRefresh }: { profile: Profile; onRefresh: (
   // AUTO_PORTAL_ACCOUNT_LINK
   const email=String(profile.email||"").trim().toLowerCase();
   const staffSuffix="@staff.mishkat.sa";const studentSuffix="@students.mishkat.sa";
-  const portalKey=email.endsWith(staffSuffix)?"T:"+email.slice(0,-staffSuffix.length):email.endsWith(studentSuffix)?email.slice(0,-studentSuffix.length):"";
+  const studentLocal=email.endsWith(studentSuffix)?email.slice(0,-studentSuffix.length):"";
+  const studentNoFromEmail=studentLocal.includes(".")?studentLocal.slice(studentLocal.lastIndexOf(".")+1):studentLocal;
+  const portalKey=email.endsWith(staffSuffix)?"T:"+email.slice(0,-staffSuffix.length):studentNoFromEmail;
   const [busy,setBusy]=useState(false);const[message,setMessage]=useState("");
   async function repair(){if(!portalKey||busy)return;setBusy(true);setMessage("");try{if(portalKey.startsWith("T:")){const mobile=portalKey.slice(2);const lookup=await rpc("api_student_lookup",{p_student_no:portalKey});if(lookup?.job_title==="معلم")await rpc("api_claim_teacher_account",{p_mobile:mobile});else await rpc("api_claim_student_account",{p_student_no:portalKey})}else await rpc("api_claim_student_account",{p_student_no:portalKey});await onRefresh()}catch(e){setMessage(niceError(e))}finally{setBusy(false)}}
   useEffect(()=>{if(portalKey)void repair()},[portalKey]);

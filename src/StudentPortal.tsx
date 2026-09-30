@@ -15,6 +15,9 @@ const GUIDANCE_LOGO = `${import.meta.env.BASE_URL}guidance-logo.png`;
 type PortalAnnouncement={ id:string; title_ar:string; body_ar:string; starts_at:string; ends_at?:string|null; announcement_type?:string; criteria?:string[]; target_class_ids?:string[] };
 type FollowupNote={ id:string; subject_ar?:string; note_kind?:string; category_ar?:string; note_text:string; note_date:string; teacher_name?:string };
 type PortalData = {
+  school_id?: string;
+  school_name?: string;
+  school_code?: string;
   student: { id:string; student_no:string; name:string; grade_name:string; class_name:string; points:number; value_sar:number; avatar?:string|null };
   checks: Array<{ id:string; serial_no:string; points:number; reason:string; status:string; approval_status:string; issued_at:string; rule_name:string; issuer_name:string; reversed_at?:string|null; reversal_reason?:string|null }>;
   announcements: PortalAnnouncement[];
@@ -94,7 +97,7 @@ export default function StudentPortal({cacheUserId=""}:{cacheUserId?:string}){
 
   return <div className="student-portal">
     <header className="student-portal-head">
-      <div className="student-brand"><div className="logos"><img src={SCHOOL_LOGO}/><img src={GUIDANCE_LOGO}/></div><div><span>متوسطة وثانوية مشكاة الشعلة</span><h1>بوابة الطالب — بنك التميز</h1></div></div>
+      <div className="student-brand"><div className="logos"><img src={SCHOOL_LOGO}/><img src={GUIDANCE_LOGO}/></div><div><span>{data.school_name||"مدارس المشكاة الأهلية"}</span><h1>بوابة الطالب — بنك التميز</h1></div></div>
       <button className="btn ghost" onClick={()=>neon.auth.signOut()}>تسجيل الخروج</button>
     </header>
 

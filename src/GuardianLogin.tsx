@@ -1,9 +1,10 @@
-import {FormEvent,useState} from "react";
+import {FormEvent,useEffect,useState} from "react";
 import {niceError,rpc} from "./client";
 import GuardianPortal from "./GuardianPortal";
 
 const SCHOOL_LOGO=`${import.meta.env.BASE_URL}school-logo.png`;
 const GUIDANCE_LOGO=`${import.meta.env.BASE_URL}guidance-logo.png`;
+type SchoolOption={code:string;name_ar:string};
 
 function normalizeStudentNo(value:string){
   const ar="٠١٢٣٤٥٦٧٨٩", fa="۰۱۲۳۴۵۶۷۸۹";
@@ -15,8 +16,18 @@ function normalizeStudentNo(value:string){
 
 function LoginForm({onSuccess}:{onSuccess:(studentNo:string,data:any)=>void}){
   const[studentNo,setStudentNo]=useState("");
+  const[schools,setSchools]=useState<SchoolOption[]>([]);
+  const[schoolCode,setSchoolCode]=useState("MISHKAT");
   const[busy,setBusy]=useState(false);
   const[msg,setMsg]=useState("");
+
+  useEffect(()=>{
+    rpc<SchoolOption[]>("api_public_schools").then(rows=>{
+      const list=Array.isArray(rows)?rows:[];
+      setSchools(list);
+      if(list.length&&!list.some(x=>x.code===schoolCode))setSchoolCode(list[0].code);
+    }).catch(()=>{});
+  },[]);
 
   async function submit(e:FormEvent){
     e.preventDefault();
@@ -24,7 +35,8 @@ function LoginForm({onSuccess}:{onSuccess:(studentNo:string,data:any)=>void}){
     setBusy(true);setMsg("");
     try{
       if(!/^\d{10}$/.test(no))throw new Error("اكتب رقم هوية / رقم الطالب المكوّن من 10 أرقام.");
-      const lookup=await rpc<any>("api_guardian_lookup",{p_mobile:no});
+      if(!schoolCode)throw new Error("اختر المدرسة أولًا.");
+      const lookup=await rpc<any>("api_guardian_lookup_school",{p_student_no:no,p_school_code:schoolCode});
       if(!lookup?.exists||lookup?.source!=="student_no"||!lookup?.portal)throw new Error("STUDENT_NOT_FOUND");
       onSuccess(no,lookup.portal);
     }catch(err){
@@ -36,16 +48,17 @@ function LoginForm({onSuccess}:{onSuccess:(studentNo:string,data:any)=>void}){
   return <form onSubmit={submit} className="form-stack guardian-login-form">
     <div className="guardian-login-title">
       <div className="guardian-login-logos"><img src={SCHOOL_LOGO} alt="شعار المدرسة"/><img src={GUIDANCE_LOGO} alt="شعار التوجيه الطلابي"/></div>
-      <span>متوسطة وثانوية مشكاة الشعلة</span>
+      <span>مدارس المشكاة الأهلية</span>
       <h2>بوابة ولي الأمر</h2>
     </div>
     <p>أدخل <b>رقم هوية / رقم الطالب المسجل بالمدرسة</b> فقط. لا تحتاج إلى كلمة مرور.</p>
+    <label>المدرسة<select required value={schoolCode} onChange={e=>setSchoolCode(e.target.value)}>{schools.map(x=><option key={x.code} value={x.code}>{x.name_ar}</option>)}</select></label>
     <label>رقم هوية / رقم الطالب
       <input inputMode="numeric" autoComplete="off" maxLength={10} required value={studentNo} onChange={e=>setStudentNo(e.target.value)} placeholder="10 أرقام"/>
     </label>
     <button className="btn primary" disabled={busy}>{busy?"جارٍ فتح البوابة...":"دخول ولي الأمر"}</button>
     {msg&&<div className="notice error">{msg}</div>}
-    <small>الرابط موحّد لجميع أولياء الأمور، وكل ولي أمر يدخل برقم ابنه فقط.</small>
+    <small>الرابط موحّد لجميع المدارس؛ اختر المدرسة ثم أدخل رقم الطالب المسجل بها.</small>
   </form>;
 }
 
@@ -58,7 +71,7 @@ export default function GuardianLogin({standalone=false}:{standalone?:boolean}){
   return <div className="auth-page">
     <div className="auth-brand guardian-public-brand">
       <div className="logos"><img src={SCHOOL_LOGO} alt="شعار المدرسة"/><img src={GUIDANCE_LOGO} alt="شعار التوجيه الطلابي"/></div>
-      <span>متوسطة وثانوية مشكاة الشعلة</span>
+      <span>مدارس المشكاة الأهلية</span>
       <h1>بوابة ولي الأمر</h1>
       <p>متابعة يومية لملاحظات المعلمين والتقييمات والتميز الطلابي.</p>
     </div>

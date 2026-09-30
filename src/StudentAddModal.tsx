@@ -1,5 +1,6 @@
 import {FormEvent,useMemo,useState} from "react";
 import {niceError,rpc} from "./client";
+import {getCurrentSchoolCode} from "./school-brand";
 
 type ClassOption={id:string;grade_id:string;grade_name:string;class_name:string;department_id:string};
 type ImportResult={ok:boolean;inserted:number;updated:number;skipped:number;errors?:Array<{row:number;student_no?:string;error:string}>};
@@ -48,7 +49,8 @@ export default function StudentAddModal({onAdded}:{onAdded:()=>Promise<void>}){
     if(!classId){setMsg("اختر الصف والفصل.");return}
     setBusy(true);setMsg("");
     try{
-      const lookup=await rpc<{exists:boolean}>("api_student_lookup",{p_student_no:studentNo.trim()});
+      const schoolCode=getCurrentSchoolCode();
+      const lookup=await rpc<{exists:boolean}>("api_student_lookup_school",{p_student_no:studentNo.trim(),p_school_code:schoolCode});
       if(lookup?.exists){setMsg("رقم الطالب موجود بالفعل في قاعدة المدرسة.");return}
       const selected=options.find(x=>x.id===classId);
       if(!selected?.department_id){setMsg("تعذر تحديد قسم الصف المختار. أعد فتح نافذة الإضافة وحاول مرة أخرى.");return}

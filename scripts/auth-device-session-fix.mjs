@@ -8,7 +8,7 @@ const sessionHelper = (name) => `async function ${name}() {\n  for (let attempt 
 function patchTeacherLogin() {
   const path = "src/TeacherLogin.tsx";
   let src = readFileSync(path, "utf8");
-  if (src.includes("AUTH_SESSION_STABILITY_V2_TEACHER")) return;
+  if (src.includes("AUTH_SESSION_STABILITY_V2_TEACHER") || src.includes("prepareAuthenticatedSession")) return;
 
   const authFn = `function authError(result: any) {\n  if (result?.error) throw new Error(result.error.message || result.error.code || "تعذر تسجيل الدخول");\n}`;
   if (!src.includes("async function ensureTeacherSessionReady")) {
@@ -39,7 +39,7 @@ function patchTeacherLogin() {
 function patchStudentLogin() {
   const path = "src/StudentLogin.tsx";
   let src = readFileSync(path, "utf8");
-  if (src.includes("AUTH_SESSION_STABILITY_V2_STUDENT")) return;
+  if (src.includes("AUTH_SESSION_STABILITY_V2_STUDENT") || src.includes("prepareAuthenticatedSession")) return;
 
   const authFn = `function authError(result: any) {\n  if (result?.error) throw new Error(result.error.message || result.error.code || "تعذر تسجيل الدخول");\n}`;
   if (!src.includes("async function ensureStudentSessionReady")) {

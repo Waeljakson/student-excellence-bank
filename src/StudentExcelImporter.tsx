@@ -6,6 +6,7 @@ import "./student-importer.css";
 
 type Department = { id: string; name: string };
 type ImportOptions = { academic_year_id: string; academic_year: string; departments: Department[] };
+type ClassOption = { id:string; grade_id:string; grade_name:string; class_name:string; department_id:string };
 type ImportRow = { student_no: string; student_name: string; grade: string; class_name: string };
 type ImportResult = {
   inserted: number;
@@ -152,6 +153,19 @@ function stageDepartment(kind: StageKind, departments: Department[]) {
   if (!kind) return undefined;
   return departments.find(d => kind === "secondary" ? /ثان/.test(d.name) : /متوسط/.test(d.name));
 }
+function departmentsFromClasses(rows:ClassOption[],schoolName:string):Department[]{
+  const byId=new Map<string,Department>();
+  for(const row of rows||[]){
+    const id=String(row?.department_id||"").trim();
+    if(!id)continue;
+    const grade=String(row?.grade_name||"");
+    const kind:StageKind=/ثان/.test(grade)?"secondary":/متوسط/.test(grade)?"middle":"";
+    const name=kind?schoolStageName(schoolName,kind):"";
+    if(name)byId.set(id,{id,name});
+  }
+  return Array.from(byId.values());
+}
+
 function unwrapOptions(value: any): ImportOptions | null {
   const candidate = Array.isArray(value) ? (value[0]?.api_student_import_options ?? value[0]) : (value?.api_student_import_options ?? value);
   if (!candidate || typeof candidate !== "object") return null;
@@ -199,13 +213,29 @@ export default function StudentExcelImporter({ onImported }: { onImported: () =>
         try{
           const raw=await rpc<any>("api_student_import_options");
           const o=unwrapOptions(raw);
-          if(o&&alive){
+          if(o&&o.departments.length&&alive){
             setOptions(o);
             if(o.departments.length===1)setDepartmentId(o.departments[0].id);
             setMessage(prev=>prev.startsWith("تعذر تحميل أقسام")?"":prev);
             return;
           }
         }catch(e){lastError=e}
+
+        try{
+          const classes=await rpc<ClassOption[]>("api_student_class_options");
+          const departments=departmentsFromClasses(Array.isArray(classes)?classes:[],schoolName);
+          if(departments.length&&alive){
+            setOptions(prev=>({
+              academic_year_id:prev?.academic_year_id||"",
+              academic_year:prev?.academic_year||"",
+              departments
+            }));
+            if(departments.length===1)setDepartmentId(departments[0].id);
+            setMessage(prev=>prev.startsWith("تعذر تحميل أقسام")?"":prev);
+            return;
+          }
+        }catch(e){lastError=e}
+
         await new Promise(resolve=>setTimeout(resolve,250*(attempt+1)));
       }
       if(alive)setMessage(`تعذر تحميل أقسام ${schoolName}. ${niceError(lastError)}`);
@@ -220,6 +250,7 @@ export default function StudentExcelImporter({ onImported }: { onImported: () =>
   }, [departmentHint, availableDepartments, departmentId]);
 
   const departmentName = availableDepartments.find(d => d.id === departmentId)?.name || "";
+  const effectiveDepartmentName = departmentName || (departmentHint==="secondary" ? schoolStageName(schoolName,"secondary") : departmentHint==="middle" ? schoolStageName(schoolName,"middle") : "");
 
   function applyHeader(data: unknown[][], rowIndex: number) {
     const safeIndex = Math.max(0, Math.min(rowIndex, Math.max(0, data.length - 1)));
@@ -275,14 +306,14 @@ export default function StudentExcelImporter({ onImported }: { onImported: () =>
   const rawRows = useMemo(() => matrix.slice(headerRow + 1).filter(r => r.some(v => text(v) !== "")), [matrix, headerRow]);
 
   const prepared = useMemo(() => {
-    if (!departmentName || Object.values(mapping).some(v => v < 0)) return { rows: [] as ImportRow[], invalid: 0, duplicates: 0 };
+    if (Object.values(mapping).some(v => v < 0)) return { rows: [] as ImportRow[], invalid: 0, duplicates: 0 };
     const mapped: ImportRow[] = [];
     let invalid = 0;
     for (const row of rawRows) {
       const item: ImportRow = {
         student_no: cleanStudentNo(row[mapping.studentNo]),
         student_name: text(row[mapping.studentName]),
-        grade: canonicalGrade(row[mapping.grade], departmentName),
+        grade: canonicalGrade(row[mapping.grade], effectiveDepartmentName),
         class_name: cleanClass(row[mapping.className]),
       };
       if (!item.student_no || !item.student_name || !item.grade || !item.class_name) {
@@ -298,7 +329,7 @@ export default function StudentExcelImporter({ onImported }: { onImported: () =>
       byNo.set(r.student_no, r);
     }
     return { rows: Array.from(byNo.values()), invalid, duplicates };
-  }, [rawRows, mapping, departmentName]);
+  }, [rawRows, mapping, effectiveDepartmentName]);
 
   async function importStudents() {
     if (!book) {
@@ -332,6 +363,22 @@ export default function StudentExcelImporter({ onImported }: { onImported: () =>
             importDepartmentId=resolved.id;
             setDepartmentId(resolved.id);
           }
+        }
+      }catch{}
+    }
+    if (!importDepartmentId && departmentHint) {
+      try{
+        const classes=await rpc<ClassOption[]>("api_student_class_options");
+        const departments=departmentsFromClasses(Array.isArray(classes)?classes:[],schoolName);
+        const resolved=stageDepartment(departmentHint,departments);
+        if(resolved){
+          setOptions(prev=>({
+            academic_year_id:prev?.academic_year_id||"",
+            academic_year:prev?.academic_year||"",
+            departments
+          }));
+          importDepartmentId=resolved.id;
+          setDepartmentId(resolved.id);
         }
       }catch{}
     }

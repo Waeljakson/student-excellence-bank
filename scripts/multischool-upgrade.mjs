@@ -203,8 +203,11 @@ edit("src/StudentExcelImporter.tsx",s=>{
 
 
 edit("src/TeacherLogin.tsx",s=>{
-  for(const marker of ["api_staff_lookup_school","api_claim_staff_account_school","SchoolOption","p_school_code"]){
-    if(!s.includes(marker))throw new Error("multischool-upgrade: school-aware staff login missing "+marker);
+  for(const marker of ["api_student_lookup","api_claim_student_account","SchoolOption","schoolCode",'"T:"+schoolCode+":"+phone']){
+    if(!s.includes(marker))throw new Error("multischool-upgrade: schema-stable school-aware staff login missing "+marker);
+  }
+  if(s.includes("api_staff_lookup_school")||s.includes("api_claim_staff_account_school")){
+    throw new Error("multischool-upgrade: teacher login must not depend on fresh schema-cache RPC names");
   }
   return s;
 });

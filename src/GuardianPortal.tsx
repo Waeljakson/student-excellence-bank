@@ -1,5 +1,5 @@
 import {useEffect,useState} from "react";
-import {neon,niceError,rpc} from "./client";
+import {forceSignOut,neon,niceError,rpc} from "./client";
 import "./guardian-portal.css";
 
 type Note={id:string;subject_ar?:string;note_kind?:string;category_ar?:string;note_text:string;note_date:string;teacher_name?:string};
@@ -237,7 +237,7 @@ export default function GuardianPortal({token,studentNo,initialData}:{token?:str
 
   function leave(){
     if(tokenMode||identityMode){window.location.href=import.meta.env.BASE_URL+"?parent=1";return}
-    void neon.auth.signOut();
+    void forceSignOut();
   }
 
   if(error)return <div className="full-center"><div className="pending-card"><h1>تعذر تحميل حساب ولي الأمر</h1><p>{error.includes("GUARDIAN_LINK_INVALID")?"رابط ولي الأمر غير صالح أو تم إيقافه.":error.includes("STUDENT_NOT_FOUND")?"لم يتم العثور على طالب بهذا الرقم.":"تعذر تحميل بيانات الطالب."}</p><button className="btn ghost" onClick={leave}>العودة لبوابة ولي الأمر</button></div></div>;

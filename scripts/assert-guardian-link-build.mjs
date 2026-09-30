@@ -4,7 +4,7 @@ const files=readdirSync(dir).filter(x=>x.endsWith(".js"));
 const required=[
   "api_guardian_lookup",
   "followup_notes",
-  "متوسطة وثانوية مشكاة الشعلة",
+  "school_name",
   "student-tabs",
   "ملاحظات المعلمين",
   "كل الفصول",

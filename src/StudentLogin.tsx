@@ -1,5 +1,5 @@
 import { FormEvent, useEffect, useState } from "react";
-import { neon, niceError, rpc } from "./client";
+import { captureAuthResult, neon, niceError, prepareAuthenticatedSession, rpc } from "./client";
 import "./feature-upgrade.css";
 
 type Lookup = { exists: boolean; claimed: boolean; school_code?:string; school_name?:string };
@@ -45,6 +45,11 @@ export default function StudentLogin() {
         try {
           const signed = await neon.auth.signIn.email({ email, password });
           authError(signed);
+          captureAuthResult(signed);
+          if(!await prepareAuthenticatedSession(8))throw new Error("AUTH_REQUIRED");
+          window.dispatchEvent(new Event("mishkat-auth-success"));
+          window.dispatchEvent(new Event("mishkat-auth-success"));
+      window.location.reload();
           return;
         } catch {
           throw new Error("رقم الطالب أو كلمة المرور غير صحيحة.");
@@ -59,11 +64,13 @@ export default function StudentLogin() {
       try {
         const created = await neon.auth.signUp.email({ name: `طالب ${no}`, email, password });
         authError(created);
+        captureAuthResult(created);
         createdOk = true;
       } catch (createErr) {
         try {
           const signed = await neon.auth.signIn.email({ email, password });
           authError(signed);
+          captureAuthResult(signed);
           createdOk = true;
         } catch {
           throw createErr;
@@ -76,10 +83,12 @@ export default function StudentLogin() {
       try {
         const signed = await neon.auth.signIn.email({ email, password });
         authError(signed);
+        captureAuthResult(signed);
       } catch {
         // signUp في Neon Auth قد يسجل الدخول تلقائيًا؛ نكمل محاولة الربط في هذه الحالة.
       }
 
+      if(!await prepareAuthenticatedSession(8))throw new Error("AUTH_REQUIRED");
       await rpc("api_claim_student_account", { p_student_no: no });
       window.location.reload();
     } catch (err) {

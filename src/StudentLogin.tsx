@@ -1,5 +1,5 @@
 import { FormEvent, useEffect, useState } from "react";
-import { captureAuthResult, neon, niceError, prepareAuthenticatedSession, rpc } from "./client";
+import { captureAuthResult, clearLogoutGuard, neon, niceError, prepareAuthenticatedSession, rpc } from "./client";
 import "./feature-upgrade.css";
 
 type Lookup = { exists: boolean; claimed: boolean; school_code?:string; school_name?:string };
@@ -45,6 +45,7 @@ export default function StudentLogin() {
         try {
           const signed = await neon.auth.signIn.email({ email, password });
           authError(signed);
+          clearLogoutGuard();
           captureAuthResult(signed);
           if(!await prepareAuthenticatedSession(8))throw new Error("AUTH_REQUIRED");
           window.dispatchEvent(new Event("mishkat-auth-success"));
@@ -63,12 +64,14 @@ export default function StudentLogin() {
       try {
         const created = await neon.auth.signUp.email({ name: `طالب ${no}`, email, password });
         authError(created);
+        clearLogoutGuard();
         captureAuthResult(created);
         createdOk = true;
       } catch (createErr) {
         try {
           const signed = await neon.auth.signIn.email({ email, password });
           authError(signed);
+          clearLogoutGuard();
           captureAuthResult(signed);
           createdOk = true;
         } catch {
@@ -82,6 +85,7 @@ export default function StudentLogin() {
       try {
         const signed = await neon.auth.signIn.email({ email, password });
         authError(signed);
+        clearLogoutGuard();
         captureAuthResult(signed);
       } catch {
         // signUp في Neon Auth قد يسجل الدخول تلقائيًا؛ نكمل محاولة الربط في هذه الحالة.

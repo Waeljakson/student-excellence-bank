@@ -64,7 +64,7 @@ export default function CompletedReferralsReport({completed}:{completed:Referral
       .footer{margin-top:10px;font-size:9px;color:#666;text-align:left}
     </style></head><body>
       <h1>تقرير التحويلات المنتهية</h1>
-      <div class="school">متوسطة وثانوية مشكاة الشعلة</div>
+      <div class="school">${esc(getCurrentSchoolName())}</div>
       <div class="meta">عدد التحويلات المنتهية: ${completed.length}</div>
       <table><thead><tr><th>رقم التحويل</th><th>الطالب</th><th>الفصل</th><th>المعلم</th><th>الجهة</th><th>المخالفة</th><th>الخصم</th><th>الإجراء النهائي</th><th>تاريخ الإنهاء</th></tr></thead><tbody>${rows}</tbody></table>
       <div class="footer">تمت الطباعة من نظام بنك التميز الطلابي</div>
@@ -97,7 +97,7 @@ export default function CompletedReferralsReport({completed}:{completed:Referral
       @media print{.screen-only{display:none!important}}
       .screen-only{text-align:center;margin:12px 0 0}.screen-only button{font-family:inherit;background:#0b3a65;color:white;border:0;border-radius:8px;padding:9px 18px;cursor:pointer}
     </style></head><body>
-      <div class="head"><h1>تحويل طالب</h1><h2>متوسطة وثانوية مشكاة الشعلة</h2><div class="ref">رقم التحويل: ${esc(r.referral_no)}</div></div>
+      <div class="head"><h1>تحويل طالب</h1><h2>${esc(getCurrentSchoolName())}</h2><div class="ref">رقم التحويل: ${esc(r.referral_no)}</div></div>
       <div class="section"><h3>بيانات التحويل الأصلي</h3><div class="grid">
         <div class="cell"><span class="label">اسم الطالب</span><span class="value">${esc(r.student_name)}</span></div>
         <div class="cell"><span class="label">رقم الطالب</span><span class="value">${esc(r.student_no)}</span></div>

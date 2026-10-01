@@ -226,3 +226,11 @@ edit("src/GuardianPortal.tsx",s=>{
   }
   return s;
 });
+
+
+edit("src/App.tsx",s=>{
+  const navOk=s.includes('["SUPER_ADMIN","SCHOOL_ADMIN"].includes(r))) nav.push(["system","إعدادات النظام","◆"])');
+  const renderOk=s.includes('tab==="system"&&profile.roles?.some(r=>["SUPER_ADMIN","SCHOOL_ADMIN"].includes(r))&&<SystemControlPanel/>');
+  if(!navOk||!renderOk)throw new Error("multischool-upgrade: school-admin system settings access missing");
+  return s;
+});

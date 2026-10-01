@@ -19,14 +19,14 @@ if(!src.includes('{mode==="student"&&<StudentLogin/>}')){
 src=src.replace(/type Tab = ([^;]+);/,m=>m.includes('"system"')?m:m.slice(0,-1)+' | "system";');
 
 if(!src.includes('nav.push(["system","إعدادات النظام"')){
-  src=src.replace('if(isAdmin) nav.push(["admin","الهيئة والصلاحيات","⚙"]);','if(isAdmin) nav.push(["admin","الهيئة والصلاحيات","⚙"]);\n  if(profile.roles?.includes("SUPER_ADMIN")) nav.push(["system","إعدادات النظام","◆"]);');
+  src=src.replace('if(isAdmin) nav.push(["admin","الهيئة والصلاحيات","⚙"]);','if(isAdmin) nav.push(["admin","الهيئة والصلاحيات","⚙"]);\n  if(profile.roles?.some(r=>["SUPER_ADMIN","SCHOOL_ADMIN"].includes(r))) nav.push(["system","إعدادات النظام","◆"]);');
 }
 
 src=src.replace('<label>النقاط<input type="number" required value={points} onChange={e=>setPoints(Number(e.target.value))}/></label>','<div className="fixed-point-value"><span>نقاط البطاقة</span><strong>{points}</strong><small>يحددها مدير النظام فقط</small></div>');
 src=src.replace('subtitle="المعلم لا يستطيع الإصدار إلا بعد اعتماد الإدارة لصلاحيته"','subtitle="اختر الطالب والبطاقة فقط — قيمة النقاط محددة مركزيًا من مدير النظام"');
 
 src=src.replace('{tab==="khameesna"&&<KhameesnaView data={khameesna} reload={loadAll}/>}','{tab==="khameesna"&&<KhameesnaCompetition/>}');
-if(!src.includes('{tab==="system"&&profile.roles?.includes("SUPER_ADMIN")&&<SystemControlPanel/>}')){
+if(!src.includes('{tab==="system"&&profile.roles?.some(r=>["SUPER_ADMIN","SCHOOL_ADMIN"].includes(r))&&<SystemControlPanel/>}')){
   src=src.replace('{tab==="admin"&&isAdmin&&<AdminView pending={pending} users={users} staff={staff} classes={adminClasses} reload={loadAll}/>}','{tab==="system"&&profile.roles?.includes("SUPER_ADMIN")&&<SystemControlPanel/>} {tab==="admin"&&isAdmin&&<AdminView pending={pending} users={users} staff={staff} classes={adminClasses} reload={loadAll}/>}');
 }
 

@@ -3,8 +3,8 @@ import { readFileSync, writeFileSync } from "node:fs";
 const appPath = "src/App.tsx";
 let app = readFileSync(appPath, "utf8");
 if (!app.includes("BEHAVIORAL_TEACHER_TAB_ALWAYS_V1")) {
-  const oldLine = '  const showBehavior=profile.roles?.some(r=>["GUIDANCE_COUNSELOR","SUPER_ADMIN"].includes(r))||(profile.roles?.includes("TEACHER")&&behaviorStatus?.visible_to_teacher===true);';
-  const newLine = '  // BEHAVIORAL_TEACHER_TAB_ALWAYS_V1: teachers always see the tab; nomination availability is controlled inside the page.\n  const showBehavior=profile.roles?.some(r=>["TEACHER","GUIDANCE_COUNSELOR","SUPER_ADMIN"].includes(r));';
+  const oldLine = '  const showBehavior=profile.roles?.some(r=>["GUIDANCE_COUNSELOR","SUPER_ADMIN","SCHOOL_ADMIN"].includes(r))||(profile.roles?.includes("TEACHER")&&behaviorStatus?.visible_to_teacher===true);';
+  const newLine = '  // BEHAVIORAL_TEACHER_TAB_ALWAYS_V1: teachers and school admins always see the tab; nomination availability is controlled inside the page.\n  const showBehavior=profile.roles?.some(r=>["TEACHER","GUIDANCE_COUNSELOR","SUPER_ADMIN","SCHOOL_ADMIN"].includes(r));';
   if (!app.includes(oldLine)) throw new Error("Behavioral navigation visibility line not found");
   app = app.replace(oldLine, newLine);
   writeFileSync(appPath, app);

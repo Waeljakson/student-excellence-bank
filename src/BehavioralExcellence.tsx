@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { FormEvent, useEffect, useMemo, useState } from "react";
 import { niceError, rpc } from "./client";
 import * as XLSX from "xlsx";
 import "./engagement.css";
@@ -14,9 +14,11 @@ type Props={students:Student[];schoolName?:string};
 const fmt=(v?:string|null)=>v?new Date(v).toLocaleString("ar-SA",{year:"numeric",month:"short",day:"numeric",hour:"numeric",minute:"2-digit"}):"—";
 const statusLabel=(s?:string)=>s==="ACTIVE"?"مفعلة":s==="SCHEDULED"?"بانتظار تفعيل الموجه":s==="CLOSED"?"منتهية":"غير مجدولة";
 const participationLabel=(s:TeacherParticipation["status"])=>s==="COMPLETE"?"أكمل الترشيح":s==="PARTIAL"?"رشّح جزئيًا":s==="NOT_NOMINATED"?"لم يرشح":s==="NO_ACCOUNT"?"لا يوجد حساب مفعل":"لا توجد فصول مسندة";
+function localDateTime(d:Date){const pad=(n:number)=>String(n).padStart(2,"0");return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`}
+function cycleEndDefault(){const d=new Date();d.setDate(d.getDate()+7);return localDateTime(d)}
 
 export default function BehavioralExcellence({students,schoolName="مدارس المشكاة الأهلية"}:Props){
-  const[data,setData]=useState<Data|null>(null);const[selected,setSelected]=useState<Record<string,string[]>>({});const[busy,setBusy]=useState("");const[msg,setMsg]=useState("");const[reportFilter,setReportFilter]=useState<"ALL"|TeacherParticipation["status"]>("ALL");
+  const[data,setData]=useState<Data|null>(null);const[selected,setSelected]=useState<Record<string,string[]>>({});const[busy,setBusy]=useState("");const[msg,setMsg]=useState("");const[cycleStart,setCycleStart]=useState(()=>localDateTime(new Date()));const[cycleEnd,setCycleEnd]=useState(()=>cycleEndDefault());const[cycleDesc,setCycleDesc]=useState("كل معلم يرشح ثلاثة طلاب من كل فصل مسند له، والطلاب الأكثر ترشيحًا يتصدرون البرنامج.");const[reportFilter,setReportFilter]=useState<"ALL"|TeacherParticipation["status"]>("ALL");
   async function load(){try{const d=await rpc<Data>("api_behavioral_excellence");setData(d);const initial:Record<string,string[]>={};for(const n of d.my_nominations||[])initial[n.class_id]=(n.student_ids||[]).map(String);setSelected(initial)}catch(e){setMsg(niceError(e))}}
   useEffect(()=>{load()},[]);
   const classGroups=useMemo(()=>{if(!data)return[];const allowed=new Set((data.assigned_class_ids||[]).map(String));const map=new Map<string,{id:string;grade:string;name:string;students:Student[]}>();for(const s of students){if(!s.class_id||!allowed.has(String(s.class_id)))continue;const key=String(s.class_id);if(!map.has(key))map.set(key,{id:key,grade:s.grade_name,name:s.class_name,students:[]});map.get(key)!.students.push(s)}return [...map.values()].sort((a,b)=>`${a.grade}${a.name}`.localeCompare(`${b.grade}${b.name}`,"ar"))},[students,data]);
@@ -46,7 +48,19 @@ export default function BehavioralExcellence({students,schoolName="مدارس ا
   },[data?.leaderboard]);
   function toggle(classId:string,studentId:string){setMsg("");setSelected(v=>{const current=v[classId]||[];if(current.includes(studentId))return{...v,[classId]:current.filter(x=>x!==studentId)};if(current.length>=3){setMsg("لكل فصل 3 ترشيحات فقط. ألغِ اختيار طالب أولًا لتختار غيره.");return v}return{...v,[classId]:[...current,studentId]}})}
   async function saveClass(classId:string){const ids=selected[classId]||[];if(ids.length!==3){setMsg("اختر 3 طلاب بالضبط من هذا الفصل قبل الحفظ.");return}if(!data?.cycle)return;setBusy(classId);setMsg("");try{await rpc("api_behavioral_nominate",{p_cycle_id:data.cycle.id,p_class_id:classId,p_student_ids:ids});setMsg("تم حفظ ترشيحات التميز السلوكي لهذا الفصل.");await load()}catch(e){setMsg(niceError(e))}finally{setBusy("")}}
-  async function cycleAction(action:"ACTIVATE"|"CLOSE"|"PUBLISH_WINNERS"){
+  async function createCycle(e:FormEvent){
+    e.preventDefault();
+    if(!data?.can_manage)return;
+    if(new Date(cycleEnd)<=new Date(cycleStart)){setMsg("وقت نهاية الدورة يجب أن يكون بعد وقت البداية.");return}
+    setBusy("CREATE");setMsg("");
+    try{
+      await rpc("api_behavioral_create_cycle",{p_starts_at:new Date(cycleStart).toISOString(),p_ends_at:new Date(cycleEnd).toISOString(),p_description_ar:cycleDesc});
+      setMsg("تم تجهيز دورة التميز السلوكي لمدرستك. فعّلها من نفس الصفحة عندما تريد إظهارها للمعلمين.");
+      setCycleStart(localDateTime(new Date()));setCycleEnd(cycleEndDefault());
+      await load();window.dispatchEvent(new Event("behavioral-status-changed"));
+    }catch(e){setMsg(niceError(e))}finally{setBusy("")}
+  }
+    async function cycleAction(action:"ACTIVATE"|"CLOSE"|"PUBLISH_WINNERS"){
     if(!data?.cycle)return;
     if(action==="PUBLISH_WINNERS"&&!window.confirm("سيتم اعتماد أفضل 5 طلاب على مستوى كل صف ونشر التهنئة لأولياء أمور الفائزين. لا يمكن إعادة احتساب المراكز بعد النشر. هل تريد المتابعة؟"))return;
     setBusy(action);setMsg("");
@@ -232,7 +246,9 @@ if(!imgs.length)doPrint();
   if(!data)return <><header className="topbar"><div><h1>التميز السلوكي</h1><p>جارٍ تحميل البرنامج...</p></div></header><main className="content"><div className="panel empty">جارٍ التحميل...</div></main></>;
   const c=data.cycle;
   return <><header className="topbar"><div><h1>التميز السلوكي</h1><p>برنامج دوري لترشيح الطلاب الأكثر تميزًا في السلوك</p></div>{c&&<span className={`behavioral-header-status ${c.status.toLowerCase()}`}>{statusLabel(c.status)}</span>}</header><main className="content behavioral-page">
-    {c?<section className="panel behavioral-hero"><div><span className="eyebrow">برنامج دوري</span><h2>{c.title_ar}</h2><p>{c.description_ar}</p><div className="behavioral-dates"><span><small>البداية</small><b>{fmt(c.starts_at)}</b></span><span><small>النهاية</small><b>{fmt(c.ends_at)}</b></span></div></div><div className="behavioral-rule"><strong>3</strong><span>طلاب من كل فصل<br/>لكل معلم</span></div></section>:<section className="panel empty">لم يجهز مدير النظام دورة للتميز السلوكي حتى الآن.</section>}
+    {c?<section className="panel behavioral-hero"><div><span className="eyebrow">برنامج دوري</span><h2>{c.title_ar}</h2><p>{c.description_ar}</p><div className="behavioral-dates"><span><small>البداية</small><b>{fmt(c.starts_at)}</b></span><span><small>النهاية</small><b>{fmt(c.ends_at)}</b></span></div></div><div className="behavioral-rule"><strong>3</strong><span>طلاب من كل فصل<br/>لكل معلم</span></div></section>:!data.can_manage?<section className="panel empty">لم يجهز مدير نظام المدرسة دورة للتميز السلوكي حتى الآن.</section>:null}
+
+    {data.can_manage&&(!c||c.status==="CLOSED")&&<section className="panel behavioral-admin-panel"><div className="panel-title"><div><h3>تجهيز دورة التميز السلوكي</h3><p>بصفتك مدير نظام المدرسة يمكنك إنشاء دورة جديدة لمدرستك فقط، ثم تفعيلها للمعلمين من نفس الصفحة.</p></div><span className="counter">مدير المدرسة</span></div><form className="behavioral-cycle-form" onSubmit={createCycle}><div className="behavioral-cycle-head"><div><span>اسم البرنامج</span><strong>التميز السلوكي</strong></div><div className="behavioral-time-fields"><label>بداية الدورة<input type="datetime-local" required value={cycleStart} onChange={e=>setCycleStart(e.target.value)}/></label><label>نهاية الدورة<input type="datetime-local" required value={cycleEnd} onChange={e=>setCycleEnd(e.target.value)}/></label></div></div><label>وصف الدورة<textarea rows={3} required value={cycleDesc} onChange={e=>setCycleDesc(e.target.value)}/></label><div className="behavioral-admin-note"><b>آلية البرنامج:</b><span>3 طلاب من كل فصل لكل معلم · كل ترشيح = صوت واحد · الصدارة للأكثر ترشيحًا.</span></div><button className="btn primary" disabled={busy==="CREATE"}>{busy==="CREATE"?"جارٍ تجهيز الدورة...":"تجهيز دورة جديدة"}</button></form></section>}
 
     {c&&data.can_activate&&<section className="panel guidance-activation"><div><h3>تحكم الموجه الطلابي</h3><p>{c.status==="SCHEDULED"?"الدورة مجهزة ولكنها مخفية عن المعلمين. فعّلها عندما تريد بدء البرنامج.":c.status==="ACTIVE"?"الدورة مفعلة. يمكنك تمديد وقت الترشيح ساعة أو ساعتين، أو إغلاق الدورة عند الانتهاء.":"هذه الدورة منتهية."}</p></div>{c.status==="SCHEDULED"?<button className="btn primary" disabled={!!busy} onClick={()=>cycleAction("ACTIVATE")}>{busy==="ACTIVATE"?"جارٍ التفعيل...":"تفعيل البرنامج للمعلمين"}</button>:c.status==="ACTIVE"?<div className="behavioral-guidance-actions"><button className="btn secondary" disabled={!!busy} onClick={()=>extendCycle(1)}>{busy==="EXTEND_1H"?"جارٍ التمديد...":"تمديد ساعة"}</button><button className="btn secondary" disabled={!!busy} onClick={()=>extendCycle(2)}>{busy==="EXTEND_2H"?"جارٍ التمديد...":"تمديد ساعتين"}</button><button className="btn danger" disabled={!!busy} onClick={()=>cycleAction("CLOSE")}>{busy==="CLOSE"?"جارٍ الإغلاق...":"إغلاق الدورة"}</button></div>:null}</section>}
 

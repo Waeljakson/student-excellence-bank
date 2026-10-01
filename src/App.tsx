@@ -133,6 +133,7 @@
 // SYSTEM_FEATURES_V2
 // SYSTEM_FEATURES_V2
 // SYSTEM_FEATURES_V2
+// SYSTEM_FEATURES_V2
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import QRCode from "qrcode";
 import { AUTH_FALLBACK_EVENT, AUTH_URL, captureAuthResult, captureCurrentAuthJwt, clearLogoutGuard, forceSignOut, getFallbackAuthUserId, isLogoutGuarded, isUsableAuthUserId, neon, niceError, prepareAuthenticatedSession, rpc } from "./client";
@@ -374,7 +375,7 @@ function AppShell({ profile, children, tab, setTab }: { profile: Profile; childr
   const nav:Array<[Tab,string,string]>=[["dashboard","الرئيسية","⌂"],["checks","شيكات التميز","▣"],["khameesna","خميسنا غير","🏆"],["students","الطلاب والمحافظ","◎"],["rankings","لوحة الترتيب","★"],["rewards","المكافآت","◇"]];
   if(profile.roles?.some(r=>["TEACHER","VICE_PRINCIPAL","GUIDANCE_COUNSELOR"].includes(r))) nav.splice(Math.min(3,nav.length),0,["referrals","تحويلات الطلاب","↗"]);
   if(profile.roles?.includes("GUIDANCE_COUNSELOR")) nav.splice(Math.min(4,nav.length),0,["redemption","الاستبدال","⇄"]);
-  // BEHAVIORAL_TEACHER_TAB_ALWAYS_V1: teachers always see the tab; nomination availability is controlled inside the page.
+  // BEHAVIORAL_TEACHER_TAB_ALWAYS_V1: teachers and school admins always see the tab; nomination availability is controlled inside the page.
   const showBehavior=profile.roles?.some(r=>["TEACHER","GUIDANCE_COUNSELOR","SUPER_ADMIN","SCHOOL_ADMIN"].includes(r));
   if(showBehavior) nav.splice(Math.min(5,nav.length),0,["behavioral","التميز السلوكي","✦"]);
   if(profile.roles?.some(r=>["TEACHER","VICE_PRINCIPAL","GUIDANCE_COUNSELOR","SUPER_ADMIN"].includes(r))) nav.splice(Math.min(4,nav.length),0,["student-evaluations","تقارير التقييم","▤"]);

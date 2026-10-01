@@ -357,7 +357,7 @@ function PendingAccount({ profile, onRefresh }: { profile: Profile; onRefresh: (
 function AppShell({ profile, children, tab, setTab }: { profile: Profile; children: any; tab: Tab; setTab:(t:Tab)=>void }) {
   const isAdmin=profile.roles?.some(r=>["SUPER_ADMIN","SCHOOL_ADMIN","PRINCIPAL"].includes(r));
   const handlesReferrals=profile.roles?.some(r=>["VICE_PRINCIPAL","GUIDANCE_COUNSELOR"].includes(r));
-  const canWatchBehavior=profile.roles?.some(r=>["TEACHER","GUIDANCE_COUNSELOR","SUPER_ADMIN"].includes(r));
+  const canWatchBehavior=profile.roles?.some(r=>["TEACHER","GUIDANCE_COUNSELOR","SUPER_ADMIN","SCHOOL_ADMIN"].includes(r));
   const [referralCount,setReferralCount]=useState(0);
   const [behaviorStatus,setBehaviorStatus]=useState<any>(null);
   useEffect(()=>{
@@ -375,7 +375,7 @@ function AppShell({ profile, children, tab, setTab }: { profile: Profile; childr
   if(profile.roles?.some(r=>["TEACHER","VICE_PRINCIPAL","GUIDANCE_COUNSELOR"].includes(r))) nav.splice(Math.min(3,nav.length),0,["referrals","تحويلات الطلاب","↗"]);
   if(profile.roles?.includes("GUIDANCE_COUNSELOR")) nav.splice(Math.min(4,nav.length),0,["redemption","الاستبدال","⇄"]);
   // BEHAVIORAL_TEACHER_TAB_ALWAYS_V1: teachers always see the tab; nomination availability is controlled inside the page.
-  const showBehavior=profile.roles?.some(r=>["TEACHER","GUIDANCE_COUNSELOR","SUPER_ADMIN"].includes(r));
+  const showBehavior=profile.roles?.some(r=>["TEACHER","GUIDANCE_COUNSELOR","SUPER_ADMIN","SCHOOL_ADMIN"].includes(r));
   if(showBehavior) nav.splice(Math.min(5,nav.length),0,["behavioral","التميز السلوكي","✦"]);
   if(profile.roles?.some(r=>["TEACHER","VICE_PRINCIPAL","GUIDANCE_COUNSELOR","SUPER_ADMIN"].includes(r))) nav.splice(Math.min(4,nav.length),0,["student-evaluations","تقارير التقييم","▤"]);
   if(profile.roles?.some(r=>["TEACHER","GUIDANCE_COUNSELOR","SUPER_ADMIN"].includes(r))) nav.push(["followup","دفتر المتابعة","▤"]);

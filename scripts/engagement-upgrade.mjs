@@ -13,7 +13,7 @@ src=src.replace('}}>دخول المعلم</button>','}}>دخول الهيئة</b
 const shell=`function AppShell({ profile, children, tab, setTab }: { profile: Profile; children: any; tab: Tab; setTab:(t:Tab)=>void }) {
   const isAdmin=profile.roles?.some(r=>["SUPER_ADMIN","SCHOOL_ADMIN","PRINCIPAL"].includes(r));
   const handlesReferrals=profile.roles?.some(r=>["VICE_PRINCIPAL","GUIDANCE_COUNSELOR"].includes(r));
-  const canWatchBehavior=profile.roles?.some(r=>["TEACHER","GUIDANCE_COUNSELOR","SUPER_ADMIN"].includes(r));
+  const canWatchBehavior=profile.roles?.some(r=>["TEACHER","GUIDANCE_COUNSELOR","SUPER_ADMIN","SCHOOL_ADMIN"].includes(r));
   const [referralCount,setReferralCount]=useState(0);
   const [behaviorStatus,setBehaviorStatus]=useState<any>(null);
   useEffect(()=>{
@@ -30,7 +30,7 @@ const shell=`function AppShell({ profile, children, tab, setTab }: { profile: Pr
   const nav:Array<[Tab,string,string]>=[["dashboard","الرئيسية","⌂"],["checks","شيكات التميز","▣"],["khameesna","خميسنا غير","🏆"],["students","الطلاب والمحافظ","◎"],["rankings","لوحة الترتيب","★"],["rewards","المكافآت","◇"]];
   if(profile.roles?.some(r=>["TEACHER","VICE_PRINCIPAL","GUIDANCE_COUNSELOR"].includes(r))) nav.splice(Math.min(3,nav.length),0,["referrals","تحويلات الطلاب","↗"]);
   if(profile.roles?.includes("GUIDANCE_COUNSELOR")) nav.splice(Math.min(4,nav.length),0,["redemption","استبدال النقاط","⇄"]);
-  const showBehavior=profile.roles?.some(r=>["GUIDANCE_COUNSELOR","SUPER_ADMIN"].includes(r))||(profile.roles?.includes("TEACHER")&&behaviorStatus?.visible_to_teacher===true);
+  const showBehavior=profile.roles?.some(r=>["GUIDANCE_COUNSELOR","SUPER_ADMIN","SCHOOL_ADMIN"].includes(r))||(profile.roles?.includes("TEACHER")&&behaviorStatus?.visible_to_teacher===true);
   if(showBehavior) nav.splice(Math.min(5,nav.length),0,["behavioral","التميز السلوكي","✦"]);
   nav.push(["account","حسابي","◉"]);
   if(isAdmin) nav.push(["admin","الهيئة والصلاحيات","⚙"]);

@@ -229,8 +229,10 @@ edit("src/GuardianPortal.tsx",s=>{
 
 
 edit("src/App.tsx",s=>{
-  const navOk=s.includes('["SUPER_ADMIN","SCHOOL_ADMIN"].includes(r))) nav.push(["system","إعدادات النظام","◆"])');
-  const renderOk=s.includes('tab==="system"&&profile.roles?.some(r=>["SUPER_ADMIN","SCHOOL_ADMIN"].includes(r))&&<SystemControlPanel/>');
+  const systemNavLine=s.split("\n").find(line=>line.includes('nav.push(["system","إعدادات النظام","◆"])'))||"";
+  const systemRenderLine=s.split("\n").find(line=>line.includes('tab==="system"')&&line.includes("<SystemControlPanel/>"))||"";
+  const navOk=systemNavLine.includes("SCHOOL_ADMIN");
+  const renderOk=systemRenderLine.includes("SCHOOL_ADMIN");
   if(!navOk||!renderOk)throw new Error("multischool-upgrade: school-admin system settings access missing");
   return s;
 });

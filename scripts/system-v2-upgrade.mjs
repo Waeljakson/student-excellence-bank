@@ -27,7 +27,10 @@ src=src.replace('subtitle="المعلم لا يستطيع الإصدار إلا 
 
 src=src.replace('{tab==="khameesna"&&<KhameesnaView data={khameesna} reload={loadAll}/>}','{tab==="khameesna"&&<KhameesnaCompetition/>}');
 if(!src.includes('{tab==="system"&&profile.roles?.some(r=>["SUPER_ADMIN","SCHOOL_ADMIN"].includes(r))&&<SystemControlPanel/>}')){
-  src=src.replace('{tab==="admin"&&isAdmin&&<AdminView pending={pending} users={users} staff={staff} classes={adminClasses} reload={loadAll}/>}','{tab==="system"&&profile.roles?.includes("SUPER_ADMIN")&&<SystemControlPanel/>} {tab==="admin"&&isAdmin&&<AdminView pending={pending} users={users} staff={staff} classes={adminClasses} reload={loadAll}/>}');
+  src=src.replace('{tab==="system"&&profile.roles?.includes("SUPER_ADMIN")&&<SystemControlPanel/>}','{tab==="system"&&profile.roles?.some(r=>["SUPER_ADMIN","SCHOOL_ADMIN"].includes(r))&&<SystemControlPanel/>}');
+  if(!src.includes('{tab==="system"&&profile.roles?.some(r=>["SUPER_ADMIN","SCHOOL_ADMIN"].includes(r))&&<SystemControlPanel/>}')){
+    src=src.replace('{tab==="admin"&&isAdmin&&<AdminView pending={pending} users={users} staff={staff} classes={adminClasses} reload={loadAll}/>}','{tab==="system"&&profile.roles?.some(r=>["SUPER_ADMIN","SCHOOL_ADMIN"].includes(r))&&<SystemControlPanel/>} {tab==="admin"&&isAdmin&&<AdminView pending={pending} users={users} staff={staff} classes={adminClasses} reload={loadAll}/>}');
+  }
 }
 
 if(!src.includes('profile.roles?.includes("STUDENT")')){

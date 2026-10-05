@@ -295,3 +295,8 @@
 .exit-feature-paused h3{margin:0 0 7px;font-size:20px}
 .exit-feature-paused p{margin:0;color:#667085;line-height:1.8}
 @media(max-width:700px){.feature-switch-row{align-items:stretch;flex-direction:column}.feature-switch-row .btn{width:100%;min-width:0}.exit-feature-paused{align-items:flex-start;flex-direction:column;margin:16px auto}}
+
+
+.feature-direct-actions{display:flex;gap:10px;flex-wrap:wrap;justify-content:flex-end}
+.feature-direct-actions .btn{min-width:150px}
+@media(max-width:700px){.feature-direct-actions{display:grid;grid-template-columns:1fr;width:100%}.feature-direct-actions .btn{width:100%;min-width:0}}

@@ -74,7 +74,7 @@ BEGIN
           'id',cl.id,
           'grade_name',g.name_ar,
           'class_name',cl.name_ar
-        ) ORDER BY g.sort_order,cl.sort_order,cl.name_ar)
+        ) ORDER BY g.sort_order,cl.name_ar)
         FROM jsonb_array_elements_text(COALESCE(ca.target_class_ids,'[]'::jsonb)) j(value)
         JOIN public.classes cl ON cl.id=j.value::uuid
         JOIN public.grades g ON g.id=cl.grade_id

@@ -7,17 +7,29 @@ type Rule = { id:string; name_ar:string; description_ar?:string|null; points:num
 type AdminClass = { id:string; grade_name:string; class_name:string };
 type Announcement = { id:string; title_ar:string; body_ar:string; starts_at:string; ends_at?:string|null; is_published:boolean; created_at:string; announcement_type?:string; criteria?:string[]; target_class_ids?:string[]; target_classes?:AdminClass[] };
 type Board = { available:boolean; name_ar?:string; week_no?:number; starts_on?:string; ends_on?:string; status?:string; reward?:string; criteria?:Array<{key:string;label:string;weight:number;max_score:number}>; weeks?:Array<{id:string;week_no:number;name_ar:string;starts_on:string;ends_on:string;status:string}> };
+type ExitFeatureStatus={school_id:string;school_name:string;student_exit_enabled:boolean};
 
 const today=()=>new Date().toISOString().slice(0,10);
 const afterDays=(days:number)=>{const d=new Date();d.setDate(d.getDate()+days);return d.toISOString().slice(0,10)};
 
 export default function SystemControlPanel(){
-  const[rules,setRules]=useState<Rule[]>([]);const[draft,setDraft]=useState<Record<string,string>>({});const[ann,setAnn]=useState<Announcement[]>([]);const[board,setBoard]=useState<Board|null>(null);const[classes,setClasses]=useState<AdminClass[]>([]);const[busy,setBusy]=useState("");const[msg,setMsg]=useState("");
+  const[rules,setRules]=useState<Rule[]>([]);const[draft,setDraft]=useState<Record<string,string>>({});const[ann,setAnn]=useState<Announcement[]>([]);const[board,setBoard]=useState<Board|null>(null);const[classes,setClasses]=useState<AdminClass[]>([]);const[exitFeature,setExitFeature]=useState<ExitFeatureStatus|null>(null);const[busy,setBusy]=useState("");const[msg,setMsg]=useState("");
   const[title,setTitle]=useState("");const[body,setBody]=useState("");const[endDate,setEndDate]=useState("");
   const[compTitle,setCompTitle]=useState("");const[compBody,setCompBody]=useState("");const[compStart,setCompStart]=useState(today());const[compEnd,setCompEnd]=useState(afterDays(7));const[compCriteria,setCompCriteria]=useState<string[]>([""]);const[selectedClasses,setSelectedClasses]=useState<string[]>([]);
-  async function load(){try{const[r,a,b,c]=await Promise.all([rpc<Rule[]>("api_admin_point_rules"),rpc<Announcement[]>("api_admin_announcements"),rpc<Board>("api_khameesna_competition_board"),rpc<AdminClass[]>("api_admin_classes")]);setRules(r);setAnn(a);setBoard(b);setClasses(c);setDraft(Object.fromEntries(r.map(x=>[x.id,String(x.points)])))}catch(e){setMsg(niceError(e))}}
+  async function load(){try{const[r,a,b,c,x]=await Promise.all([rpc<Rule[]>("api_admin_point_rules"),rpc<Announcement[]>("api_admin_announcements"),rpc<Board>("api_khameesna_competition_board"),rpc<AdminClass[]>("api_admin_classes"),rpc<ExitFeatureStatus>("api_student_exit_feature_status")]);setRules(r);setAnn(a);setBoard(b);setClasses(c);setExitFeature(x);setDraft(Object.fromEntries(r.map(x=>[x.id,String(x.points)])))}catch(e){setMsg(niceError(e))}}
   useEffect(()=>{load()},[]);
   async function saveRule(r:Rule){const p=Number(draft[r.id]);if(!Number.isFinite(p)||p<1||p>100){setMsg("قيمة النقاط يجب أن تكون من 1 إلى 100.");return}setBusy(r.id);setMsg("");try{await rpc("api_admin_set_point_rule",{p_rule_id:r.id,p_points:p});setMsg(`تم تثبيت قيمة «${r.name_ar}» على ${p} نقطة. المعلم لن يستطيع تغييرها.`);await load()}catch(e){setMsg(niceError(e))}finally{setBusy("")}}
+  async function toggleStudentExitFeature(){
+    if(!exitFeature||busy==="student-exit-feature")return;
+    const next=!exitFeature.student_exit_enabled;
+    setBusy("student-exit-feature");setMsg("");
+    try{
+      const result=await rpc<ExitFeatureStatus>("api_admin_set_student_exit_feature",{p_enabled:next});
+      setExitFeature(result);
+      setMsg(next?"تم تشغيل خاصية استئذان الطلاب لهذه المدرسة.":"تم إيقاف خاصية استئذان الطلاب لهذه المدرسة مؤقتًا.");
+    }catch(e){setMsg(niceError(e))}
+    finally{setBusy("")}
+  }
   async function publish(e:FormEvent){e.preventDefault();setBusy("announcement");setMsg("");try{await rpc("api_admin_publish_announcement",{p_title_ar:title,p_body_ar:body,p_ends_at:endDate?new Date(endDate+"T23:59:59+03:00").toISOString():null});setTitle("");setBody("");setEndDate("");setMsg("تم نشر الإعلان في بوابة الطلاب.");await load()}catch(e){setMsg(niceError(e))}finally{setBusy("")}}
   function toggleClass(id:string){setSelectedClasses(v=>v.includes(id)?v.filter(x=>x!==id):[...v,id])}
   function criterionChange(index:number,value:string){setCompCriteria(v=>v.map((x,i)=>i===index?value:x))}
@@ -39,6 +51,19 @@ export default function SystemControlPanel(){
   const targeted=ann.filter(a=>a.announcement_type==="TARGETED_COMPETITION");
   const general=ann.filter(a=>a.announcement_type!=="TARGETED_COMPETITION");
   return <><header className="topbar"><div><h1>إعدادات مدير النظام</h1><p>قيم البطاقات وإطلاق المسابقات — هذه الصفحة متاحة لمدير النظام فقط</p></div></header><main className="content system-control">
+    <section className="panel student-exit-feature-admin">
+      <div className="panel-title">
+        <div><h3>خاصية استئذان الطلاب</h3><p>التحكم مستقل لكل مدرسة. عند الإيقاف يرى المعلم رسالة «تم إيقاف خاصية الاستئذان مؤقتًا» ولا يمكنه تسجيل خروج أو عدم حضور حصة.</p></div>
+        <span className={"feature-state "+(exitFeature?.student_exit_enabled?"enabled":"disabled")}>{exitFeature?.student_exit_enabled?"مفعلة":"موقوفة"}</span>
+      </div>
+      <div className="feature-switch-row">
+        <div><b>{exitFeature?.school_name||"المدرسة الحالية"}</b><span>{exitFeature?.student_exit_enabled?"المعلمون يستطيعون استخدام الاستئذان وعدم حضور الحصة.":"الخاصية موقوفة للمعلمين في هذه المدرسة."}</span></div>
+        <button type="button" className={exitFeature?.student_exit_enabled?"btn danger":"btn primary"} disabled={!exitFeature||busy==="student-exit-feature"} onClick={()=>void toggleStudentExitFeature()}>
+          {busy==="student-exit-feature"?"جارٍ الحفظ...":exitFeature?.student_exit_enabled?"إيقاف الخاصية مؤقتًا":"تشغيل الخاصية"}
+        </button>
+      </div>
+    </section>
+
     <section className="panel"><div className="panel-title"><div><h3>قيم بطاقات التميز</h3><p>المعلم يختار البطاقة فقط. عدد النقاط هنا هو القيمة النهائية التي تعتمدها قاعدة البيانات.</p></div><span className="counter">{rules.length}</span></div><div className="point-rule-admin">{rules.map(r=><article key={r.id} className={r.is_mega?"mega-rule-admin":""}><div><b>{r.name_ar}</b><small>{r.is_mega?"شيك عملاق — للإدارة والتوجيه فقط":r.description_ar||"بطاقة تميز"}</small></div><label><input type="number" min="1" max="100" value={draft[r.id]??r.points} onChange={e=>setDraft(v=>({...v,[r.id]:e.target.value}))}/><span>نقطة</span></label><button className="btn primary" disabled={busy===r.id} onClick={()=>saveRule(r)}>{busy===r.id?"جارٍ الحفظ...":"حفظ القيمة"}</button></article>)}</div></section>
 
     <section className="panel competition-launcher"><div className="panel-title"><div><h3>إطلاق مسابقة للفصول</h3><p>حدد المعايير والفصول ومدة المسابقة. لن يراها إلا طلاب الفصول المختارة.</p></div><span className="counter">{selectedClasses.length} فصل</span></div>

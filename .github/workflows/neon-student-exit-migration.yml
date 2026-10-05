@@ -84,6 +84,12 @@ jobs:
           FROM public.school_feature_settings fs
           JOIN public.schools s ON s.id=fs.school_id
           ORDER BY s.name_ar;
+          SELECT pg_get_functiondef(p.oid)
+          FROM pg_proc p
+          JOIN pg_namespace n ON n.oid=p.pronamespace
+          WHERE n.nspname='public'
+            AND p.proname IN ('api_admin_point_rules','api_admin_set_point_rule')
+          ORDER BY p.proname;
           SELECT proname
           FROM pg_proc
           WHERE proname IN (

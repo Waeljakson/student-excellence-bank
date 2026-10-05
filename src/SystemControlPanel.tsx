@@ -37,35 +37,20 @@ export default function SystemControlPanel(){
       }
     }catch(e){setMsg(niceError(e))}
   }
-  async function loadExitFeature(){
-    try{
-      const r=await rpc<Rule[]>("api_admin_point_rules");
-      const featureRow=(r||[]).find(x=>x.name_ar==="__STUDENT_EXIT_FEATURE__");
-      if(!featureRow)throw new Error("FEATURE_CONTROL_NOT_FOUND");
-      const x:ExitFeatureStatus={
-        school_id:"",
-        school_name:featureRow.description_ar||"المدرسة الحالية",
-        student_exit_enabled:Number(featureRow.points)===1
-      };
-      setExitFeature(x);return x;
-    }catch(e){setMsg("تعذر تحميل حالة خاصية الاستئذان: "+niceError(e));return null}
-  }
   useEffect(()=>{void load()},[]);
   async function saveRule(r:Rule){const p=Number(draft[r.id]);if(!Number.isFinite(p)||p<1||p>100){setMsg("قيمة النقاط يجب أن تكون من 1 إلى 100.");return}setBusy(r.id);setMsg("");try{await rpc("api_admin_set_point_rule",{p_rule_id:r.id,p_points:p});setMsg(`تم تثبيت قيمة «${r.name_ar}» على ${p} نقطة. المعلم لن يستطيع تغييرها.`);await load()}catch(e){setMsg(niceError(e))}finally{setBusy("")}}
-  async function toggleStudentExitFeature(){
+  async function setStudentExitFeature(enabled:boolean){
     if(busy==="student-exit-feature")return;
     setBusy("student-exit-feature");setMsg("");
     try{
-      let current=exitFeature;
-      if(!current){
-        current=await loadExitFeature();
-        if(!current)return;
-      }
-      const next=!current.student_exit_enabled;
       const featureControlId="00000000-0000-0000-0000-00000000e001";
-      await rpc("api_admin_set_point_rule",{p_rule_id:featureControlId,p_points:next?1:2});
-      setExitFeature({...current,student_exit_enabled:next});
-      setMsg(next?"تم تشغيل خاصية استئذان الطلاب لهذه المدرسة.":"تم إيقاف خاصية استئذان الطلاب لهذه المدرسة مؤقتًا.");
+      await rpc("api_admin_set_point_rule",{p_rule_id:featureControlId,p_points:enabled?1:2});
+      setExitFeature(current=>({
+        school_id:current?.school_id||"",
+        school_name:current?.school_name||"المدرسة الحالية",
+        student_exit_enabled:enabled
+      }));
+      setMsg(enabled?"تم تشغيل خاصية استئذان الطلاب لهذه المدرسة.":"تم إيقاف خاصية استئذان الطلاب لهذه المدرسة مؤقتًا.");
     }catch(e){setMsg(niceError(e))}
     finally{setBusy("")}
   }
@@ -92,14 +77,19 @@ export default function SystemControlPanel(){
   return <><header className="topbar"><div><h1>إعدادات مدير النظام</h1><p>قيم البطاقات وإطلاق المسابقات — هذه الصفحة متاحة لمدير النظام فقط</p></div></header><main className="content system-control">
     <section className="panel student-exit-feature-admin">
       <div className="panel-title">
-        <div><h3>خاصية استئذان الطلاب</h3><p>التحكم مستقل لكل مدرسة. عند الإيقاف يرى المعلم رسالة «تم إيقاف خاصية الاستئذان مؤقتًا» ولا يمكنه تسجيل خروج أو عدم حضور حصة.</p></div>
-        <span className={"feature-state "+(exitFeature?.student_exit_enabled?"enabled":"disabled")}>{exitFeature?.student_exit_enabled?"مفعلة":"موقوفة"}</span>
+        <div><h3>خاصية استئذان الطلاب</h3><p>التحكم مستقل لكل مدرسة. استخدم التشغيل أو الإيقاف مباشرة بدون الحاجة إلى تحميل حالة الخاصية أولًا.</p></div>
+        {exitFeature&&<span className={"feature-state "+(exitFeature.student_exit_enabled?"enabled":"disabled")}>{exitFeature.student_exit_enabled?"مفعلة الآن":"موقوفة الآن"}</span>}
       </div>
       <div className="feature-switch-row">
-        <div><b>{exitFeature?.school_name||"المدرسة الحالية"}</b><span>{exitFeature?.student_exit_enabled?"المعلمون يستطيعون استخدام الاستئذان وعدم حضور الحصة.":"الخاصية موقوفة للمعلمين في هذه المدرسة."}</span></div>
-        <button type="button" className={exitFeature?.student_exit_enabled?"btn danger":"btn primary"} disabled={busy==="student-exit-feature"} onClick={()=>void toggleStudentExitFeature()}>
-          {busy==="student-exit-feature"?"جارٍ الحفظ...":!exitFeature?"تحميل حالة الخاصية":exitFeature.student_exit_enabled?"إيقاف الخاصية مؤقتًا":"تشغيل الخاصية"}
-        </button>
+        <div><b>{exitFeature?.school_name||"المدرسة الحالية"}</b><span>التغيير يُحفظ مباشرة في قاعدة Neon للمدرسة التي سجلت الدخول إليها.</span></div>
+        <div className="feature-direct-actions">
+          <button type="button" className="btn primary" disabled={busy==="student-exit-feature"} onClick={()=>void setStudentExitFeature(true)}>
+            {busy==="student-exit-feature"?"جارٍ الحفظ...":"تشغيل الخاصية"}
+          </button>
+          <button type="button" className="btn danger" disabled={busy==="student-exit-feature"} onClick={()=>void setStudentExitFeature(false)}>
+            {busy==="student-exit-feature"?"جارٍ الحفظ...":"إيقاف الخاصية مؤقتًا"}
+          </button>
+        </div>
       </div>
     </section>
 

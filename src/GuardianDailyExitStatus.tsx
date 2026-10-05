@@ -84,14 +84,14 @@ export default function GuardianDailyExitStatus({studentId,studentNo,schoolCode,
   },[studentId,studentNo,schoolCode,notes]);
 
   if(error&&!data)return null;
-  if(!data)return <section className="guardian-attendance-card loading-card"><span>الحضور اليومي</span><p>جارٍ تحديث سجل الخروج من الفصل...</p></section>;
+  if(!data)return <section className="guardian-attendance-card loading-card"><span>معدل الحضور اليومي</span><p>جارٍ تحديث سجل الخروج من الفصل...</p></section>;
 
   const events=data.events||[];
   const noExit=Number(data.exit_count||0)===0;
 
   return <section className={"guardian-attendance-card "+(data.currently_out?"attention":noExit?"clear":"recorded")}>
     <div className="guardian-attendance-head">
-      <div><span>الحضور اليومي</span><h3>{data.currently_out?"الطالب خارج الفصل الآن":noExit?"لم يسجل أي خروج من الفصل اليوم":"تم تسجيل خروج وعودة خلال اليوم"}</h3></div>
+      <div><span>معدل الحضور اليومي</span><h3>{data.currently_out?"الطالب خارج الفصل الآن":noExit?"لم يسجل أي خروج من الفصل اليوم":"تم تسجيل خروج وعودة خلال اليوم"}</h3></div>
       <b>{noExit?"مستقر":minutesText(Number(data.total_minutes||0))}</b>
     </div>
     {noExit

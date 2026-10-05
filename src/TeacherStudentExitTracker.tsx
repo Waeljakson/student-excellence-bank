@@ -1,6 +1,7 @@
 import {useEffect,useMemo,useState} from "react";
 import {niceError,rpc} from "./client";
 import "./student-exit-tracker.css";
+import "./feature-upgrade.css";
 
 type StudentRow={id:string;student_no:string;name:string;class_id:string;grade_name:string;class_name:string};
 type ExitEvent={id:string;student_id:string;class_id:string;lesson_no:number;subject_ar?:string;exited_at:string;returned_at?:string|null;duration_minutes:number;teacher_name?:string};

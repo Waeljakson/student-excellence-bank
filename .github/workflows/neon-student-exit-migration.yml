@@ -74,6 +74,23 @@ jobs:
           psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -c "SELECT pg_notify('pgrst','reload schema');"
           sleep 4
 
+      - name: Probe Neon Data API cached admin RPC
+        if: env.DATABASE_URL != ''
+        shell: bash
+        run: |
+          set +e
+          echo "Probing api_admin_point_rules through Neon Data API..."
+          curl -sS -D /tmp/rpc-headers.txt -o /tmp/rpc-body.txt             -X POST "https://ep-green-bar-b2rjvdpo.apirest.c-6.eu-central-1.aws.neon.tech/excellence_bank/rest/v1/rpc/api_admin_point_rules"             -H "Content-Type: application/json"             --data '{}'
+          cat /tmp/rpc-headers.txt
+          cat /tmp/rpc-body.txt
+          echo
+          if grep -Eq 'PGRST202|Could not find the function|schema cache' /tmp/rpc-body.txt; then
+            echo "::error::Neon Data API still does not expose api_admin_point_rules in schema cache."
+            exit 1
+          fi
+          echo "Data API recognizes api_admin_point_rules (authentication may still be required, which is expected)."
+          exit 0
+
       - name: Verify exit tracking objects
         if: env.DATABASE_URL != ''
         shell: bash

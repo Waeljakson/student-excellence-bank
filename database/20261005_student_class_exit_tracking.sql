@@ -535,6 +535,8 @@ GRANT EXECUTE ON FUNCTION public.api_teacher_student_exit_data() TO authenticate
 GRANT EXECUTE ON FUNCTION public.api_teacher_student_exit_action(uuid,text,int) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.api_guardian_student_exit_today(uuid,text) TO anonymous,authenticated;
 
-NOTIFY pgrst, 'reload schema';
-
 COMMIT;
+
+-- Force Neon Data API / PostgREST schema cache refresh after DDL commit.
+NOTIFY pgrst, 'reload schema';
+SELECT pg_notify('pgrst','reload schema');

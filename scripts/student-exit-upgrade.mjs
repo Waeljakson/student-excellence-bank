@@ -8,10 +8,17 @@ if(!app.includes('import TeacherStudentExitTracker from "./TeacherStudentExitTra
   if(!app.includes(marker))throw new Error("student-exit-upgrade: followup import marker missing");
   app=app.replace(marker,marker+'\nimport TeacherStudentExitTracker from "./TeacherStudentExitTracker";');
 }
+if(!app.includes('import StudentExitAnalytics from "./StudentExitAnalytics";')){
+  const marker='import TeacherStudentExitTracker from "./TeacherStudentExitTracker";';
+  if(!app.includes(marker))throw new Error("student-exit-upgrade: teacher exit import marker missing");
+  app=app.replace(marker,marker+'\nimport StudentExitAnalytics from "./StudentExitAnalytics";');
+}
 
 app=app.replace(/type Tab = ([^;]+);/,m=>{
-  if(m.includes('"student-exits"'))return m;
-  return m.slice(0,-1)+' | "student-exits";';
+  let out=m;
+  if(!out.includes('"student-exits"'))out=out.slice(0,-1)+' | "student-exits";';
+  if(!out.includes('"student-exit-analytics"'))out=out.slice(0,-1)+' | "student-exit-analytics";';
+  return out;
 });
 
 if(!app.includes('["student-exits","استئذان الطلاب","↔"]')){
@@ -19,11 +26,21 @@ if(!app.includes('["student-exits","استئذان الطلاب","↔"]')){
   if(!app.includes(marker))throw new Error("student-exit-upgrade: nav marker missing");
   app=app.replace(marker,marker+'\n  if(profile.roles?.includes("TEACHER")) nav.push(["student-exits","استئذان الطلاب","↔"]);');
 }
+if(!app.includes('["student-exit-analytics","معدلات الخروج","↗"]')){
+  const marker='  if(profile.roles?.includes("TEACHER")) nav.push(["student-exits","استئذان الطلاب","↔"]);';
+  if(!app.includes(marker))throw new Error("student-exit-upgrade: analytics nav marker missing");
+  app=app.replace(marker,marker+'\n  if(profile.roles?.some(r=>["SUPER_ADMIN","GUIDANCE_COUNSELOR"].includes(r))) nav.push(["student-exit-analytics","معدلات الخروج","↗"]);');
+}
 
 if(!app.includes('tab==="student-exits"&&<TeacherStudentExitTracker/>')){
   const marker='{tab==="followup"&&<StudentFollowupNotebook roles={profile.roles}/>}';
   if(!app.includes(marker))throw new Error("student-exit-upgrade: render marker missing");
   app=app.replace(marker,marker+' {tab==="student-exits"&&<TeacherStudentExitTracker/>}');
+}
+if(!app.includes('tab==="student-exit-analytics"&&<StudentExitAnalytics/>')){
+  const marker='{tab==="student-exits"&&<TeacherStudentExitTracker/>}';
+  if(!app.includes(marker))throw new Error("student-exit-upgrade: analytics render marker missing");
+  app=app.replace(marker,marker+' {tab==="student-exit-analytics"&&<StudentExitAnalytics/>}');
 }
 
 writeFileSync(appPath,app);
@@ -45,7 +62,7 @@ if(!guardian.includes('<GuardianDailyExitStatus studentId={c.id} studentNo={c.st
 
 writeFileSync(guardianPath,guardian);
 
-console.log("student-exit-upgrade: teacher tracker and guardian daily exit status wired");
+console.log("student-exit-upgrade: teacher tracker, admin analytics, and guardian daily exit status wired");
 
  
 // EXIT_NOTE_FILTER_V1

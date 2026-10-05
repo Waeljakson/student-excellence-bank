@@ -278,6 +278,7 @@ export function niceError(error: unknown) {
   const message = error instanceof Error ? error.message : String(error);
   if (/RPC_TIMEOUT|AUTH_SESSION_TIMEOUT|AUTH_JWT_TIMEOUT/i.test(message)) return "تعذر الاتصال بالخدمة في الوقت المحدد. أعد المحاولة أو سجل الخروج ثم ادخل مرة أخرى.";
   if (/invalid input syntax for type uuid:\\s*["\']anonymous["\']/i.test(message)) return "جلسة الدخول غير مكتملة. أعد المحاولة بعد لحظات.";
+  if (message.includes("api_admin_set_staff_vice_principal") && /schema cache|Could not find the function/i.test(message)) return "صلاحية تحويل المعلم إلى وكيل لم تُفعّل بعد في قاعدة البيانات. يلزم تفعيل تحديث Neon مرة واحدة.";
   if (message.includes("APPROVAL_REQUIRED")) return "الحساب غير مرتبط بالنظام. استخدم طريقة الدخول المخصصة لك.";
   if (message.includes("SUPER_ADMIN_REQUIRED")) return "هذه الإعدادات متاحة لمدير النظام فقط.";
   if (message.includes("ADMIN_REQUIRED")) return "هذه العملية متاحة لإدارة النظام فقط.";

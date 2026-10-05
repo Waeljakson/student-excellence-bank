@@ -21,15 +21,17 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Check database secret
+      - name: Database secret status
         shell: bash
         run: |
           if [ -z "$DATABASE_URL" ]; then
-            echo "::error::Repository secret DATABASE_URL is not configured."
-            exit 1
+            echo "::warning::Repository secret DATABASE_URL is not configured. Neon migration is skipped; the app will continue using the compatibility fallback."
+          else
+            echo "DATABASE_URL is configured; Neon migration will run."
           fi
 
       - name: Install PostgreSQL client
+        if: env.DATABASE_URL != ''
         run: |
           if ! command -v psql >/dev/null 2>&1; then
             sudo apt-get update
@@ -37,9 +39,11 @@ jobs:
           fi
 
       - name: Apply migration to Neon
+        if: env.DATABASE_URL != ''
         run: psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f database/20261005_student_class_exit_tracking.sql
 
       - name: Verify exit tracking objects
+        if: env.DATABASE_URL != ''
         shell: bash
         run: |
           psql "$DATABASE_URL" -v ON_ERROR_STOP=1 <<'SQL'

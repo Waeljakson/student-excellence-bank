@@ -23,3 +23,5 @@ jobs:
         run: npm install --include=dev
       - name: Type-check and build SPA
         run: npm run build
+
+# Rifq final verification trigger

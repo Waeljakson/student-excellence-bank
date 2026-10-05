@@ -592,7 +592,7 @@ function AdminView({pending,users,staff,classes,reload,isSuperAdmin,canManageRol
       }
       if(!Array.isArray(value))value=[];
       return [...new Set(value.flat?.(2)??value)]
-        .map((x:any)=>String(x?.id??x?.class_id??x||"").trim())
+        .map((x:any)=>String((x?.id??x?.class_id??x)||"").trim())
         .filter((x:string)=>/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(x));
     };
     const classIds=normalizeClassIds(s.assigned_class_ids);

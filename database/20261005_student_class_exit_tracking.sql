@@ -125,6 +125,14 @@ BEGIN
     RAISE EXCEPTION 'TEACHER_REQUIRED';
   END IF;
 
+  -- Close forgotten open exits from previous school days at zero additional minutes.
+  -- This prevents a stale record from blocking a new day's attendance.
+  UPDATE public.student_class_exit_events
+  SET returned_at=exited_at
+  WHERE school_id=v_school
+    AND returned_at IS NULL
+    AND school_day < (v_now AT TIME ZONE 'Asia/Riyadh')::date;
+
   IF p_lesson_no IS NULL OR p_lesson_no<1 OR p_lesson_no>10 THEN
     RAISE EXCEPTION 'LESSON_NUMBER_REQUIRED';
   END IF;

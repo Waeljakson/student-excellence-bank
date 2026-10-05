@@ -357,6 +357,11 @@ export function niceError(error: unknown) {
   if (message.includes("COMPETITION_NOT_STARTED")) return "لم يبدأ وقت الانضمام للمسابقة بعد.";
   if (message.includes("COMPETITION_ENDED")) return "انتهت مدة الانضمام لهذه المسابقة.";
   if (message.includes("COMPETITION_NOT_FOR_CLASS")) return "هذه المسابقة غير مخصصة لفصل الطالب.";
+  if (message.includes("COMPETITION_CLOSED")) return "تم إغلاق هذه المسابقة نهائيًا.";
+  if (message.includes("COMPETITION_SUBMISSION_REQUIRED")) return "حدد نوع مشاركة الطالب أولًا قبل اعتماد الفوز.";
+  if (message.includes("COMPETITION_SUBMISSION_INVALID")) return "نوع المشاركة غير صحيح. اختر لوحة أو مجسم أو فيديو أو بحث.";
+  if (message.includes("COMPETITION_WINNER_LOCKED")) return "تم اعتماد هذا الطالب فائزًا بالفعل ولا يمكن استبعاده.";
+
   if (message.includes("STAFF_NAME_INVALID")) return "اسم المعلم غير صالح. اكتب الاسم الصحيح كاملًا.";
   if (message.includes("STAFF_NAME_EXISTS")) return "يوجد موظف آخر مسجل بنفس الاسم.";
   if (message.includes("STAFF_NOT_FOUND")) return "لم يتم العثور على الموظف في دليل الهيئة.";

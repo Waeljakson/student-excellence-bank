@@ -579,13 +579,23 @@ function AdminView({pending,users,staff,classes,reload,isSuperAdmin,canManageRol
   async function setVicePrincipalRole(s:StaffMember,enabled:boolean){
     if(!canManageRoles)return;
     if(!s.linked_app_user_id){setMsg("لا يمكن منح صلاحية وكيل قبل ربط المعلم بحساب دخول.");return}
+    const linkedUser=users.find(u=>u.id===s.linked_app_user_id);
+    if(!linkedUser){setMsg("تعذر العثور على حساب الدخول المرتبط بهذا المعلم.");return}
+    if(!s.assigned_class_ids?.length){setMsg("يجب تسكين المعلم على فصل واحد على الأقل قبل منحه صلاحية وكيل.");return}
     const verb=enabled?"منح صلاحية وكيل المدرسة لـ":"سحب صلاحية وكيل المدرسة من";
     if(!window.confirm(verb+" "+s.full_name_ar+"؟ سيتم تحديث وظيفته وصلاحيات حسابه فورًا داخل مدرسته."))return;
     const key="vice:"+s.id;setBusy(key);setMsg("");
+    const nextJob=enabled?"وكيل المدرسة":"معلم";
+    const previousJob=s.job_title_ar;
     try{
-      const linkedUser=users.find(u=>u.id===s.linked_app_user_id);
-      if(!linkedUser)throw new Error("STAFF_ACCOUNT_REQUIRED");
-      await rpc("api_set_staff_classes",{p_staff_id:s.id,p_class_ids:{action:"SET_VICE_PRINCIPAL",enabled,app_user_id:linkedUser.id}});
+      const {error:updateError}=await neon.from("staff_directory").update({job_title_ar:nextJob,updated_at:new Date().toISOString()}).eq("id",s.id);
+      if(updateError)throw new Error(updateError.message||String(updateError));
+      try{
+        await rpc("api_set_user_scope",{p_app_user_id:linkedUser.id,p_staff_id:s.id,p_class_ids:s.assigned_class_ids});
+      }catch(scopeError){
+        try{await neon.from("staff_directory").update({job_title_ar:previousJob,updated_at:new Date().toISOString()}).eq("id",s.id)}catch{}
+        throw scopeError;
+      }
       setMsg(enabled
         ?"تم تحويل "+s.full_name_ar+" إلى وكيل مدرسة ومنحه صلاحيات الوكيل."
         :"تم سحب صلاحية الوكيل من "+s.full_name_ar+" وإعادته إلى صلاحية معلم.");

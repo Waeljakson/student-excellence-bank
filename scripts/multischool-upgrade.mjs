@@ -248,7 +248,7 @@ edit("src/App.tsx",s=>{
   const oldCall='<AdminView pending={pending} users={users} staff={staff} classes={adminClasses} reload={refreshAdmin} isSuperAdmin={profile.roles?.includes("SUPER_ADMIN")===true}/>';
   const newCall='<AdminView pending={pending} users={users} staff={staff} classes={adminClasses} reload={refreshAdmin} isSuperAdmin={profile.roles?.includes("SUPER_ADMIN")===true} canManageRoles={profile.roles?.some(r=>["SUPER_ADMIN","SCHOOL_ADMIN"].includes(r))===true}/>';
   if(s.includes(oldCall))s=s.replace(oldCall,newCall);
-  for(const marker of ["normalizeClassIds","VICE_SCOPE_UPDATE_FAILED","neon.from(\"staff_directory\")","api_set_user_scope","canManageRoles","منح صلاحية وكيل",newCall]){
+  for(const marker of ["api_admin_set_staff_vice_principal","canManageRoles","منح صلاحية وكيل",newCall]){
     if(!s.includes(marker))throw new Error("multischool-upgrade: school-admin vice-principal promotion missing "+marker);
   }
   return s;

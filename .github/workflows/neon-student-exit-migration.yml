@@ -1,0 +1,55 @@
+name: Apply Neon student-exit migration
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "database/20261005_student_class_exit_tracking.sql"
+      - ".github/workflows/neon-student-exit-migration.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  migrate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Check database secret
+        shell: bash
+        run: |
+          if [ -z "$DATABASE_URL" ]; then
+            echo "::error::Repository secret DATABASE_URL is not configured."
+            exit 1
+          fi
+
+      - name: Install PostgreSQL client
+        run: |
+          if ! command -v psql >/dev/null 2>&1; then
+            sudo apt-get update
+            sudo apt-get install -y postgresql-client
+          fi
+
+      - name: Apply migration to Neon
+        run: psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f database/20261005_student_class_exit_tracking.sql
+
+      - name: Verify exit tracking objects
+        shell: bash
+        run: |
+          psql "$DATABASE_URL" -v ON_ERROR_STOP=1 <<'SQL'
+          SELECT to_regclass('public.student_class_exit_events') AS exit_events_table;
+          SELECT proname
+          FROM pg_proc
+          WHERE proname IN (
+            'api_teacher_student_exit_data',
+            'api_teacher_student_exit_action',
+            'api_guardian_student_exit_today'
+          )
+          ORDER BY proname;
+          SQL

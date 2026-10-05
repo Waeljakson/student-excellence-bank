@@ -2,10 +2,18 @@ import {useEffect,useState} from "react";
 import {niceError,rpc} from "./client";
 import "./student-exit-tracker.css";
 
-type ExitEvent={id:string;lesson_no:number;exited_at:string;returned_at?:string|null;duration_minutes:number;teacher_name?:string};
-type ExitSummary={today:string;exit_count:number;currently_out:boolean;total_minutes:number;events:ExitEvent[]};
+type ExitEvent={id:string;lesson_no:number;subject_ar?:string;exited_at:string;returned_at?:string|null;duration_minutes:number;teacher_name?:string};
+type AbsenceEvent={id:string;lesson_no:number;subject_ar?:string;teacher_name?:string;marked_at:string};
+type ExitSummary={today:string;exit_count:number;absence_count?:number;currently_out:boolean;total_minutes:number;events:ExitEvent[];absences?:AbsenceEvent[]};
 type Note={id:string;category_ar?:string;note_text?:string;teacher_name?:string};
 
+function subjectLabel(value?:string|null){
+  const v=String(value||"").trim();
+  if(v==="E")return "لغة إنجليزية";
+  if(v==="بدنية")return "التربية البدنية";
+  if(v==="فنية")return "التربية الفنية";
+  return v||"الحصة الدراسية";
+}
 function clock(value?:string|null){
   if(!value)return "—";
   return new Date(value).toLocaleTimeString("ar-SA",{timeZone:"Asia/Riyadh",hour:"2-digit",minute:"2-digit"});
@@ -49,7 +57,8 @@ function fallbackSummary(notes:Note[]):ExitSummary{
   }
   const now=Date.now();
   const total=events.reduce((sum,e)=>sum+(e.returned_at?Number(e.duration_minutes||0):Math.max(0,(now-new Date(e.exited_at).getTime())/60000)),0);
-  return {today,exit_count:events.length,currently_out:events.some(e=>!e.returned_at),total_minutes:total,events:events.sort((a,b)=>b.exited_at.localeCompare(a.exited_at))};
+  const absences:AbsenceEvent[]=(notes||[]).filter(n=>String(n.category_ar||"")==="الحضور: لم يحضر الحصة").map(n=>({id:n.id,lesson_no:noteLesson(String(n.note_text||"")),subject_ar:String(n.note_text||"").match(/لم يحضر الطالب\s+(.+?)\s+في الحصة/)?.[1]||"الحصة الدراسية",teacher_name:n.teacher_name,marked_at:noteStamp(String(n.note_text||""))||new Date().toISOString()}));
+  return {today,exit_count:events.length,absence_count:absences.length,currently_out:events.some(e=>!e.returned_at),total_minutes:total,events:events.sort((a,b)=>b.exited_at.localeCompare(a.exited_at)),absences};
 }
 
 export default function GuardianDailyExitStatus({studentId,studentNo,schoolCode,notes=[]}:{studentId:string;studentNo:string;schoolCode?:string;notes?:Note[]}){
@@ -87,19 +96,30 @@ export default function GuardianDailyExitStatus({studentId,studentNo,schoolCode,
   if(!data)return <section className="guardian-attendance-card loading-card"><span>معدل الحضور اليومي</span><p>جارٍ تحديث سجل الخروج من الفصل...</p></section>;
 
   const events=data.events||[];
+  const absences=data.absences||[];
   const noExit=Number(data.exit_count||0)===0;
+  const noAbsence=Number(data.absence_count||absences.length||0)===0;
 
-  return <section className={"guardian-attendance-card "+(data.currently_out?"attention":noExit?"clear":"recorded")}>
+  return <section className={"guardian-attendance-card "+(data.currently_out?"attention":(noExit&&noAbsence)?"clear":"recorded")}>
     <div className="guardian-attendance-head">
-      <div><span>معدل الحضور اليومي</span><h3>{data.currently_out?"الطالب خارج الفصل الآن":noExit?"لم يسجل أي خروج من الفصل اليوم":"تم تسجيل خروج وعودة خلال اليوم"}</h3></div>
-      <b>{noExit?"مستقر":minutesText(Number(data.total_minutes||0))}</b>
+      <div><span>معدل الحضور اليومي</span><h3>{data.currently_out?"الطالب خارج الفصل الآن":!noAbsence?"تم تسجيل عدم حضور حصة":noExit?"لم يسجل أي خروج من الفصل اليوم":"تم تسجيل خروج وعودة خلال اليوم"}</h3></div>
+      <b>{!noAbsence?Number(data.absence_count||absences.length).toLocaleString("ar-SA")+" غياب":noExit?"مستقر":minutesText(Number(data.total_minutes||0))}</b>
     </div>
+
+    {!noAbsence&&<div className="guardian-absence-events">
+      <div className="guardian-attendance-subhead"><b>الحصص التي لم يحضرها الطالب</b><span>{absences.length} {absences.length===1?"حصة":"حصص"}</span></div>
+      {absences.map(a=><article key={a.id}>
+        <div><b>لم يحضر حصة {subjectLabel(a.subject_ar)}</b><span>{a.teacher_name||"المعلم"}</span></div>
+        <small>تم التسجيل {clock(a.marked_at)} · الحصة رقم {a.lesson_no}</small>
+      </article>)}
+    </div>}
+
     {noExit
-      ?<p>لم يسجل المعلم أي استئذان أو خروج من الفصل اليوم.</p>
+      ?<p>{noAbsence?"لم يسجل المعلم أي استئذان أو خروج من الفصل اليوم.":"لا توجد حالات خروج مسجلة اليوم بالإضافة إلى حالة عدم الحضور الموضحة أعلاه."}</p>
       :<><p>{data.currently_out?"يوجد استئذان مفتوح حاليًا، وتُحسب المدة حتى عودة الطالب.":"إجمالي مدة خروج الطالب من الفصل اليوم: "+minutesText(Number(data.total_minutes||0))+"."}</p>
         <div className="guardian-exit-events">
           {events.map(e=><article key={e.id}>
-            <div><b>الحصة {e.lesson_no}</b><span>{e.teacher_name||"المعلم"}</span></div>
+            <div><b>استئذان من {subjectLabel(e.subject_ar)}</b><span>{e.teacher_name||"المعلم"}</span></div>
             <div><small>خرج {clock(e.exited_at)}</small><small>{e.returned_at?"عاد "+clock(e.returned_at):"لم يعد بعد"}</small></div>
             <strong>{minutesText(e.returned_at?Number(e.duration_minutes||0):Math.max(0,(Date.now()-new Date(e.exited_at).getTime())/60000))}</strong>
           </article>)}

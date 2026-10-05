@@ -17,7 +17,8 @@ type Competition={
   reward_ar?:string|null;
 };
 type Student={name:string;grade_name:string;class_name:string};
-type Membership={competition_id:string;joined_at:string};
+type Membership={competition_id:string;joined_at:string;status?:"JOINED"|"EXCLUDED"|"WINNER"};
+type CompetitionHistory={competition_id:string;title_ar:string;body_ar?:string|null;joined_at:string;status:"JOINED"|"EXCLUDED"|"WINNER";winner_at?:string|null;reward_ar?:string|null};
 type Special={
   id?:string;
   type:string;
@@ -48,23 +49,27 @@ const joinTips=[
 
 export default function StudentPrograms({competitions,student}:{competitions:Competition[];student:Student}){
   const[members,setMembers]=useState<Membership[]>([]);
+  const[history,setHistory]=useState<CompetitionHistory[]>([]);
   const[programs,setPrograms]=useState<Programs>({});
   const[busy,setBusy]=useState("");
   const[msg,setMsg]=useState("");
 
   async function load(){
     try{
-      const[m,p]=await Promise.all([
+      const[m,p,h]=await Promise.all([
         rpc<Membership[]>("api_student_competition_memberships"),
-        rpc<Programs>("api_student_program_banners")
+        rpc<Programs>("api_student_program_banners"),
+        rpc<CompetitionHistory[]>("api_student_competition_history")
       ]);
       setMembers(m||[]);
       setPrograms(p||{});
+      setHistory(h||[]);
     }catch(e){setMsg(niceError(e))}
   }
   useEffect(()=>{load()},[]);
 
-  const joined=useMemo(()=>new Set(members.map(x=>x.competition_id)),[members]);
+  const joined=useMemo(()=>new Set(members.filter(x=>(x.status||"JOINED")!=="EXCLUDED").map(x=>x.competition_id)),[members]);
+  const excluded=useMemo(()=>new Set(members.filter(x=>x.status==="EXCLUDED").map(x=>x.competition_id)),[members]);
   const specials=[programs.khameesna,programs.behavioral].filter(Boolean) as Special[];
 
   async function join(id:string){
@@ -118,6 +123,7 @@ export default function StudentPrograms({competitions,student}:{competitions:Com
 
     {competitions.map((c,index)=>{
       const alreadyJoined=joined.has(c.id);
+      const isExcluded=excluded.has(c.id);
       const upcoming=isUpcoming(c.starts_at);
       return <article className="competition-check-banner joinable" key={c.id}>
         <div className="check-perforation top"/>
@@ -141,14 +147,21 @@ export default function StudentPrograms({competitions,student}:{competitions:Com
             <div><small>تنتهي</small><b>{date(c.ends_at)}</b></div>
             <div><small>الفصل المستهدف</small><b>{student.grade_name} — فصل {student.class_name}</b></div>
           </div>
-          <button className={alreadyJoined?"competition-join-btn joined":"competition-join-btn"} disabled={alreadyJoined||busy===c.id||upcoming} onClick={()=>join(c.id)}>
-            {busy===c.id?"جارٍ الانضمام...":alreadyJoined?"✓ أنت منضم للمسابقة":upcoming?`يفتح الانضمام ${date(c.starts_at)}`:"انضم الآن وابدأ المنافسة"}
+          <button className={alreadyJoined?"competition-join-btn joined":isExcluded?"competition-join-btn excluded":"competition-join-btn"} disabled={alreadyJoined||isExcluded||busy===c.id||upcoming} onClick={()=>join(c.id)}>
+            {busy===c.id?"جارٍ الانضمام...":alreadyJoined?"✓ أنت منضم للمسابقة":isExcluded?"تم استبعادك من هذه المسابقة":upcoming?`يفتح الانضمام ${date(c.starts_at)}`:"انضم الآن وابدأ المنافسة"}
           </button>
-          {!alreadyJoined&&!upcoming&&<p className="join-encouragement">انضم الآن؛ المشاركة هي أول خطوة للفوز، والجوائز بانتظار أصحاب المبادرة والإبداع.</p>}
+          {!alreadyJoined&&!isExcluded&&!upcoming&&<p className="join-encouragement">انضم الآن؛ المشاركة هي أول خطوة للفوز، والجوائز بانتظار أصحاب المبادرة والإبداع.</p>}
         </div>
         <div className="check-perforation bottom"/>
       </article>
     })}
+    {history.length>0&&<section className="student-competition-history">
+      <div className="optional-competitions-title"><div><span>سجلك في المسابقات</span><h3>مشاركاتي ونتائجي</h3><p>سجل موثق للمسابقات التي انضممت إليها والنتائج التي تم اعتمادها.</p></div></div>
+      <div className="student-history-grid">{history.map(h=><article key={h.competition_id} className={h.status==="WINNER"?"history-winner":h.status==="EXCLUDED"?"history-excluded":""}>
+        <div><span>{h.status==="WINNER"?"🏆 فوز معتمد":h.status==="EXCLUDED"?"تم الاستبعاد":"مشاركة مسجلة"}</span><h4>{h.title_ar}</h4><p>{h.status==="WINNER"?"اشتركت في المسابقة وتم اعتمادك فائزًا.":"تم تسجيل مشاركتك في هذه المسابقة."}</p></div>
+        <div className="history-meta"><small>تاريخ الانضمام</small><b>{date(h.joined_at)}</b>{h.status==="WINNER"&&<><small>تاريخ اعتماد الفوز</small><b>{date(h.winner_at)}</b></>}</div>
+      </article>)}</div>
+    </section>}
     {msg&&<div className="notice compact-notice">{msg}</div>}
   </section>;
 }

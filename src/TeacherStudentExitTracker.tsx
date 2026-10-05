@@ -6,7 +6,7 @@ type StudentRow={id:string;student_no:string;name:string;class_id:string;grade_n
 type ExitEvent={id:string;student_id:string;class_id:string;lesson_no:number;subject_ar?:string;exited_at:string;returned_at?:string|null;duration_minutes:number;teacher_name?:string};
 type AbsenceEvent={id:string;student_id:string;class_id:string;lesson_no:number;subject_ar?:string;teacher_name?:string;marked_at:string};
 type FollowupNote={id:string;student_id:string;category_ar?:string;note_text?:string;created_at?:string;teacher_name?:string};
-type ExitData={today:string;current_lesson_no?:number|null;teacher_subject_ar?:string;students:StudentRow[];events:ExitEvent[];absences?:AbsenceEvent[]};
+type ExitData={feature_enabled?:boolean;today:string;current_lesson_no?:number|null;teacher_subject_ar?:string;students:StudentRow[];events:ExitEvent[];absences?:AbsenceEvent[]};
 type FollowupData={students:StudentRow[];notes:FollowupNote[]};
 type ClassGroup={id:string;label:string;students:StudentRow[]};
 
@@ -115,6 +115,7 @@ export default function TeacherStudentExitTracker(){
     return()=>window.clearInterval(timer);
   },[]);
 
+  const featureEnabled=data?.feature_enabled!==false;
   const students=data?.students||[];
   const events=data?.events||[];
   const absences=data?.absences||[];
@@ -192,6 +193,18 @@ export default function TeacherStudentExitTracker(){
       setMsg(existing?"تم إلغاء تسجيل عدم حضور "+student.name+".":"تم تسجيل أن "+student.name+" لم يحضر "+teacherSubject+".");
       await load();
     }catch(e){setMsg(errorText(e))}finally{setBusy("")}
+  }
+
+  if(data&&data.feature_enabled===false){
+    return <>
+      <header className="topbar"><div><h1>استئذان الطلاب من الحصة</h1><p>إدارة خروج الطالب وعودته وعدم حضور الحصة.</p></div></header>
+      <main className="content">
+        <section className="panel exit-feature-paused">
+          <div className="exit-feature-paused-icon">⏸</div>
+          <div><h3>تم إيقاف خاصية الاستئذان مؤقتًا</h3><p>أوقفت إدارة المدرسة هذه الخاصية حاليًا. سيتم تفعيلها تلقائيًا هنا عند تشغيلها من إعدادات النظام.</p></div>
+        </section>
+      </main>
+    </>;
   }
 
   return <>

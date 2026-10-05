@@ -54,3 +54,26 @@
 /* BEHAVIORAL_TOP5_EXPORT_ACTIONS_V1 */
 .behavioral-top5-actions{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
 @media(max-width:760px){.behavioral-top5-actions{width:100%}.behavioral-top5-actions .mini-btn{flex:1 1 160px}}
+
+
+/* COMPETITION_RESULTS_ADMIN_V1 */
+.participant-actions{display:flex;gap:6px;flex-wrap:wrap}
+.participant-status{display:inline-flex;align-items:center;padding:4px 8px;border-radius:999px;font-size:9px;font-weight:800}
+.participant-status.joined{background:#e9f4f1;color:#0b705d}
+.participant-status.excluded{background:#fdeaea;color:#9a2d2d}
+.participant-status.winner{background:#fff3c9;color:#8a6500}
+.participant-excluded{opacity:.68}
+.participant-winner{background:#fffdf3}
+.winner-btn{border-color:#d4a72c!important;color:#8a6500!important;background:#fff9dc!important}
+.competition-join-btn.excluded{background:#f4eeee!important;color:#8f4a4a!important;border-color:#e6cccc!important}
+.student-competition-history{margin-top:18px}
+.student-history-grid{display:grid;gap:10px}
+.student-history-grid article{display:flex;justify-content:space-between;gap:18px;align-items:center;padding:16px;border:1px solid #dfe8ed;border-radius:16px;background:#fff}
+.student-history-grid article.history-winner{border-color:#e2c768;background:linear-gradient(135deg,#fffdf4,#fff7d2)}
+.student-history-grid article.history-excluded{opacity:.72;background:#faf7f7}
+.student-history-grid article>div:first-child>span{font-size:9px;font-weight:800;color:#0b705d}
+.student-history-grid article h4{margin:4px 0;font-size:15px}
+.student-history-grid article p{margin:0;color:#6b7d86;font-size:10px}
+.history-meta{min-width:170px;display:grid;grid-template-columns:auto auto;gap:3px 8px;align-items:center}
+.history-meta small{font-size:8px;color:#7c8f99}.history-meta b{font-size:9px;color:#2d4753}
+@media(max-width:720px){.student-history-grid article{align-items:stretch;flex-direction:column}.history-meta{min-width:0}}

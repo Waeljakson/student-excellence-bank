@@ -4,7 +4,9 @@ import "./student-exit-tracker.css";
 
 type StudentRow={id:string;student_no:string;name:string;class_id:string;grade_name:string;class_name:string};
 type ExitEvent={id:string;student_id:string;class_id:string;lesson_no:number;exited_at:string;returned_at?:string|null;duration_minutes:number;teacher_name?:string};
+type FollowupNote={id:string;student_id:string;category_ar?:string;note_text?:string;created_at?:string;teacher_name?:string};
 type ExitData={today:string;students:StudentRow[];events:ExitEvent[]};
+type FollowupData={students:StudentRow[];notes:FollowupNote[]};
 type ClassGroup={id:string;label:string;students:StudentRow[]};
 
 function errorText(e:unknown){
@@ -23,9 +25,52 @@ function minutesText(value:number){
   if(n>0&&n<1)return "أقل من دقيقة";
   return n.toLocaleString("ar-SA",{maximumFractionDigits:1})+" دقيقة";
 }
+function riyadhStamp(){
+  const parts=new Intl.DateTimeFormat("en-GB",{timeZone:"Asia/Riyadh",year:"numeric",month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit",second:"2-digit",hourCycle:"h23"}).formatToParts(new Date());
+  const get=(t:string)=>parts.find(x=>x.type===t)?.value||"00";
+  return {date:get("year")+"-"+get("month")+"-"+get("day"),time:get("hour")+":"+get("minute")+":"+get("second")};
+}
+function noteStamp(text:string){
+  const m=text.match(/وقت (?:الخروج|العودة):\s*(\d{2}:\d{2}:\d{2})\s*\((\d{4}-\d{2}-\d{2})\)/);
+  return m?new Date(m[2]+"T"+m[1]+"+03:00").toISOString():"";
+}
+function noteLesson(text:string){
+  const m=text.match(/الحصة رقم\s*(\d+)/);
+  return m?Number(m[1]):1;
+}
+function fallbackEvents(notes:FollowupNote[],students:StudentRow[]){
+  const today=riyadhStamp().date;
+  const rows=(notes||[]).filter(n=>String(n.category_ar||"").startsWith("استئذان:"))
+    .map(n=>({n,at:noteStamp(String(n.note_text||""))}))
+    .filter(x=>x.at&&x.at.slice(0,10)===today)
+    .sort((a,b)=>a.at.localeCompare(b.at));
+  const open=new Map<string,ExitEvent[]>();
+  const out:ExitEvent[]=[];
+  const studentMap=new Map(students.map(s=>[s.id,s]));
+  for(const row of rows){
+    const n=row.n;
+    const cat=String(n.category_ar||"");
+    if(cat==="استئذان: خروج"){
+      const s=studentMap.get(n.student_id);
+      if(!s)continue;
+      const e:ExitEvent={id:n.id,student_id:n.student_id,class_id:s.class_id,lesson_no:noteLesson(String(n.note_text||"")),exited_at:row.at,returned_at:null,duration_minutes:0,teacher_name:n.teacher_name};
+      out.push(e);
+      const list=open.get(n.student_id)||[];list.push(e);open.set(n.student_id,list);
+    }else if(cat==="استئذان: عودة"){
+      const list=open.get(n.student_id)||[];
+      const e=[...list].reverse().find(x=>!x.returned_at);
+      if(e){
+        e.returned_at=row.at;
+        e.duration_minutes=Math.max(0,(new Date(row.at).getTime()-new Date(e.exited_at).getTime())/60000);
+      }
+    }
+  }
+  return out.sort((a,b)=>b.exited_at.localeCompare(a.exited_at));
+}
 
 export default function TeacherStudentExitTracker(){
   const[data,setData]=useState<ExitData|null>(null);
+  const[fallback,setFallback]=useState(false);
   const[classId,setClassId]=useState("");
   const[lessonNo,setLessonNo]=useState<number>(()=>Number(sessionStorage.getItem("mishkat-current-lesson")||"1"));
   const[q,setQ]=useState("");
@@ -34,9 +79,17 @@ export default function TeacherStudentExitTracker(){
   const[,setTick]=useState(0);
 
   async function load(){
+    setMsg("");
     try{
       const next=await rpc<ExitData>("api_teacher_student_exit_data");
-      setData(next);
+      setFallback(false);setData(next);return;
+    }catch{}
+    try{
+      const f=await rpc<FollowupData>("api_teacher_followup_data");
+      const students=Array.isArray(f?.students)?f.students:[];
+      const notes=Array.isArray(f?.notes)?f.notes:[];
+      setFallback(true);
+      setData({today:riyadhStamp().date,students,events:fallbackEvents(notes,students)});
     }catch(e){setMsg(errorText(e))}
   }
   useEffect(()=>{void load()},[]);
@@ -84,7 +137,18 @@ export default function TeacherStudentExitTracker(){
     if(busy)return;
     setBusy(student.id);setMsg("");
     try{
-      await rpc("api_teacher_student_exit_action",{p_student_id:student.id,p_action:action,p_lesson_no:lessonNo});
+      if(fallback){
+        const stamp=riyadhStamp();
+        const current=openEvent(student.id);
+        const lesson=action==="RETURN"?(current?.lesson_no||lessonNo):lessonNo;
+        const category=action==="EXIT"?"استئذان: خروج":"استئذان: عودة";
+        const note=action==="EXIT"
+          ?"استأذن الطالب من الحصة رقم "+lesson+". وقت الخروج: "+stamp.time+" ("+stamp.date+")."
+          :"عاد الطالب إلى الفصل في الحصة رقم "+lesson+". وقت العودة: "+stamp.time+" ("+stamp.date+").";
+        await rpc("api_add_student_followup_note",{p_student_id:student.id,p_kind:"GENERAL",p_category_ar:category,p_note_text:note});
+      }else{
+        await rpc("api_teacher_student_exit_action",{p_student_id:student.id,p_action:action,p_lesson_no:lessonNo});
+      }
       setMsg(action==="EXIT"?"تم تسجيل استئذان "+student.name+".":"تم تسجيل عودة "+student.name+" وحساب مدة الخروج.");
       await load();
     }catch(e){setMsg(errorText(e))}finally{setBusy("")}

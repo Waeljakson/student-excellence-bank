@@ -37,12 +37,28 @@ if(!guardian.includes('import GuardianDailyExitStatus from "./GuardianDailyExitS
   guardian=guardian.replace(marker,marker+'\nimport GuardianDailyExitStatus from "./GuardianDailyExitStatus";');
 }
 
-if(!guardian.includes('<GuardianDailyExitStatus studentId={c.id} studentNo={c.student_no}/>')){
+if(!guardian.includes('<GuardianDailyExitStatus studentId={c.id} studentNo={c.student_no} notes={c.notes||[]}/>')){
   const marker='<DailyFollowup child={c}/>';
   if(!guardian.includes(marker))throw new Error("student-exit-upgrade: daily followup marker missing");
-  guardian=guardian.replace(marker,marker+'\n        <GuardianDailyExitStatus studentId={c.id} studentNo={c.student_no}/>');
+  guardian=guardian.replace(marker,marker+'\n        <GuardianDailyExitStatus studentId={c.id} studentNo={c.student_no} notes={c.notes||[]}/>');
 }
 
 writeFileSync(guardianPath,guardian);
 
 console.log("student-exit-upgrade: teacher tracker and guardian daily exit status wired");
+
+ 
+// EXIT_NOTE_FILTER_V1
+guardian=guardian.replace(
+  "  const notes=(child.notes||[]).filter(n=>String(n.note_date||\"\").slice(0,10)===key);",
+  "  const notes=(child.notes||[]).filter(n=>!String(n.category_ar||\"\").startsWith(\"استئذان:\")).filter(n=>String(n.note_date||\"\").slice(0,10)===key);"
+);
+guardian=guardian.replace(
+  '<FollowupTimeline notes={c.notes||[]}/>',
+  '<FollowupTimeline notes={(c.notes||[]).filter(n=>!String(n.category_ar||"").startsWith("استئذان:"))}/>'
+);
+guardian=guardian.replace(
+  '<article><span>ملاحظات المتابعة</span><b>{c.notes.length}</b></article>',
+  '<article><span>ملاحظات المتابعة</span><b>{(c.notes||[]).filter(n=>!String(n.category_ar||"").startsWith("استئذان:")).length}</b></article>'
+);
+writeFileSync(guardianPath,guardian);

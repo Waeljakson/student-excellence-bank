@@ -89,3 +89,5 @@ jobs:
       - name: Deploy compiled artifact to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
+
+# Rifq final deployment trigger

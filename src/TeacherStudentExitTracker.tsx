@@ -236,9 +236,16 @@ export default function TeacherStudentExitTracker(){
                 <button type="button" className={open?"return-btn":"exit-btn"} disabled={busy===s.id||(!open&&!currentLesson)} onClick={()=>void act(s,open?"RETURN":"EXIT")}>
                   {busy===s.id?"جارٍ التسجيل...":open?"عاد":"استأذن"}
                 </button>
-                {currentLesson&&(()=>{
-                  const absent=absences.some(a=>a.student_id===s.id&&a.lesson_no===currentLesson.no);
-                  return <button type="button" className={absent?"absence-btn marked":"absence-btn"} disabled={busy===s.id+"-absence"} onClick={()=>void markAbsent(s)}>
+                {(()=>{
+                  const absent=currentLesson?absences.some(a=>a.student_id===s.id&&a.lesson_no===currentLesson.no):false;
+                  const absenceTitle=currentLesson?"تسجيل عدم حضور "+teacherSubject+" — "+currentLesson.label:"يتفعل الزر تلقائيًا أثناء وقت الحصة";
+                  return <button
+                    type="button"
+                    className={absent?"absence-btn marked":"absence-btn"}
+                    disabled={!currentLesson||busy===s.id+"-absence"}
+                    title={absenceTitle}
+                    onClick={()=>void markAbsent(s)}
+                  >
                     {busy===s.id+"-absence"?"جارٍ التسجيل...":absent?"إلغاء عدم الحضور":"لم يحضر الحصة"}
                   </button>;
                 })()}

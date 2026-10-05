@@ -242,3 +242,32 @@ edit("src/App.tsx",s=>{
   if(!navOk||!renderOk)throw new Error("multischool-upgrade: school-admin system settings access missing");
   return s;
 });
+
+
+edit("src/App.tsx",s=>{
+  for(const marker of ["api_admin_set_staff_vice_principal","canManageRoles","منح صلاحية وكيل"]){
+    if(!s.includes(marker))throw new Error("multischool-upgrade: school-admin vice-principal promotion missing "+marker);
+  }
+  return s;
+});
+
+edit("src/CompetitionManagementPanel.tsx",s=>{
+  for(const marker of ["api_admin_set_competition_participant_status","استبعاد","اعتماد فائز","participant-status"]){
+    if(!s.includes(marker))throw new Error("multischool-upgrade: competition participant results missing "+marker);
+  }
+  return s;
+});
+
+edit("src/StudentPrograms.tsx",s=>{
+  for(const marker of ["api_student_competition_history","مشاركاتي ونتائجي","history-winner"]){
+    if(!s.includes(marker))throw new Error("multischool-upgrade: student competition history missing "+marker);
+  }
+  return s;
+});
+
+edit("src/GuardianPortal.tsx",s=>{
+  for(const marker of ["api_guardian_competition_history","guardian-competition-winner","تهانينا بفوز ابنكم"]){
+    if(!s.includes(marker))throw new Error("multischool-upgrade: guardian competition winner notice missing "+marker);
+  }
+  return s;
+});

@@ -80,6 +80,10 @@ jobs:
           SELECT to_regclass('public.student_class_exit_events') AS exit_events_table;
           SELECT to_regclass('public.student_lesson_absence_events') AS absence_events_table;
           SELECT to_regclass('public.school_feature_settings') AS feature_settings_table;
+          SELECT s.name_ar,fs.student_exit_enabled,fs.updated_by IS NOT NULL AS manually_changed
+          FROM public.school_feature_settings fs
+          JOIN public.schools s ON s.id=fs.school_id
+          ORDER BY s.name_ar;
           SELECT proname
           FROM pg_proc
           WHERE proname IN (

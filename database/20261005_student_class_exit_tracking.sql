@@ -92,7 +92,7 @@ $$;
 CREATE OR REPLACE FUNCTION public.api_teacher_student_exit_action(
   p_student_id uuid,
   p_action text,
-  p_lesson_no int
+  p_lesson_no int DEFAULT NULL
 )
 RETURNS jsonb
 LANGUAGE plpgsql

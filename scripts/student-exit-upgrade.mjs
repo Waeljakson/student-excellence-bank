@@ -37,10 +37,10 @@ if(!guardian.includes('import GuardianDailyExitStatus from "./GuardianDailyExitS
   guardian=guardian.replace(marker,marker+'\nimport GuardianDailyExitStatus from "./GuardianDailyExitStatus";');
 }
 
-if(!guardian.includes('<GuardianDailyExitStatus studentId={c.id} studentNo={c.student_no} notes={c.notes||[]}/>')){
+if(!guardian.includes('<GuardianDailyExitStatus studentId={c.id} studentNo={c.student_no} schoolCode={schoolCode} notes={c.notes||[]}/>')){
   const marker='<DailyFollowup child={c}/>';
   if(!guardian.includes(marker))throw new Error("student-exit-upgrade: daily followup marker missing");
-  guardian=guardian.replace(marker,marker+'\n        <GuardianDailyExitStatus studentId={c.id} studentNo={c.student_no} notes={c.notes||[]}/>');
+  guardian=guardian.replace(marker,marker+'\n        <GuardianDailyExitStatus studentId={c.id} studentNo={c.student_no} schoolCode={schoolCode} notes={c.notes||[]}/>');
 }
 
 writeFileSync(guardianPath,guardian);

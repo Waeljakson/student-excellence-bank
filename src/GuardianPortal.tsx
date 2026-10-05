@@ -211,7 +211,6 @@ export default function GuardianPortal({token,studentNo,initialData}:{token?:str
   const[error,setError]=useState("");
   const[childId,setChildId]=useState("");
   const[trip,setTrip]=useState<any>(null);
-  const[competitionHistory,setCompetitionHistory]=useState<any[]>([]);
   const[tripBusy,setTripBusy]=useState(false);
   const[tripMessage,setTripMessage]=useState("");
   const[tab,setTab]=useState<"overview"|"followup"|"periodic"|"individual"|"competitions">("overview");
@@ -238,13 +237,6 @@ export default function GuardianPortal({token,studentNo,initialData}:{token?:str
     rpc<any>("api_guardian_lookup",{p_mobile:"TRIP:"+child.student_no})
       .then(x=>setTrip(x?.trip||null))
       .catch(()=>setTrip(null));
-  },[data,childId]);
-  useEffect(()=>{
-    const child=(data?.children||[]).find((x:any)=>x.id===childId)||(data?.children||[])[0];
-    if(!child?.student_no){setCompetitionHistory([]);return}
-    rpc<any[]>("api_guardian_competition_history",{p_student_no:child.student_no})
-      .then(rows=>setCompetitionHistory(Array.isArray(rows)?rows:[]))
-      .catch(()=>setCompetitionHistory([]));
   },[data,childId]);
 
   async function approveTrip(){
@@ -300,16 +292,6 @@ export default function GuardianPortal({token,studentNo,initialData}:{token?:str
       {!children.length&&<section className="portal-panel"><div className="empty">لا يوجد طالب مرتبط بهذه البيانات حاليًا.</div></section>}
       {c&&<>
         <section className="guardian-student-card"><div><h2>{c.name}</h2><p>{c.grade_name} — فصل {c.class_name} · رقم الطالب {c.student_no}</p></div><div><small>نقاط التميز</small><strong>{Number(c.points||0).toLocaleString("ar-SA")}</strong></div></section>
-        {competitionHistory.filter((x:any)=>x.status==="WINNER").map((award:any)=><section className="guardian-competition-winner" key={award.competition_id}>
-          <div className="guardian-winner-icon">🏆</div>
-          <div className="guardian-winner-copy">
-            <span>نتيجة مسابقة معتمدة</span>
-            <h3>تهانينا بفوز ابنكم {c.name} 🎉</h3>
-            <p>يسرنا أن نبارك لكم فوز ابنكم في مسابقة <b>{award.title_ar}</b>. هذا الإنجاز محل فخر ونتمنى له مزيدًا من التميز والنجاح.</p>
-            <small>تم اعتماد النتيجة: {award.winner_at?new Date(award.winner_at).toLocaleString("ar-SA"):"—"}</small>
-          </div>
-          <div className="guardian-winner-rank"><small>النتيجة</small><strong>فائز</strong><span>🏆</span></div>
-        </section>)}
         {(c.behavioral_awards||[]).map((award:any)=><section className="guardian-behavioral-winner" key={award.cycle_id}>
           <div className="guardian-winner-icon">★</div>
           <div className="guardian-winner-copy">
@@ -340,11 +322,11 @@ export default function GuardianPortal({token,studentNo,initialData}:{token?:str
           <button className={tab==="individual"?"active":""} onClick={()=>setTab("individual")}>تقارير التقييم</button>
           <button className={tab==="competitions"?"active":""} onClick={()=>setTab("competitions")}>المسابقات</button>
         </nav>
-        {tab==="overview"&&<section className="portal-panel"><h3>ملخص الطالب</h3><div className="guardian-summary"><article><span>نقاط التميز</span><b>{c.points}</b></article><article><span>ملاحظات المتابعة</span><b>{c.notes.length}</b></article><article><span>التقييمات الدورية</span><b>{c.periodic_evaluations.length}</b></article><article><span>المسابقات</span><b>{Math.max(c.competitions.length,competitionHistory.length)}</b></article></div></section>}
+        {tab==="overview"&&<section className="portal-panel"><h3>ملخص الطالب</h3><div className="guardian-summary"><article><span>نقاط التميز</span><b>{c.points}</b></article><article><span>ملاحظات المتابعة</span><b>{c.notes.length}</b></article><article><span>التقييمات الدورية</span><b>{c.periodic_evaluations.length}</b></article><article><span>المسابقات</span><b>{c.competitions.length}</b></article></div></section>}
         {tab==="followup"&&<section className="portal-panel"><div className="guardian-followup-title"><div><h3>دفتر متابعة الطالب</h3><p>الملاحظات مرتبة يوميًا لسهولة المتابعة المستمرة.</p></div></div><FollowupTimeline notes={c.notes||[]}/></section>}
         {tab==="periodic"&&<section className="portal-panel"><div className="guardian-eval-title"><div><h3>التقييمات الدورية المنشورة</h3><p>عرض عربي منظم للتقييم التحصيلي والسلوكي، مع قراءة تحليلية تساعد على فهم الصورة العامة.</p></div>{c.periodic_evaluations.length>0&&<button type="button" className="btn ghost" onClick={()=>printPeriodicReport(c)}>طباعة التقييم الدوري</button>}</div>{c.periodic_evaluations.length?<><div className="guardian-eval-table-wrap"><table className="guardian-eval-table"><thead><tr><th>الفترة</th><th>المادة</th><th>التقييم التحصيلي</th><th>التقييم السلوكي</th><th>ملاحظات المعلم</th><th>المعلم</th></tr></thead><tbody>{c.periodic_evaluations.map((e:any,i:number)=><tr key={i}><td>{e.cycle_title||"—"}</td><td>{guardianSubjectLabel(e.subject_ar)}</td><td><span className="guardian-rating-badge">{guardianRatingLabel(e.academic_rating)}</span></td><td><span className="guardian-rating-badge">{guardianRatingLabel(e.behavior_rating)}</span></td><td className="guardian-eval-notes">{e.notes||"—"}</td><td>{e.teacher_name||"—"}</td></tr>)}</tbody></table></div><div className="guardian-periodic-analysis-list">{periodicAnalysis(c.periodic_evaluations).map(a=><article className="guardian-periodic-analysis" key={a.cycle_id}><div className="guardian-analysis-head"><div><span>قراءة تحليلية للتقييم</span><h4>{a.cycle_title}</h4></div><b>ملخص إرشادي</b></div><p className="guardian-analysis-summary">{a.summary}</p><div className="guardian-analysis-grid"><div><b>الجانب التحصيلي</b><p>{a.academic}</p>{a.strengths.length>0&&<small>نقاط قوة: {a.strengths.join("، ")}</small>}</div><div><b>الجانب السلوكي</b><p>{a.behavior}</p></div></div>{a.followups.length>0&&<div className="guardian-analysis-followup"><b>مواد تحتاج متابعة</b><span>{a.followups.join("، ")}</span></div>}<div className="guardian-analysis-recommendation"><b>التوصية</b><p>{a.recommendation}</p></div></article>)}</div></>:<div className="empty">لا توجد تقييمات دورية منشورة.</div>}</section>}
         {tab==="individual"&&<section className="portal-panel"><div className="guardian-eval-title"><h3>تقارير التقييم المرسلة لولي الأمر</h3><p>تفاصيل كل تقرير معروضة بالعربية في جدول موحد.</p></div>{c.individual_evaluations.length?c.individual_evaluations.map((r:any)=><article className="guardian-report-card" key={r.report_id}><div className="guardian-report-head"><div><span>رقم التقرير</span><strong>{r.report_no||"—"}</strong></div></div><div className="guardian-eval-table-wrap"><table className="guardian-eval-table"><thead><tr><th>المادة</th><th>المعلم</th><th>التقييم التحصيلي</th><th>التقييم السلوكي</th><th>ملاحظات المعلم</th></tr></thead><tbody>{(r.responses||[]).map((x:any,i:number)=><tr key={i}><td>{guardianSubjectLabel(x.subject_ar)}</td><td>{x.teacher_name||"—"}</td><td><span className="guardian-rating-badge">{guardianRatingLabel(x.academic_rating)}</span></td><td><span className="guardian-rating-badge">{guardianRatingLabel(x.behavior_rating)}</span></td><td className="guardian-eval-notes">{x.notes||"—"}</td></tr>)}</tbody></table></div>{(r.vice_principal_opinion||r.guidance_opinion)&&<div className="guardian-report-opinions">{r.vice_principal_opinion&&<div><b>رأي وكيل المدرسة</b><p>{r.vice_principal_opinion}</p></div>}{r.guidance_opinion&&<div><b>رأي الموجه الطلابي</b><p>{r.guidance_opinion}</p></div>}</div>}</article>):<div className="empty">لا توجد تقارير مرسلة.</div>}</section>}
-        {tab==="competitions"&&<section className="portal-panel"><h3>المسابقات المشترك فيها</h3>{competitionHistory.length?<div className="guardian-competition-history">{competitionHistory.map((x:any)=><article className={x.status==="WINNER"?"guardian-eval competition-win":"guardian-eval"} key={x.competition_id}><div className="guardian-comp-result"><h4>{x.title_ar}</h4><span>{x.status==="WINNER"?"🏆 فائز":x.status==="EXCLUDED"?"مستبعد":"شارك"}</span></div><p>{x.body_ar||"تم تسجيل مشاركة الطالب في المسابقة."}</p><small>تاريخ المشاركة: {x.joined_at?new Date(x.joined_at).toLocaleDateString("ar-SA"):"—"}{x.status==="WINNER"&&x.winner_at?" · اعتماد الفوز: "+new Date(x.winner_at).toLocaleDateString("ar-SA"):""}</small></article>)}</div>:c.competitions.length?c.competitions.map((x:any)=><article className="guardian-eval" key={x.id}><h4>{x.name_ar}</h4><p>{x.description_ar}</p>{x.reward_text_ar&&<small>المكافأة: {x.reward_text_ar}</small>}</article>):<div className="empty">الطالب غير مشترك في مسابقات حاليًا.</div>}</section>}
+        {tab==="competitions"&&<section className="portal-panel"><h3>المسابقات المشترك فيها</h3>{c.competitions.length?<div className="guardian-competition-history">{c.competitions.map((x:any)=><article className={x.status==="WINNER"?"guardian-eval competition-win":"guardian-eval"} key={x.id||x.competition_id}><div className="guardian-comp-result"><h4>{x.name_ar||x.title_ar}</h4>{x.status&&<span>{x.status==="WINNER"?"🏆 فائز":x.status==="EXCLUDED"?"مستبعد":"شارك"}</span>}</div><p>{x.description_ar||x.body_ar}</p>{x.reward_text_ar&&<small>المكافأة: {x.reward_text_ar}</small>}{x.status==="WINNER"&&x.winner_at&&<small> · تم اعتماد الفوز: {new Date(x.winner_at).toLocaleDateString("ar-SA")}</small>}</article>)}</div>:<div className="empty">الطالب غير مشترك في مسابقات حاليًا.</div>}</section>}
       </>}
     </main>
   </div>;

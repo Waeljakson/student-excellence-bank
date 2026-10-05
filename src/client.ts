@@ -345,6 +345,15 @@ export function niceError(error: unknown) {
   if (message.includes("STAFF_ALREADY_CLAIMED")) return "هذا الموظف مرتبط بالفعل بحساب دخول آخر.";
   if (message.includes("STAFF_SCHOOL_NOT_FOUND")) return "المدرسة المختارة غير موجودة أو غير مفعلة.";
   if (message.includes("STAFF_ROLE_UNSUPPORTED")) return "هذا المسمى الوظيفي غير مفعّل للدخول إلى المنصة.";
+  if (message.includes("SCHOOL_ADMIN_REQUIRED")) return "هذه العملية متاحة لمدير نظام المدرسة فقط.";
+  if (message.includes("STAFF_ACCOUNT_REQUIRED")) return "اربط الموظف بحساب دخول أولًا قبل منحه هذه الصلاحية.";
+  if (message.includes("VICE_ROLE_SOURCE_INVALID")) return "يمكن منح أو سحب صلاحية الوكيل للمعلم أو الوكيل فقط.";
+  if (message.includes("COMPETITION_PARTICIPANT_NOT_FOUND")) return "الطالب غير موجود ضمن المنضمين لهذه المسابقة.";
+  if (message.includes("COMPETITION_PARTICIPANT_EXCLUDED")) return "هذا الطالب مستبعد من المسابقة ولا يمكن اعتماده فائزًا.";
+  if (message.includes("COMPETITION_PARTICIPANT_ACTION_INVALID")) return "إجراء الطالب في المسابقة غير صحيح.";
+  if (message.includes("COMPETITION_NOT_STARTED")) return "لم يبدأ وقت الانضمام للمسابقة بعد.";
+  if (message.includes("COMPETITION_ENDED")) return "انتهت مدة الانضمام لهذه المسابقة.";
+  if (message.includes("COMPETITION_NOT_FOR_CLASS")) return "هذه المسابقة غير مخصصة لفصل الطالب.";
   if (message.includes("STAFF_NAME_INVALID")) return "اسم المعلم غير صالح. اكتب الاسم الصحيح كاملًا.";
   if (message.includes("STAFF_NAME_EXISTS")) return "يوجد موظف آخر مسجل بنفس الاسم.";
   if (message.includes("STAFF_NOT_FOUND")) return "لم يتم العثور على الموظف في دليل الهيئة.";

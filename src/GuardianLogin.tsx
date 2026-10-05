@@ -14,7 +14,7 @@ function normalizeStudentNo(value:string){
     .replace(/\D/g,"");
 }
 
-function LoginForm({onSuccess}:{onSuccess:(studentNo:string,data:any)=>void}){
+function LoginForm({onSuccess}:{onSuccess:(studentNo:string,schoolCode:string,data:any)=>void}){
   const[studentNo,setStudentNo]=useState("");
   const[schools,setSchools]=useState<SchoolOption[]>([]);
   const[schoolCode,setSchoolCode]=useState("MISHKAT");
@@ -38,7 +38,7 @@ function LoginForm({onSuccess}:{onSuccess:(studentNo:string,data:any)=>void}){
       if(!schoolCode)throw new Error("اختر المدرسة أولًا.");
       const lookup=await rpc<any>("api_guardian_lookup_school",{p_student_no:no,p_school_code:schoolCode});
       if(!lookup?.exists||lookup?.source!=="student_no"||!lookup?.portal)throw new Error("STUDENT_NOT_FOUND");
-      onSuccess(no,lookup.portal);
+      onSuccess(no,schoolCode,lookup.portal);
     }catch(err){
       const m=niceError(err);
       setMsg(m.includes("STUDENT_NOT_FOUND")?"لم يتم العثور على طالب بهذا الرقم. تأكد من الرقم المسجل بالمدرسة.":m);
@@ -65,8 +65,9 @@ function LoginForm({onSuccess}:{onSuccess:(studentNo:string,data:any)=>void}){
 export default function GuardianLogin({standalone=false}:{standalone?:boolean}){
   const[studentNo,setStudentNo]=useState("");
   const[portalData,setPortalData]=useState<any>(null);
-  function success(no:string,data:any){setStudentNo(no);setPortalData(data)}
-  if(studentNo&&portalData)return <GuardianPortal studentNo={studentNo} initialData={portalData}/>;
+  const[schoolCode,setSchoolCode]=useState("");
+  function success(no:string,code:string,data:any){setStudentNo(no);setSchoolCode(code);setPortalData(data)}
+  if(studentNo&&portalData)return <GuardianPortal studentNo={studentNo} schoolCode={schoolCode} initialData={portalData}/>;
   if(!standalone)return <LoginForm onSuccess={success}/>;
   return <div className="auth-page">
     <div className="auth-brand guardian-public-brand">

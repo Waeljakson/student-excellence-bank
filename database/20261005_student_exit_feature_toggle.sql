@@ -24,12 +24,12 @@ ON CONFLICT (school_id) DO NOTHING;
 UPDATE public.school_feature_settings fs
 SET student_exit_enabled=false,updated_at=now()
 FROM public.schools s
-WHERE s.id=fs.school_id AND s.name_ar ILIKE '%الشعلة%';
+WHERE s.id=fs.school_id AND s.name_ar ILIKE '%الشعلة%' AND fs.updated_by IS NULL;
 
 UPDATE public.school_feature_settings fs
 SET student_exit_enabled=true,updated_at=now()
 FROM public.schools s
-WHERE s.id=fs.school_id AND s.name_ar ILIKE '%الندى%';
+WHERE s.id=fs.school_id AND s.name_ar ILIKE '%الندى%' AND fs.updated_by IS NULL;
 
 CREATE OR REPLACE FUNCTION public.api_student_exit_feature_status()
 RETURNS jsonb

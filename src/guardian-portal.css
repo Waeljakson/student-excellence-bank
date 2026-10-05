@@ -83,3 +83,13 @@
 .guardian-eval.competition-win{border:1px solid #e4c85e;background:#fffbed}
 .guardian-competition-history{display:grid;gap:10px}
 @media(max-width:720px){.guardian-competition-winner{grid-template-columns:52px 1fr}.guardian-competition-winner .guardian-winner-rank{grid-column:1/-1}}
+
+
+/* GUARDIAN_RIFQ_WINNER_V1 */
+.guardian-competition-winner{display:grid;grid-template-columns:58px 1fr 110px;gap:15px;align-items:center;margin:14px 0;padding:18px;border:1px solid #e4c85e;border-radius:20px;background:linear-gradient(135deg,#fffdf2,#fff4c6);box-shadow:0 10px 26px rgba(148,111,12,.10)}
+.guardian-competition-winner .guardian-winner-icon{width:52px;height:52px;border-radius:16px;display:grid;place-items:center;background:linear-gradient(135deg,#f0b52a,#c98900);font-size:25px}
+.guardian-competition-winner .guardian-winner-copy>span{font-size:9px;font-weight:800;color:#8a6500}
+.guardian-competition-winner .guardian-winner-copy h3{margin:4px 0 6px}
+.guardian-competition-winner .guardian-winner-copy p{margin:0 0 5px;line-height:1.8}
+.guardian-eval.competition-excluded{opacity:.72;background:#faf6f6}
+@media(max-width:720px){.guardian-competition-winner{grid-template-columns:52px 1fr}.guardian-competition-winner .guardian-winner-rank{grid-column:1/-1}}

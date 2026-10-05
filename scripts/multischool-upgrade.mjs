@@ -277,3 +277,25 @@ edit("src/GuardianPortal.tsx",s=>{
   }
   return s;
 });
+
+
+edit("src/CompetitionManagementPanel.tsx",s=>{
+  for(const marker of ["api_admin_competition_list","api_admin_set_competition_submission","إغلاق المسابقة","لوحة","مجسم","فيديو","بحث","+20 نقطة"]){
+    if(!s.includes(marker))throw new Error("multischool-upgrade: Rifq competition workflow missing "+marker);
+  }
+  return s;
+});
+
+edit("src/StudentPrograms.tsx",s=>{
+  for(const marker of ["api_student_competition_history","submission_label","points_awarded","فوز معتمد"]){
+    if(!s.includes(marker))throw new Error("multischool-upgrade: Rifq student history missing "+marker);
+  }
+  return s;
+});
+
+edit("src/GuardianPortal.tsx",s=>{
+  for(const marker of ["api_guardian_competition_history","guardian-competition-winner","تهانينا بفوز ابنكم","نقطة تميز"]){
+    if(!s.includes(marker))throw new Error("multischool-upgrade: Rifq guardian winner notice missing "+marker);
+  }
+  return s;
+});

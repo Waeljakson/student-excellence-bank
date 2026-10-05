@@ -296,7 +296,7 @@ LANGUAGE plpgsql
 STABLE
 SECURITY DEFINER
 SET search_path TO 'public','pg_temp'
-AS $
+AS $exit_analytics$
 DECLARE
   v_auth uuid;
   v_actor uuid;
@@ -526,7 +526,7 @@ BEGIN
     ),'[]'::jsonb)
   );
 END;
-$;
+$exit_analytics$;
 
 GRANT EXECUTE ON FUNCTION public.api_admin_student_exit_analytics(int) TO authenticated;
 

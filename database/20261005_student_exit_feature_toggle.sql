@@ -251,6 +251,33 @@ AS $feature_enabled$
   ),false);
 $feature_enabled$;
 
+CREATE OR REPLACE FUNCTION public.enforce_student_exit_feature_enabled()
+RETURNS trigger
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path TO 'public','pg_temp'
+AS $feature_guard$
+DECLARE
+  v_school uuid;
+BEGIN
+  v_school:=COALESCE(NEW.school_id,OLD.school_id);
+  IF NOT public.student_exit_feature_enabled_for_school(v_school) THEN
+    RAISE EXCEPTION 'STUDENT_EXIT_FEATURE_DISABLED';
+  END IF;
+  RETURN COALESCE(NEW,OLD);
+END;
+$feature_guard$;
+
+DROP TRIGGER IF EXISTS student_class_exit_feature_guard ON public.student_class_exit_events;
+CREATE TRIGGER student_class_exit_feature_guard
+BEFORE INSERT OR UPDATE OR DELETE ON public.student_class_exit_events
+FOR EACH ROW EXECUTE FUNCTION public.enforce_student_exit_feature_enabled();
+
+DROP TRIGGER IF EXISTS student_lesson_absence_feature_guard ON public.student_lesson_absence_events;
+CREATE TRIGGER student_lesson_absence_feature_guard
+BEFORE INSERT OR UPDATE OR DELETE ON public.student_lesson_absence_events
+FOR EACH ROW EXECUTE FUNCTION public.enforce_student_exit_feature_enabled();
+
 GRANT EXECUTE ON FUNCTION public.api_student_exit_feature_status() TO authenticated;
 GRANT EXECUTE ON FUNCTION public.api_admin_set_student_exit_feature(boolean) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.student_exit_feature_enabled_for_school(uuid) TO authenticated;

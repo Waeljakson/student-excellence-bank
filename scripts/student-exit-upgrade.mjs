@@ -76,6 +76,6 @@ guardian=guardian.replace(
 );
 guardian=guardian.replace(
   '<article><span>ملاحظات المتابعة</span><b>{c.notes.length}</b></article>',
-  '<article><span>ملاحظات المتابعة</span><b>{(c.notes||[]).filter(n=>!String(n.category_ar||"").startsWith("استئذان:")).length}</b></article>'
+  '<article><span>ملاحظات المتابعة</span><b>{(c.notes||[]).filter(n=>!String(n.category_ar||"").startsWith("استئذان:")&&!String(n.category_ar||"").startsWith("الحضور:")).length}</b></article>'
 );
 writeFileSync(guardianPath,guardian);

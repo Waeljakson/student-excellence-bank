@@ -206,7 +206,7 @@ function FollowupTimeline({notes}:{notes:Note[]}){
   </div>;
 }
 
-export default function GuardianPortal({token,studentNo,initialData}:{token?:string;studentNo?:string;initialData?:any}){
+export default function GuardianPortal({token,studentNo,schoolCode,initialData}:{token?:string;studentNo?:string;schoolCode?:string;initialData?:any}){
   const[data,setData]=useState<any>(null);
   const[error,setError]=useState("");
   const[childId,setChildId]=useState("");

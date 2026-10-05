@@ -30,6 +30,21 @@ jobs:
             echo "DATABASE_URL is configured; Neon migration will run."
           fi
 
+      - name: Verify Neon branch matches Data API
+        if: env.DATABASE_URL != ''
+        shell: bash
+        run: |
+          python - <<'PY'
+          import os, urllib.parse, sys
+          u=urllib.parse.urlparse(os.environ["DATABASE_URL"])
+          host=(u.hostname or "")
+          expected="ep-green-bar-b2rjvdpo"
+          if expected not in host:
+              print(f"::error::DATABASE_URL points to a different Neon branch host: {host}")
+              sys.exit(1)
+          print("DATABASE_URL branch matches the application's Neon Data API branch.")
+          PY
+
       - name: Install PostgreSQL client
         if: env.DATABASE_URL != ''
         run: |
@@ -41,6 +56,15 @@ jobs:
       - name: Apply migration to Neon
         if: env.DATABASE_URL != ''
         run: psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f database/20261005_student_class_exit_tracking.sql
+
+      - name: Force Neon Data API schema refresh
+        if: env.DATABASE_URL != ''
+        shell: bash
+        run: |
+          psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -c "NOTIFY pgrst, 'reload schema';"
+          sleep 4
+          psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -c "SELECT pg_notify('pgrst','reload schema');"
+          sleep 4
 
       - name: Verify exit tracking objects
         if: env.DATABASE_URL != ''

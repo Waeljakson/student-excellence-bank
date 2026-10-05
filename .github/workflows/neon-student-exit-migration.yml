@@ -53,7 +53,8 @@ jobs:
           WHERE proname IN (
             'api_teacher_student_exit_data',
             'api_teacher_student_exit_action',
-            'api_guardian_student_exit_today'
+            'api_guardian_student_exit_today',
+            'api_admin_student_exit_analytics'
           )
           ORDER BY proname;
           SQL

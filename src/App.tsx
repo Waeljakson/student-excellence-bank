@@ -582,7 +582,21 @@ function AdminView({pending,users,staff,classes,reload,isSuperAdmin,canManageRol
     if(!s.linked_app_user_id){setMsg("لا يمكن منح صلاحية وكيل قبل ربط المعلم بحساب دخول.");return}
     const linkedUser=users.find(u=>u.id===s.linked_app_user_id);
     if(!linkedUser){setMsg("تعذر العثور على حساب الدخول المرتبط بهذا المعلم.");return}
-    if(!s.assigned_class_ids?.length){setMsg("يجب تسكين المعلم على فصل واحد على الأقل قبل منحه صلاحية وكيل.");return}
+    const normalizeClassIds=(raw:any):string[]=>{
+      let value:any=raw;
+      if(typeof value==="string"){
+        try{value=JSON.parse(value)}catch{value=value.split(",")}
+      }
+      if(!Array.isArray(value)&&value&&typeof value==="object"){
+        value=value.class_ids??value.assigned_class_ids??value.ids??Object.values(value);
+      }
+      if(!Array.isArray(value))value=[];
+      return [...new Set(value.flat?.(2)??value)]
+        .map((x:any)=>String(x?.id??x?.class_id??x||"").trim())
+        .filter((x:string)=>/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(x));
+    };
+    const classIds=normalizeClassIds(s.assigned_class_ids);
+    if(!classIds.length){setMsg("يجب تسكين المعلم على فصل واحد على الأقل قبل منحه صلاحية وكيل.");return}
     const verb=enabled?"منح صلاحية وكيل المدرسة لـ":"سحب صلاحية وكيل المدرسة من";
     if(!window.confirm(verb+" "+s.full_name_ar+"؟ سيتم تحديث وظيفته وصلاحيات حسابه فورًا داخل مدرسته."))return;
     const key="vice:"+s.id;setBusy(key);setMsg("");
@@ -590,12 +604,12 @@ function AdminView({pending,users,staff,classes,reload,isSuperAdmin,canManageRol
     const previousJob=s.job_title_ar;
     try{
       const {error:updateError}=await neon.from("staff_directory").update({job_title_ar:nextJob,updated_at:new Date().toISOString()}).eq("id",s.id);
-      if(updateError)throw new Error(updateError.message||String(updateError));
+      if(updateError)throw new Error("VICE_TITLE_UPDATE_FAILED: "+(updateError.message||String(updateError)));
       try{
-        await rpc("api_set_user_scope",{p_app_user_id:linkedUser.id,p_staff_id:s.id,p_class_ids:s.assigned_class_ids});
-      }catch(scopeError){
+        await rpc("api_set_user_scope",{p_app_user_id:linkedUser.id,p_staff_id:s.id,p_class_ids:classIds});
+      }catch(scopeError:any){
         try{await neon.from("staff_directory").update({job_title_ar:previousJob,updated_at:new Date().toISOString()}).eq("id",s.id)}catch{}
-        throw scopeError;
+        throw new Error("VICE_SCOPE_UPDATE_FAILED: "+String(scopeError?.message||scopeError));
       }
       setMsg(enabled
         ?"تم تحويل "+s.full_name_ar+" إلى وكيل مدرسة ومنحه صلاحيات الوكيل."

@@ -81,7 +81,7 @@ export default function StudentPrograms({competitions,student}:{competitions:Com
     }catch(e){setMsg(niceError(e))}finally{setBusy("")}
   }
 
-  if(!competitions.length&&!specials.length)return null;
+  if(!competitions.length&&!specials.length&&!history.length)return null;
 
   return <section className="student-programs-stack">
     <div className="student-opportunities-head">

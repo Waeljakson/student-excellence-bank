@@ -31,8 +31,8 @@ function noteLesson(text:string){
 function fallbackSummary(notes:Note[]):ExitSummary{
   const today=riyadhDay();
   const rows=(notes||[]).filter(n=>String(n.category_ar||"").startsWith("استئذان:"))
-    .map(n=>({n,at:noteStamp(String(n.note_text||""))}))
-    .filter(x=>x.at&&x.at.slice(0,10)===today)
+    .map(n=>{const text=String(n.note_text||"");const day=text.match(/\\((\\d{4}-\\d{2}-\\d{2})\\)/)?.[1]||"";return {n,at:noteStamp(text),day}})
+    .filter(x=>x.at&&x.day===today)
     .sort((a,b)=>a.at.localeCompare(b.at));
   const events:ExitEvent[]=[];
   for(const row of rows){

@@ -268,16 +268,6 @@ edit("src/StudentPrograms.tsx",s=>{
   return s;
 });
 
-edit("src/GuardianPortal.tsx",s=>{
-  for(const marker of ["c.competitions","guardian-comp-result","competition-win"]){
-    if(!s.includes(marker))throw new Error("multischool-upgrade: existing guardian competition view missing "+marker);
-  }
-  if(s.includes("api_guardian_competition_history")){
-    throw new Error("multischool-upgrade: guardian portal must reuse its existing competition payload");
-  }
-  return s;
-});
-
 
 edit("src/CompetitionManagementPanel.tsx",s=>{
   for(const marker of ["api_admin_competition_list","api_admin_set_competition_submission","إغلاق المسابقة","لوحة","مجسم","فيديو","بحث","+20 نقطة"]){

@@ -582,7 +582,9 @@ function AdminView({pending,users,staff,classes,reload,isSuperAdmin,canManageRol
     if(!window.confirm(verb+" "+s.full_name_ar+"؟ سيتم تحديث وظيفته وصلاحيات حسابه فورًا داخل مدرسته."))return;
     const key="vice:"+s.id;setBusy(key);setMsg("");
     try{
-      await rpc("api_admin_set_staff_vice_principal",{p_staff_id:s.id,p_enabled:enabled});
+      const linkedUser=users.find(u=>u.id===s.linked_app_user_id);
+      if(!linkedUser)throw new Error("STAFF_ACCOUNT_REQUIRED");
+      await rpc("api_set_staff_classes",{p_staff_id:s.id,p_class_ids:{action:"SET_VICE_PRINCIPAL",enabled,app_user_id:linkedUser.id}});
       setMsg(enabled
         ?"تم تحويل "+s.full_name_ar+" إلى وكيل مدرسة ومنحه صلاحيات الوكيل."
         :"تم سحب صلاحية الوكيل من "+s.full_name_ar+" وإعادته إلى صلاحية معلم.");

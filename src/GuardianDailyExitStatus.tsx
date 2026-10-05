@@ -52,7 +52,7 @@ function fallbackSummary(notes:Note[]):ExitSummary{
   return {today,exit_count:events.length,currently_out:events.some(e=>!e.returned_at),total_minutes:total,events:events.sort((a,b)=>b.exited_at.localeCompare(a.exited_at))};
 }
 
-export default function GuardianDailyExitStatus({studentId,studentNo,notes=[]}:{studentId:string;studentNo:string;notes?:Note[]}){
+export default function GuardianDailyExitStatus({studentId,studentNo,schoolCode,notes=[]}:{studentId:string;studentNo:string;schoolCode?:string;notes?:Note[]}){
   const[data,setData]=useState<ExitSummary|null>(null);
   const[error,setError]=useState("");
 
@@ -61,6 +61,16 @@ export default function GuardianDailyExitStatus({studentId,studentNo,notes=[]}:{
       setError("");
       setData(await rpc<ExitSummary>("api_guardian_student_exit_today",{p_student_id:studentId,p_student_no:studentNo}));
     }catch(e){
+      try{
+        if(schoolCode){
+          const lookup=await rpc<any>("api_guardian_lookup_school",{p_student_no:studentNo,p_school_code:schoolCode});
+          const child=(lookup?.portal?.children||[]).find((x:any)=>x.id===studentId)||(lookup?.portal?.children||[])[0];
+          const liveNotes=Array.isArray(child?.notes)?child.notes:notes;
+          setData(fallbackSummary(liveNotes));
+          setError("");
+          return;
+        }
+      }catch{}
       const fallback=fallbackSummary(notes);
       setData(fallback);
       if(!notes.length)setError(niceError(e));
@@ -71,7 +81,7 @@ export default function GuardianDailyExitStatus({studentId,studentNo,notes=[]}:{
     void load();
     const timer=window.setInterval(()=>void load(),60000);
     return()=>window.clearInterval(timer);
-  },[studentId,studentNo,notes]);
+  },[studentId,studentNo,schoolCode,notes]);
 
   if(error&&!data)return null;
   if(!data)return <section className="guardian-attendance-card loading-card"><span>الحضور اليومي</span><p>جارٍ تحديث سجل الخروج من الفصل...</p></section>;

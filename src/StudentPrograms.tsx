@@ -17,8 +17,8 @@ type Competition={
   reward_ar?:string|null;
 };
 type Student={name:string;grade_name:string;class_name:string};
-type Membership={competition_id:string;joined_at:string;status?:"JOINED"|"EXCLUDED"|"WINNER"};
-type CompetitionHistory={competition_id:string;title_ar:string;body_ar?:string|null;joined_at:string;status:"JOINED"|"EXCLUDED"|"WINNER";winner_at?:string|null;reward_ar?:string|null};
+type Membership={competition_id:string;joined_at:string;status?:"JOINED"|"EXCLUDED"|"WINNER";submission_type?:string|null};
+type CompetitionHistory={competition_id:string;title_ar:string;body_ar?:string|null;joined_at:string;status:"JOINED"|"EXCLUDED"|"WINNER";submission_type?:string|null;submission_label?:string|null;submitted_at?:string|null;winner_at?:string|null;reward_ar?:string|null;points_awarded?:number;closed_at?:string|null};
 type Special={
   id?:string;
   type:string;
@@ -158,8 +158,8 @@ export default function StudentPrograms({competitions,student}:{competitions:Com
     {history.length>0&&<section className="student-competition-history">
       <div className="optional-competitions-title"><div><span>سجلك في المسابقات</span><h3>مشاركاتي ونتائجي</h3><p>سجل موثق للمسابقات التي انضممت إليها والنتائج التي تم اعتمادها.</p></div></div>
       <div className="student-history-grid">{history.map(h=><article key={h.competition_id} className={h.status==="WINNER"?"history-winner":h.status==="EXCLUDED"?"history-excluded":""}>
-        <div><span>{h.status==="WINNER"?"🏆 فوز معتمد":h.status==="EXCLUDED"?"تم الاستبعاد":"مشاركة مسجلة"}</span><h4>{h.title_ar}</h4><p>{h.status==="WINNER"?"اشتركت في المسابقة وتم اعتمادك فائزًا.":"تم تسجيل مشاركتك في هذه المسابقة."}</p></div>
-        <div className="history-meta"><small>تاريخ الانضمام</small><b>{date(h.joined_at)}</b>{h.status==="WINNER"&&<><small>تاريخ اعتماد الفوز</small><b>{date(h.winner_at)}</b></>}</div>
+        <div><span>{h.status==="WINNER"?"🏆 فوز معتمد":h.status==="EXCLUDED"?"تم الاستبعاد":h.submission_type?"✓ مشاركة معتمدة":"انضمام مسجل"}</span><h4>{h.title_ar}</h4><p>{h.status==="WINNER"?`شاركت بـ${h.submission_label||"عمل"} وتم اعتمادك فائزًا، وأضيف إلى رصيدك ${Number(h.points_awarded||20)} نقطة.`:h.status==="EXCLUDED"?"تم استبعاد المشاركة من هذه المسابقة.":h.submission_type?`تم تسجيل مشاركتك بنوع: ${h.submission_label||"مشاركة"}.`:"تم تسجيل انضمامك، ولم يتم تسجيل عمل مقدم حتى الآن."}</p></div>
+        <div className="history-meta"><small>تاريخ الانضمام</small><b>{date(h.joined_at)}</b>{h.submission_type&&<><small>نوع المشاركة</small><b>{h.submission_label||"—"}</b></>}{h.status==="WINNER"&&<><small>تاريخ اعتماد الفوز</small><b>{date(h.winner_at)}</b><small>نقاط الفوز</small><b>+{Number(h.points_awarded||20)} نقطة</b></>}</div>
       </article>)}</div>
     </section>}
     {msg&&<div className="notice compact-notice">{msg}</div>}

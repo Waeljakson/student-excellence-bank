@@ -68,11 +68,11 @@ console.log("student-exit-upgrade: teacher tracker, admin analytics, and guardia
 // EXIT_NOTE_FILTER_V1
 guardian=guardian.replace(
   "  const notes=(child.notes||[]).filter(n=>String(n.note_date||\"\").slice(0,10)===key);",
-  "  const notes=(child.notes||[]).filter(n=>!String(n.category_ar||\"\").startsWith(\"استئذان:\")).filter(n=>String(n.note_date||\"\").slice(0,10)===key);"
+  "  const notes=(child.notes||[]).filter(n=>!String(n.category_ar||\"\").startsWith(\"استئذان:\")&&!String(n.category_ar||\"\").startsWith(\"الحضور:\")).filter(n=>String(n.note_date||\"\").slice(0,10)===key);"
 );
 guardian=guardian.replace(
   '<FollowupTimeline notes={c.notes||[]}/>',
-  '<FollowupTimeline notes={(c.notes||[]).filter(n=>!String(n.category_ar||"").startsWith("استئذان:"))}/>'
+  '<FollowupTimeline notes={(c.notes||[]).filter(n=>!String(n.category_ar||"").startsWith("استئذان:")&&!String(n.category_ar||"").startsWith("الحضور:"))}/>'
 );
 guardian=guardian.replace(
   '<article><span>ملاحظات المتابعة</span><b>{c.notes.length}</b></article>',

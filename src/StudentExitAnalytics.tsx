@@ -38,9 +38,21 @@ export default function StudentExitAnalytics(){
 
   async function load(){
     setBusy(true);setMsg("");
+    let lastError:unknown=null;
     try{
-      setData(await rpc<Analytics>("api_admin_student_exit_analytics",{p_days:days}));
-    }catch(e){setMsg(niceError(e))}
+      for(let attempt=0;attempt<4;attempt++){
+        try{
+          setData(await rpc<Analytics>("api_admin_student_exit_analytics",{p_days:days}));
+          return;
+        }catch(e){
+          lastError=e;
+          const m=e instanceof Error?e.message:String(e);
+          const schemaRetry=/schema cache|Could not find the function|PGRST202/i.test(m);
+          if(!schemaRetry||attempt===3)throw e;
+          await new Promise(resolve=>window.setTimeout(resolve,1500*(attempt+1)));
+        }
+      }
+    }catch(e){setMsg(niceError(e||lastError))}
     finally{setBusy(false)}
   }
 

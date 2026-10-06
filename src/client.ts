@@ -299,6 +299,7 @@ export function niceError(error: unknown) {
   if (message.includes("BEHAVIORAL_PERIOD_OVERLAP")) return "توجد دورة تميز سلوكي أخرى متداخلة مع هذه المدة.";
   if (message.includes("BEHAVIORAL_CYCLE_NOT_FOUND")) return "دورة التميز السلوكي غير موجودة.";
   if (message.includes("GUIDANCE_REQUIRED")) return "هذه العملية متاحة للموجه الطلابي فقط.";
+  if (message.includes("REFERRAL_STAGE_SCOPE_REQUIRED")) return "هذا التحويل خارج نطاق المرحلة أو الفصول المسندة لهذا الوكيل.";
   if (message.includes("TEACHER_REQUIRED")) return "هذه العملية متاحة للمعلم فقط.";
   if (message.includes("BEHAVIORAL_NOT_SCHEDULED")) return "هذه الدورة ليست في حالة انتظار التفعيل.";
   if (message.includes("BEHAVIORAL_PERIOD_ENDED")) return "انتهت مدة هذه الدورة ولا يمكن تفعيلها.";

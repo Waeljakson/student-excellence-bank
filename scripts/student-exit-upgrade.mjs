@@ -21,8 +21,12 @@ app=app.replace(/type Tab = ([^;]+);/,m=>{
   return out;
 });
 
+const oldFollowupNav='  if(profile.roles?.some(r=>["TEACHER","GUIDANCE_COUNSELOR","SUPER_ADMIN"].includes(r))) nav.push(["followup","دفتر المتابعة","▤"]);';
+const scopedFollowupNav='  if(profile.roles?.some(r=>["TEACHER","VICE_PRINCIPAL","GUIDANCE_COUNSELOR","SUPER_ADMIN"].includes(r))) nav.push(["followup","دفتر المتابعة","▤"]);';
+if(app.includes(oldFollowupNav))app=app.replace(oldFollowupNav,scopedFollowupNav);
+
 if(!app.includes('["student-exits","استئذان الطلاب","↔"]')){
-  const marker='  if(profile.roles?.some(r=>["TEACHER","GUIDANCE_COUNSELOR","SUPER_ADMIN"].includes(r))) nav.push(["followup","دفتر المتابعة","▤"]);';
+  const marker=scopedFollowupNav;
   if(!app.includes(marker))throw new Error("student-exit-upgrade: nav marker missing");
   app=app.replace(marker,marker+'\n  if(profile.roles?.includes("TEACHER")) nav.push(["student-exits","استئذان الطلاب","↔"]);');
 }

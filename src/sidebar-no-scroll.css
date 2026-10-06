@@ -1,10 +1,22 @@
-/* DESKTOP_SIDEBAR_NO_SCROLL_V2
-   Desktop sidebar stays fully visible; only the main page scrolls. */
+/* DESKTOP_SIDEBAR_HIDDEN_SCROLL_V3
+   Allow the full desktop sidebar to scroll when its contents exceed the viewport,
+   while keeping the scrollbar itself invisible. */
 @media (min-width:761px){
   .sidebar{
-    overflow:hidden !important;
-    padding:12px 12px 10px !important;
+    overflow-y:auto !important;
+    overflow-x:hidden !important;
+    padding:12px 12px 16px !important;
     gap:9px !important;
+    overscroll-behavior-y:contain;
+    -webkit-overflow-scrolling:touch;
+    scrollbar-width:none !important;
+    -ms-overflow-style:none;
+  }
+  .sidebar::-webkit-scrollbar{
+    width:0 !important;
+    height:0 !important;
+    display:none !important;
+    background:transparent !important;
   }
 
   .sidebar .brand{
@@ -18,18 +30,18 @@
   .sidebar .brand span{font-size:8px !important}
 
   .sidebar nav{
-    flex:1 1 auto !important;
+    flex:0 0 auto !important;
     min-height:0 !important;
     display:flex !important;
     flex-direction:column !important;
-    justify-content:space-evenly !important;
-    gap:2px !important;
-    overflow:hidden !important;
+    justify-content:flex-start !important;
+    gap:3px !important;
+    overflow:visible !important;
   }
   .sidebar nav button{
-    flex:1 1 0 !important;
-    min-height:30px !important;
-    max-height:42px !important;
+    flex:0 0 auto !important;
+    min-height:34px !important;
+    max-height:none !important;
     padding:5px 9px !important;
     font-size:11px !important;
     line-height:1.25 !important;
@@ -43,7 +55,9 @@
 
   .issuer-card{
     flex:0 0 auto !important;
-    margin-top:0 !important;
+    position:relative !important;
+    z-index:1 !important;
+    margin-top:4px !important;
     padding:9px 10px !important;
     gap:1px !important;
     border-radius:11px !important;
@@ -57,6 +71,8 @@
 
   .signout{
     flex:0 0 auto !important;
+    position:relative !important;
+    z-index:1 !important;
     min-height:34px !important;
     padding:6px 9px !important;
     font-size:11px !important;
@@ -64,7 +80,7 @@
 }
 
 @media (min-width:761px) and (max-height:720px){
-  .sidebar{padding-top:8px !important;padding-bottom:8px !important;gap:6px !important}
+  .sidebar{padding-top:8px !important;padding-bottom:14px !important;gap:6px !important}
   .sidebar .brand{padding-bottom:6px !important}
   .sidebar .brand-logos img{width:27px !important;height:27px !important}
   .sidebar .brand b{font-size:13px !important}

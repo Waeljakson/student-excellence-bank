@@ -169,7 +169,11 @@ jobs:
               'api_admin_point_rules',
               'api_admin_set_point_rule',
               'api_student_referrals',
-              'api_teacher_followup_data'
+              'api_teacher_followup_data',
+              'api_referral_deduct_points',
+              'api_complete_student_referral',
+              'api_return_student_referral_to_teacher',
+              'api_forward_returned_referral_to_vice'
             )
           ORDER BY p.proname;
           SELECT proname

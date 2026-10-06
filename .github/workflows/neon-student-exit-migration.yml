@@ -133,6 +133,32 @@ jobs:
           GROUP BY au.id,au.full_name_ar,sd.id,sd.full_name_ar,sd.job_title_ar,sd.specialty_ar,sd.teaching_subject_ar
           ORDER BY au.full_name_ar;
 
+          SELECT
+            sd.id AS staff_id,
+            sd.full_name_ar,
+            sd.job_title_ar,
+            sd.specialty_ar,
+            sd.teaching_subject_ar,
+            sd.linked_app_user_id,
+            au.full_name_ar AS account_name,
+            array_agg(DISTINCT ur.role::text) FILTER (WHERE ur.role IS NOT NULL) AS roles,
+            array_agg(DISTINCT d.name_ar) FILTER (WHERE d.id IS NOT NULL) AS assigned_departments,
+            array_agg(DISTINCT (g.name_ar||' / '||c.name_ar)) FILTER (WHERE c.id IS NOT NULL) AS assigned_classes
+          FROM public.staff_directory sd
+          LEFT JOIN public.app_users au ON au.id=sd.linked_app_user_id
+          LEFT JOIN public.user_roles ur ON ur.user_id=sd.linked_app_user_id
+          LEFT JOIN public.teacher_class_assignments tca ON tca.user_id=sd.linked_app_user_id AND tca.is_active=true
+          LEFT JOIN public.classes c ON c.id=tca.class_id
+          LEFT JOIN public.grades g ON g.id=c.grade_id
+          LEFT JOIN public.departments d ON d.id=g.department_id
+          WHERE sd.is_active=true
+            AND (
+              sd.job_title_ar ILIKE '%وكيل%'
+              OR sd.full_name_ar ILIKE '%حجاج%'
+            )
+          GROUP BY sd.id,sd.full_name_ar,sd.job_title_ar,sd.specialty_ar,sd.teaching_subject_ar,sd.linked_app_user_id,au.full_name_ar
+          ORDER BY sd.full_name_ar;
+
           SELECT pg_get_functiondef(p.oid)
           FROM pg_proc p
           JOIN pg_namespace n ON n.oid=p.pronamespace

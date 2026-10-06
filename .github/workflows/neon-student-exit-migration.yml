@@ -107,7 +107,12 @@ jobs:
           FROM pg_proc p
           JOIN pg_namespace n ON n.oid=p.pronamespace
           WHERE n.nspname='public'
-            AND p.proname IN ('api_admin_point_rules','api_admin_set_point_rule')
+            AND p.proname IN (
+              'api_admin_point_rules',
+              'api_admin_set_point_rule',
+              'api_student_referrals',
+              'api_teacher_followup_data'
+            )
           ORDER BY p.proname;
           SELECT proname
           FROM pg_proc

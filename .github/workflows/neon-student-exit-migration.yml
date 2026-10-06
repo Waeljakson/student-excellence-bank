@@ -9,6 +9,7 @@ on:
       - "database/20261005_student_exit_feature_toggle.sql"
       - "database/20261005_student_exit_feature_bridge.sql"
       - "database/20261006_vice_guidance_stage_scope.sql"
+      - "database/20261006_referral_action_stage_scope.sql"
       - ".github/workflows/neon-student-exit-migration.yml"
   workflow_dispatch:
 
@@ -66,6 +67,7 @@ jobs:
           psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f database/20261005_student_exit_feature_toggle.sql
           psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f database/20261005_student_exit_feature_bridge.sql
           psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f database/20261006_vice_guidance_stage_scope.sql
+          psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f database/20261006_referral_action_stage_scope.sql
 
       - name: Force Neon Data API schema refresh
         if: env.DATABASE_URL != ''

@@ -1,5 +1,5 @@
 import { FormEvent, useEffect, useState } from "react";
-import { forceSignOut, neon, niceError, rpc } from "./client";
+import { forceSignOut, neon, niceError, prepareAuthenticatedSession, rpc } from "./client";
 import { readDataCache, writeDataCache, sameCacheVersion, type CacheVersions } from "./data-cache";
 import "./feature-upgrade.css";
 import "./student-account.css";
@@ -59,26 +59,43 @@ export default function StudentPortal({cacheUserId=""}:{cacheUserId?:string}){
     }catch(e){if(cached?.data?.portal)setData(cached.data.portal as PortalData);else setError(niceError(e))}
   }
   useEffect(()=>{void load()},[cacheUserId]);
-  useEffect(()=>{
+  async function loadRecognition(){
     if(!data?.student?.id)return;
-    let alive=true;
-    const run=async()=>{
+    let recognitionLoaded=false;
+    for(let attempt=0;attempt<4;attempt++){
       try{
+        if(attempt>0)await prepareAuthenticatedSession(3);
         const result=await rpc<{medals?:Medal[];achievement_rewards?:PortalData["checks"]}>("api_student_recognition");
-        if(!alive)return;
         setMedals(Array.isArray(result?.medals)?result.medals:[]);
         setAchievementRewards(Array.isArray(result?.achievement_rewards)?result.achievement_rewards:[]);
+        recognitionLoaded=true;
+        break;
       }catch{
-        if(!alive)return;
-        try{
-          const rows=await rpc<Medal[]>("api_student_medals");
-          if(alive)setMedals(Array.isArray(rows)?rows:[]);
-        }catch{if(alive)setMedals([])}
-        if(alive)setAchievementRewards([]);
+        if(attempt<3)await new Promise(resolve=>setTimeout(resolve,350*(attempt+1)));
       }
+    }
+    if(recognitionLoaded)return;
+    try{
+      await prepareAuthenticatedSession(3);
+      const rows=await rpc<Medal[]>("api_student_medals");
+      setMedals(Array.isArray(rows)?rows:[]);
+    }catch{}
+  }
+
+  useEffect(()=>{
+    if(!data?.student?.id)return;
+    let active=true;
+    const refresh=async()=>{if(active)await loadRecognition()};
+    void refresh();
+    const onFocus=()=>void refresh();
+    const onVisible=()=>{if(document.visibilityState==="visible")void refresh()};
+    window.addEventListener("focus",onFocus);
+    document.addEventListener("visibilitychange",onVisible);
+    return()=>{
+      active=false;
+      window.removeEventListener("focus",onFocus);
+      document.removeEventListener("visibilitychange",onVisible);
     };
-    void run();
-    return()=>{alive=false};
   },[data?.student?.id]);
 
   async function uploadPhoto(e:React.ChangeEvent<HTMLInputElement>){
@@ -135,7 +152,7 @@ export default function StudentPortal({cacheUserId=""}:{cacheUserId?:string}){
       </section>
 
       <nav className="student-tabs" aria-label="أقسام بوابة الطالب">
-        {tabs.map(x=><button key={x.id} className={tab===x.id?"active":""} onClick={()=>setTab(x.id)}>
+        {tabs.map(x=><button key={x.id} className={tab===x.id?"active":""} onClick={()=>{setTab(x.id);if(x.id==="medals"||x.id==="checks")void loadRecognition()}}>
           <span className="student-tab-icon">{x.icon}</span>
           <span>{x.label}</span>
           {typeof x.count==="number"&&<b>{x.count}</b>}

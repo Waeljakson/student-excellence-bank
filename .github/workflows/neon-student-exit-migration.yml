@@ -187,7 +187,8 @@ jobs:
               'api_student_portal',
               'api_guardian_portal_by_student_school',
               'api_guardian_portal_by_token',
-              'api_guardian_portal'
+              'api_guardian_portal',
+              'guardian_behavioral_awards'
             )
           ORDER BY p.proname;
           SELECT tablename

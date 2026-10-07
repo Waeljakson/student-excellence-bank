@@ -26,3 +26,9 @@
 .medal-celebration small{display:block;margin-top:7px;color:#8c9aa1;font-size:8px}
 @media(max-width:980px){.medals-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:620px){.medals-grid{grid-template-columns:1fr}.medal-card{grid-template-columns:70px minmax(0,1fr);padding:13px}.medal-symbol{width:64px}.medal-symbol span{width:58px;height:58px}.medal-celebration{grid-template-columns:58px minmax(0,1fr);padding:14px}.medal-celebration-icon{width:52px;height:52px;font-size:22px}.medal-celebration h3{font-size:14px}}
+
+
+.student-tabs{grid-template-columns:repeat(8,minmax(0,1fr))}
+.guardian-tabs{flex-wrap:wrap}
+@media(max-width:1000px){.student-tabs{grid-template-columns:repeat(4,minmax(0,1fr))}}
+@media(max-width:620px){.student-tabs{grid-template-columns:repeat(2,minmax(0,1fr))}}

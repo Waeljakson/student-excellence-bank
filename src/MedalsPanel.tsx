@@ -48,7 +48,7 @@ export function MedalCelebrations({medals,studentName}:{medals:Medal[];studentNa
   </div>;
 }
 
-export default function MedalsPanel({medals,title="ميدالياتي"}:{medals:Medal[];title?:string}){
+export default function MedalsPanel({medals,title="ميداليات"}:{medals:Medal[];title?:string}){
   const rows=medals||[];
   return <section className="portal-panel medals-panel">
     <div className="medals-head">

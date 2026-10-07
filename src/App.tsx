@@ -432,19 +432,22 @@ function AppShell({ profile, children, tab, setTab }: { profile: Profile; childr
 }
 function DashboardView({ data, checks, schoolName, isSuperAdmin, isTeacher, onRefresh, onOpenTeacherStats }: { data: Dashboard|null; checks: Check[]; schoolName:string; isSuperAdmin:boolean; isTeacher:boolean; onRefresh:()=>void; onOpenTeacherStats:()=>void }) {
   const[showGuardianVisitors,setShowGuardianVisitors]=useState(false);
+  const[guardianVisitFilter,setGuardianVisitFilter]=useState<"ALL"|"TODAY">("ALL");
   if(!data) return <Loading/>;
   const guardianUnique=Number(data.guardian_unique_visitors||0);
   const guardianToday=Number(data.guardian_visits_today||0);
   const guardianTotal=Number(data.guardian_total_visits||0);
   const guardianCoverage=Number(data.guardian_coverage_pct||0);
   const guardianVisitors=Array.isArray(data.guardian_visit_details)?data.guardian_visit_details:[];
+  const guardianVisitorsToday=guardianVisitors.filter(v=>Number(v.today_visits||0)>0);
+  const visibleGuardianVisitors=guardianVisitFilter==="TODAY"?guardianVisitorsToday:guardianVisitors;
   const visitTime=(value:string)=>new Date(value).toLocaleString("ar-SA",{timeZone:"Asia/Riyadh",dateStyle:"medium",timeStyle:"short"});
   return <><Header title="لوحة بنك التميز الطلابي" subtitle="بيانات مباشرة وآمنة من Neon"/><main className="content">
     <section className="hero"><div><span className="eyebrow">{schoolName}</span><h2>التميز يُرى، يُقاس، ويُكافأ.</h2><p>شيكات تميز رقمية، محافظ طلابية، ترتيب فوري، ومتابعة عادلة للفصول.</p></div><div className="point-value"><small>قيمة نقطة التميز</small><strong>{Number(data.point_value_sar).toLocaleString("ar-SA")} ر.س</strong></div></section>
     {isTeacher&&<TeacherHomeAchievementCard onOpen={onOpenTeacherStats}/>}
     <section className="stats-grid"><Stat label="الطلاب" value={data.students}/><Stat label="نقاط اليوم" value={data.today_points}/><Stat label="شيكات هذا الشهر" value={data.month_checks}/><Stat label="طلاب حصلوا على تعزيز" value={data.reinforced_students}/></section>
     {isSuperAdmin&&<section className="panel guardian-visit-panel">
-      <div className="panel-title"><div><h3>متابعة أولياء الأمور</h3><p>قياس استخدام بوابة ولي الأمر منذ تفعيل العداد. العدد الأساسي يمثل أرقام الطلاب التي فُتحت بوابتهم بنجاح.</p></div><div className="guardian-visit-head-actions"><button className="mini-btn guardian-visitors-btn" type="button" onClick={()=>setShowGuardianVisitors(true)}>زوار بوابة ولي الأمر</button><button className="mini-btn" type="button" onClick={onRefresh}>تحديث الآن</button></div></div>
+      <div className="panel-title"><div><h3>متابعة أولياء الأمور</h3><p>قياس استخدام بوابة ولي الأمر منذ تفعيل العداد. العدد الأساسي يمثل أرقام الطلاب التي فُتحت بوابتهم بنجاح.</p></div><div className="guardian-visit-head-actions"><button className="mini-btn guardian-visitors-btn" type="button" onClick={()=>{setGuardianVisitFilter("ALL");setShowGuardianVisitors(true)}}>زوار بوابة ولي الأمر</button><button className="mini-btn" type="button" onClick={onRefresh}>تحديث الآن</button></div></div>
       <div className="guardian-visit-stats">
         <article><small>طلاب تم فتح بوابتهم</small><strong>{guardianUnique.toLocaleString("ar-SA")}</strong><span>من أصل {Number(data.students).toLocaleString("ar-SA")} طالب</span></article>
         <article><small>نسبة الوصول</small><strong>{guardianCoverage.toLocaleString("ar-SA")}%</strong><span>من إجمالي الطلاب</span></article>
@@ -457,13 +460,17 @@ function DashboardView({ data, checks, schoolName, isSuperAdmin, isTeacher, onRe
     {isSuperAdmin&&showGuardianVisitors&&<div className="guardian-visitors-overlay" role="dialog" aria-modal="true" aria-label="زوار بوابة ولي الأمر" onClick={()=>setShowGuardianVisitors(false)}>
       <section className="guardian-visitors-modal" onClick={e=>e.stopPropagation()}>
         <div className="guardian-visitors-modal-head"><div><span>متابعة الدخول</span><h3>زوار بوابة ولي الأمر</h3><p>أحدث زيارة أولًا — كل صف يمثل طالبًا فُتحت بوابته بنجاح.</p></div><button type="button" className="guardian-visitors-close" onClick={()=>setShowGuardianVisitors(false)}>×</button></div>
-        <div className="guardian-visitors-summary"><b>{guardianVisitors.length.toLocaleString("ar-SA")}</b><span>ولي أمر / طالب زار البوابة</span></div>
+        <div className="guardian-visitors-filter">
+          <button type="button" className={guardianVisitFilter==="ALL"?"active":""} onClick={()=>setGuardianVisitFilter("ALL")}><span>كل الزوار</span><b>{guardianVisitors.length.toLocaleString("ar-SA")}</b></button>
+          <button type="button" className={guardianVisitFilter==="TODAY"?"active":""} onClick={()=>setGuardianVisitFilter("TODAY")}><span>زيارات اليوم</span><b>{guardianVisitorsToday.length.toLocaleString("ar-SA")}</b></button>
+        </div>
+        <div className="guardian-visitors-summary"><b>{visibleGuardianVisitors.length.toLocaleString("ar-SA")}</b><span>{guardianVisitFilter==="TODAY"?"ولي أمر / طالب زار البوابة اليوم":"ولي أمر / طالب زار البوابة"}</span></div>
         <div className="guardian-visitors-table-wrap">
           <table className="guardian-visitors-table">
             <thead><tr><th>ولي الأمر</th><th>الطالب</th><th>الصف / الفصل</th><th>زيارات اليوم</th><th>إجمالي الزيارات</th><th>آخر زيارة</th></tr></thead>
             <tbody>
-              {guardianVisitors.map(v=><tr key={v.student_id}><td><b>{v.guardian_name||"ولي أمر الطالب"}</b>{v.guardian_mobile&&<small>{v.guardian_mobile}</small>}</td><td><b>{v.student_name}</b><small>{v.student_no}</small></td><td>{v.grade_name} / {v.class_name}</td><td>{Number(v.today_visits||0).toLocaleString("ar-SA")}</td><td>{Number(v.visit_count||0).toLocaleString("ar-SA")}</td><td>{visitTime(v.last_visit_at)}</td></tr>)}
-              {!guardianVisitors.length&&<tr><td colSpan={6} className="guardian-visitors-empty">لا توجد زيارات مسجلة لبوابة ولي الأمر حتى الآن.</td></tr>}
+              {visibleGuardianVisitors.map(v=><tr key={v.student_id}><td><b>{v.guardian_name||"ولي أمر الطالب"}</b>{v.guardian_mobile&&<small>{v.guardian_mobile}</small>}</td><td><b>{v.student_name}</b><small>{v.student_no}</small></td><td>{v.grade_name} / {v.class_name}</td><td>{Number(v.today_visits||0).toLocaleString("ar-SA")}</td><td>{Number(v.visit_count||0).toLocaleString("ar-SA")}</td><td>{visitTime(v.last_visit_at)}</td></tr>)}
+              {!visibleGuardianVisitors.length&&<tr><td colSpan={6} className="guardian-visitors-empty">{guardianVisitFilter==="TODAY"?"لا توجد زيارات مسجلة اليوم حتى الآن.":"لا توجد زيارات مسجلة لبوابة ولي الأمر حتى الآن."}</td></tr>}
             </tbody>
           </table>
         </div>

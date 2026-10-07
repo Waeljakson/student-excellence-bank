@@ -183,7 +183,11 @@ jobs:
               'api_dashboard',
               'api_guardian_lookup_school',
               'api_behavioral_set_cycle_state',
-              'api_behavioral_excellence'
+              'api_behavioral_excellence',
+              'api_student_portal',
+              'api_guardian_portal_by_student_school',
+              'api_guardian_portal_by_token',
+              'api_guardian_portal'
             )
           ORDER BY p.proname;
           SELECT tablename

@@ -255,6 +255,107 @@ BEGIN
 END;
 $backfill_competitions$;
 
+-- Khameesna / class competitions: every active student in the winning class gets the medal.
+CREATE OR REPLACE FUNCTION public.class_competition_winner_medal_trigger()
+RETURNS trigger
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path TO 'public','pg_temp'
+AS $class_winner_medal$
+DECLARE
+  v_school uuid;
+  v_title text;
+  v_badge uuid;
+  r record;
+BEGIN
+  SELECT co.school_id,COALESCE(NULLIF(trim(NEW.trip_title_ar),''),co.name_ar,'خميسنا غير')
+  INTO v_school,v_title
+  FROM public.competitions co
+  WHERE co.id=NEW.competition_id
+  LIMIT 1;
+
+  IF v_school IS NULL THEN RETURN NEW; END IF;
+
+  IF TG_OP='UPDATE' AND OLD.class_id IS DISTINCT FROM NEW.class_id THEN
+    SELECT b.id INTO v_badge
+    FROM public.badges b
+    WHERE b.school_id=v_school
+      AND b.source_type='CLASS_COMPETITION'
+      AND b.source_id=NEW.competition_id
+    LIMIT 1;
+
+    IF v_badge IS NOT NULL THEN
+      DELETE FROM public.student_badges sb
+      USING public.students st
+      WHERE sb.student_id=st.id
+        AND sb.badge_id=v_badge
+        AND st.class_id=OLD.class_id;
+    END IF;
+  END IF;
+
+  FOR r IN
+    SELECT st.id
+    FROM public.students st
+    WHERE st.school_id=v_school
+      AND st.class_id=NEW.class_id
+      AND st.is_active=true
+  LOOP
+    PERFORM public.ensure_student_medal(
+      v_school,
+      r.id,
+      v_title,
+      'ميدالية الفوز الجماعي للفصل في مسابقة «'||v_title||'»',
+      '🏆',
+      'COMPETITION',
+      'CLASS_COMPETITION',
+      NEW.competition_id,
+      NEW.approved_by,
+      NEW.approved_at
+    );
+  END LOOP;
+
+  RETURN NEW;
+END;
+$class_winner_medal$;
+
+DROP TRIGGER IF EXISTS class_competition_winner_medal_trg
+ON public.competition_winners;
+
+CREATE TRIGGER class_competition_winner_medal_trg
+AFTER INSERT OR UPDATE OF class_id,approved_at,approved_by
+ON public.competition_winners
+FOR EACH ROW
+EXECUTE FUNCTION public.class_competition_winner_medal_trigger();
+
+DO $backfill_class_winners$
+DECLARE
+  w record;
+  st record;
+  v_title text;
+BEGIN
+  FOR w IN
+    SELECT cw.*,co.school_id,co.name_ar
+    FROM public.competition_winners cw
+    JOIN public.competitions co ON co.id=cw.competition_id
+  LOOP
+    v_title:=COALESCE(NULLIF(trim(w.trip_title_ar),''),w.name_ar,'خميسنا غير');
+    FOR st IN
+      SELECT s.id
+      FROM public.students s
+      WHERE s.school_id=w.school_id
+        AND s.class_id=w.class_id
+        AND s.is_active=true
+    LOOP
+      PERFORM public.ensure_student_medal(
+        w.school_id,st.id,v_title,
+        'ميدالية الفوز الجماعي للفصل في مسابقة «'||v_title||'»',
+        '🏆','COMPETITION','CLASS_COMPETITION',w.competition_id,w.approved_by,w.approved_at
+      );
+    END LOOP;
+  END LOOP;
+END;
+$backfill_class_winners$;
+
 -- Generic/manual honor path for academic excellence or any future school honoring.
 CREATE OR REPLACE FUNCTION public.api_admin_award_student_medal(
   p_student_id uuid,

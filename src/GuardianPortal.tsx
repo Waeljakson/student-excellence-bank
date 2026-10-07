@@ -320,8 +320,8 @@ export default function GuardianPortal({token,studentNo,schoolCode,initialData}:
           <div className="guardian-kh-trip-icon">🏆</div>
           <div className="guardian-kh-trip-copy">
             <span>مسابقة خميسنا غير</span>
-            <h3>تهانينا بفوز فصل ابنكم 🎉</h3>
-            <p>يسرنا أن نبارك لكم فوز فصل ابنكم <b>{c.grade_name} — فصل {c.class_name}</b> في مسابقة <b>خميسنا غير</b> بين فصول المدرسة، واستحقاقه <b>رحلة ترفيهية مجانية {guardianTripWhen(trip.trip_date)}</b>. يسعدنا مشاركة ابنكم في هذه الرحلة، ونأمل التكرم بتأكيد موافقتكم إلكترونيًا.</p>
+            <h3>موافقة رحلة الفصل الفائز</h3>
+            <p>فصل ابنكم <b>{c.grade_name} — فصل {c.class_name}</b> هو الفصل الفائز في مسابقة <b>خميسنا غير</b>، والرحلة الترفيهية المجانية مقررة <b>{guardianTripWhen(trip.trip_date)}</b>. نأمل التكرم بتأكيد موافقتكم إلكترونيًا على مشاركة ابنكم.</p>
             {!trip.approved?<button type="button" className="guardian-trip-approve" disabled={tripBusy} onClick={approveTrip}>{tripBusy?"جارٍ تسجيل الموافقة...":"موافق على مشاركة ابني في الرحلة"}</button>:<div className="guardian-trip-approved"><b>✓ تم استلام موافقتكم</b><small>{trip.approved_at?new Date(trip.approved_at).toLocaleString("ar-SA"):""}</small></div>}
             {tripMessage&&<div className={trip.approved?"guardian-trip-message success":"guardian-trip-message"}>{tripMessage}</div>}
             <small className="guardian-trip-note">بالضغط على زر الموافقة يتم تسجيل موافقتكم إلكترونيًا في سجل المدرسة.</small>

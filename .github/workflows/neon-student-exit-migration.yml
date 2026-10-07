@@ -11,6 +11,7 @@ on:
       - "database/20261006_vice_guidance_stage_scope.sql"
       - "database/20261006_referral_action_stage_scope.sql"
       - "database/20261007_guardian_visit_details.sql"
+      - "database/20261007_behavioral_winner_20_points.sql"
       - ".github/workflows/neon-student-exit-migration.yml"
   workflow_dispatch:
 
@@ -70,6 +71,7 @@ jobs:
           psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f database/20261006_vice_guidance_stage_scope.sql
           psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f database/20261006_referral_action_stage_scope.sql
           psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f database/20261007_guardian_visit_details.sql
+          psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f database/20261007_behavioral_winner_20_points.sql
 
       - name: Force Neon Data API schema refresh
         if: env.DATABASE_URL != ''
@@ -198,6 +200,28 @@ jobs:
               WHERE schemaname='public' AND tablename ILIKE '%behavior%'
             )
           ORDER BY table_name,ordinal_position;
+
+          SELECT
+            count(*) AS behavioral_winner_bonus_rows,
+            count(DISTINCT student_id) AS behavioral_winner_bonus_students,
+            COALESCE(sum(points_delta),0) AS behavioral_winner_bonus_points
+          FROM public.wallet_transactions
+          WHERE reference_type='BEHAVIORAL_EXCELLENCE_WINNER';
+
+          SELECT
+            s.student_no,
+            s.full_name_ar AS student_name,
+            g.name_ar AS grade_name,
+            c.name_ar AS class_name,
+            wt.points_delta,
+            wt.created_at
+          FROM public.wallet_transactions wt
+          JOIN public.students s ON s.id=wt.student_id
+          JOIN public.classes c ON c.id=s.class_id
+          JOIN public.grades g ON g.id=c.grade_id
+          WHERE wt.reference_type='BEHAVIORAL_EXCELLENCE_WINNER'
+          ORDER BY wt.created_at DESC,s.full_name_ar
+          LIMIT 100;
 
           SELECT proname
           FROM pg_proc

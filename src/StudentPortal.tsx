@@ -21,6 +21,8 @@ type PortalData = {
   school_code?: string;
   student: { id:string; student_no:string; name:string; grade_name:string; class_name:string; points:number; value_sar:number; avatar?:string|null };
   checks: Array<{ id:string; serial_no:string; points:number; reason:string; status:string; approval_status:string; issued_at:string; rule_name:string; issuer_name:string; reversed_at?:string|null; reversal_reason?:string|null }>;
+  medals?: Medal[];
+  achievement_rewards?: Array<{ id:string; serial_no:string; points:number; reason:string; status:string; approval_status:string; issued_at:string; rule_name:string; issuer_name:string; reversed_at?:string|null; reversal_reason?:string|null }>;
   announcements: PortalAnnouncement[];
   followup_notes: FollowupNote[];
 };
@@ -48,13 +50,20 @@ export default function StudentPortal({cacheUserId=""}:{cacheUserId?:string}){
   async function load(force=false){
     const scope=cacheUserId?"student:"+cacheUserId:"";
     const cached=scope?readDataCache<any>(scope):null;
-    if(!force&&cached?.data?.portal&&!data)setData(cached.data.portal as PortalData);
+    if(!force&&cached?.data?.portal&&!data){
+      const cachedPortal=cached.data.portal as PortalData;
+      setData(cachedPortal);
+      if(Array.isArray(cachedPortal.medals))setMedals(cachedPortal.medals);
+      if(Array.isArray(cachedPortal.achievement_rewards))setAchievementRewards(cachedPortal.achievement_rewards);
+    }
     setError("");
     try{
       const versions=await rpc<CacheVersions>("api_student_cache_version");
       if(!force&&cached?.data?.portal&&Array.isArray(cached.data.portal.followup_notes)&&sameCacheVersion(cached.versions,versions,"student_portal")){setData(cached.data.portal as PortalData);return}
       const fresh=await rpc<PortalData>("api_student_portal");
       setData(fresh);
+      if(Array.isArray(fresh.medals))setMedals(fresh.medals);
+      if(Array.isArray(fresh.achievement_rewards))setAchievementRewards(fresh.achievement_rewards);
       if(scope)writeDataCache(scope,{...(cached?.versions||{}),student_portal:versions.student_portal},{...(cached?.data||{}),portal:fresh});
     }catch(e){if(cached?.data?.portal)setData(cached.data.portal as PortalData);else setError(niceError(e))}
   }

@@ -101,11 +101,13 @@ jobs:
           echo "Data API recognizes api_admin_point_rules (authentication may still be required, which is expected)."
 
           echo "Probing student medal RPCs..."
-          for fn in api_student_medals api_guardian_student_medals; do
+          for fn in api_student_medals api_guardian_student_medals api_admin_award_student_medal; do
             if [ "$fn" = "api_student_medals" ]; then
               payload='{}'
-            else
+            elif [ "$fn" = "api_guardian_student_medals" ]; then
               payload='{"p_student_id":"00000000-0000-0000-0000-000000000000","p_student_no":null,"p_school_code":null,"p_token":null}'
+            else
+              payload='{"p_student_id":"00000000-0000-0000-0000-000000000000","p_title_ar":"test","p_description_ar":null,"p_medal_kind":"ACADEMIC"}'
             fi
             curl -sS -o "/tmp/$fn-body.txt" \
               -X POST "https://ep-green-bar-b2rjvdpo.apirest.c-6.eu-central-1.aws.neon.tech/excellence_bank/rest/v1/rpc/$fn" \

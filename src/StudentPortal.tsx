@@ -91,7 +91,7 @@ export default function StudentPortal({cacheUserId=""}:{cacheUserId?:string}){
     {id:"home",label:"الرئيسية",icon:"⌂"},
     {id:"competitions",label:"المسابقات",icon:"★",count:competitions.length},
     {id:"rewards",label:"المكافآت",icon:"◆"},
-    {id:"medals",label:"ميدالياتي",icon:"🏅",count:medals.length},
+    {id:"medals",label:"ميداليات",icon:"🏅",count:medals.length},
     {id:"followup",label:"ملاحظات المعلمين",icon:"✎",count:activeNotes.length},
     {id:"checks",label:"شيكات التميز",icon:"✓",count:data.checks.length},
     {id:"announcements",label:"الإعلانات",icon:"◉",count:announcements.length},

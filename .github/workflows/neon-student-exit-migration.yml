@@ -99,6 +99,26 @@ jobs:
             exit 1
           fi
           echo "Data API recognizes api_admin_point_rules (authentication may still be required, which is expected)."
+
+          echo "Probing student medal RPCs..."
+          for fn in api_student_medals api_guardian_student_medals; do
+            if [ "$fn" = "api_student_medals" ]; then
+              payload='{}'
+            else
+              payload='{"p_student_id":"00000000-0000-0000-0000-000000000000","p_student_no":null,"p_school_code":null,"p_token":null}'
+            fi
+            curl -sS -o "/tmp/$fn-body.txt" \
+              -X POST "https://ep-green-bar-b2rjvdpo.apirest.c-6.eu-central-1.aws.neon.tech/excellence_bank/rest/v1/rpc/$fn" \
+              -H "Content-Type: application/json" \
+              --data "$payload"
+            cat "/tmp/$fn-body.txt"
+            echo
+            if grep -Eq 'PGRST202|Could not find the function|schema cache' "/tmp/$fn-body.txt"; then
+              echo "::error::Neon Data API still does not expose $fn in schema cache."
+              exit 1
+            fi
+          done
+          echo "Data API recognizes student medal RPCs."
           exit 0
 
       - name: Verify exit tracking objects

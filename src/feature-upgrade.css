@@ -300,3 +300,35 @@
 .feature-direct-actions{display:flex;gap:10px;flex-wrap:wrap;justify-content:flex-end}
 .feature-direct-actions .btn{min-width:150px}
 @media(max-width:700px){.feature-direct-actions{display:grid;grid-template-columns:1fr;width:100%}.feature-direct-actions .btn{width:100%;min-width:0}}
+
+
+.guardian-visit-head-actions{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+.guardian-visitors-btn{background:#e9f5f1!important;color:#0b725f!important;border-color:#c9e7dd!important}
+.guardian-visitors-overlay{position:fixed;inset:0;z-index:10000;background:rgba(10,28,40,.46);display:grid;place-items:center;padding:24px;backdrop-filter:blur(3px)}
+.guardian-visitors-modal{width:min(1100px,96vw);max-height:88vh;overflow:hidden;background:#fff;border-radius:20px;box-shadow:0 24px 80px rgba(10,34,48,.28);display:flex;flex-direction:column}
+.guardian-visitors-modal-head{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;padding:20px 22px 14px;border-bottom:1px solid #e4ecef}
+.guardian-visitors-modal-head>div{min-width:0}
+.guardian-visitors-modal-head span{display:block;font-size:9px;color:#0b725f;font-weight:900;margin-bottom:4px}
+.guardian-visitors-modal-head h3{margin:0;font-size:20px;color:#173e58}
+.guardian-visitors-modal-head p{margin:5px 0 0;font-size:10px;line-height:1.7;color:#718391}
+.guardian-visitors-close{width:36px;height:36px;flex:0 0 36px;border:0;border-radius:10px;background:#eef3f5;color:#405766;font-size:24px;line-height:1;cursor:pointer}
+.guardian-visitors-summary{display:flex;align-items:baseline;gap:8px;padding:12px 22px;background:#f7fbfa;border-bottom:1px solid #e3eeeb}
+.guardian-visitors-summary b{font-size:22px;color:#0b725f}
+.guardian-visitors-summary span{font-size:10px;color:#687d89}
+.guardian-visitors-table-wrap{overflow:auto;min-height:0;padding:0 6px 8px;scrollbar-width:thin}
+.guardian-visitors-table{width:100%;min-width:820px;border-collapse:separate;border-spacing:0}
+.guardian-visitors-table th{position:sticky;top:0;z-index:1;background:#eef6f4;color:#365769;font-size:9px;font-weight:900;padding:10px 12px;border-bottom:1px solid #dce9e6}
+.guardian-visitors-table td{padding:11px 12px;border-bottom:1px solid #edf1f3;font-size:10px;vertical-align:middle}
+.guardian-visitors-table td b{display:block;font-size:11px;color:#173e58}
+.guardian-visitors-table td small{display:block;margin-top:3px;font-size:8px;color:#8797a1}
+.guardian-visitors-table tbody tr:hover{background:#f9fcfb}
+.guardian-visitors-empty{text-align:center!important;padding:30px!important;color:#7b8d98!important}
+@media(max-width:760px){
+  .guardian-visit-head-actions{width:100%;display:grid;grid-template-columns:1fr 1fr}
+  .guardian-visit-head-actions .mini-btn{width:100%}
+  .guardian-visitors-overlay{padding:10px}
+  .guardian-visitors-modal{width:100%;max-height:92vh;border-radius:16px}
+  .guardian-visitors-modal-head{padding:15px}
+  .guardian-visitors-modal-head h3{font-size:17px}
+  .guardian-visitors-summary{padding:10px 15px}
+}

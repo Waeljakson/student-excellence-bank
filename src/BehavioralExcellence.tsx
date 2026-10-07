@@ -62,7 +62,7 @@ export default function BehavioralExcellence({students,schoolName="مدارس ا
   }
     async function cycleAction(action:"ACTIVATE"|"CLOSE"|"PUBLISH_WINNERS"){
     if(!data?.cycle)return;
-    if(action==="PUBLISH_WINNERS"&&!window.confirm("سيتم اعتماد أفضل 5 طلاب على مستوى كل صف ونشر التهنئة لأولياء أمور الفائزين. لا يمكن إعادة احتساب المراكز بعد النشر. هل تريد المتابعة؟"))return;
+    if(action==="PUBLISH_WINNERS"&&!window.confirm("سيتم اعتماد أفضل 5 طلاب على مستوى كل صف، وإضافة 20 نقطة تميز لكل فائز، ونشر التهنئة لأولياء أمور الفائزين. لا يمكن إعادة احتساب المراكز بعد النشر. هل تريد المتابعة؟"))return;
     setBusy(action);setMsg("");
     try{
       const result=await rpc<any>("api_behavioral_set_cycle_state",{p_cycle_id:data.cycle.id,p_action:action});
@@ -70,7 +70,7 @@ export default function BehavioralExcellence({students,schoolName="مدارس ا
         ?"تم تفعيل البرنامج. سيظهر للمعلمين داخل المدة المحددة، وأصبح تقرير متابعة الترشيحات متاحًا لك."
         :action==="CLOSE"
           ?"تم إغلاق الدورة وإيقاف الترشيحات. راجع النتائج ثم انشر الفائزين لأولياء الأمور."
-          :`تم اعتماد ونشر الفائزين لأولياء الأمور (${Number(result?.published_winners||0).toLocaleString("ar-SA")} طالبًا).`);
+          :`تم اعتماد ونشر الفائزين لأولياء الأمور (${Number(result?.published_winners||0).toLocaleString("ar-SA")} طالبًا)، وإضافة 20 نقطة تميز لكل فائز.`);
       await load();
       window.dispatchEvent(new Event("behavioral-status-changed"));
     }catch(e){setMsg(niceError(e))}finally{setBusy("")}

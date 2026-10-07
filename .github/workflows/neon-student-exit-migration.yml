@@ -179,9 +179,26 @@ jobs:
               'api_return_student_referral_to_teacher',
               'api_forward_returned_referral_to_vice',
               'api_dashboard',
-              'api_guardian_lookup_school'
+              'api_guardian_lookup_school',
+              'api_behavioral_set_cycle_state',
+              'api_behavioral_excellence'
             )
           ORDER BY p.proname;
+          SELECT tablename
+          FROM pg_tables
+          WHERE schemaname='public'
+            AND tablename ILIKE '%behavior%'
+          ORDER BY tablename;
+
+          SELECT column_name,data_type
+          FROM information_schema.columns
+          WHERE table_schema='public'
+            AND table_name IN (
+              SELECT tablename FROM pg_tables
+              WHERE schemaname='public' AND tablename ILIKE '%behavior%'
+            )
+          ORDER BY table_name,ordinal_position;
+
           SELECT proname
           FROM pg_proc
           WHERE proname IN (

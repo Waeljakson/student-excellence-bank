@@ -6,6 +6,7 @@ import "./student-account.css";
 import StudentPrograms from "./StudentPrograms";
 import StudentRedemptionPanel from "./StudentRedemptionPanel";
 import StudentFollowupPanel from "./StudentFollowupPanel";
+import MedalsPanel,{type Medal} from "./MedalsPanel";
 import "./redemption.css";
 import "./targeted-competitions.css";
 
@@ -23,7 +24,7 @@ type PortalData = {
   announcements: PortalAnnouncement[];
   followup_notes: FollowupNote[];
 };
-type StudentTab="home"|"competitions"|"rewards"|"followup"|"checks"|"announcements"|"account";
+type StudentTab="home"|"competitions"|"rewards"|"medals"|"followup"|"checks"|"announcements"|"account";
 
 function date(v?:string|null){return v?new Date(v).toLocaleDateString("ar-SA",{year:"numeric",month:"long",day:"numeric"}):"—"}
 function authError(result:any){if(result?.error)throw new Error(result.error.message||result.error.code||"تعذر تنفيذ العملية")}
@@ -39,7 +40,7 @@ async function prepareAvatar(file:File){
 }
 
 export default function StudentPortal({cacheUserId=""}:{cacheUserId?:string}){
-  const[data,setData]=useState<PortalData|null>(null);const[error,setError]=useState("");
+  const[data,setData]=useState<PortalData|null>(null);const[error,setError]=useState("");const[medals,setMedals]=useState<Medal[]>([]);
   const[tab,setTab]=useState<StudentTab>("home");
   const[photoBusy,setPhotoBusy]=useState(false);const[photoMsg,setPhotoMsg]=useState("");
   const[currentPassword,setCurrentPassword]=useState("");const[newPassword,setNewPassword]=useState("");const[confirmPassword,setConfirmPassword]=useState("");const[passwordBusy,setPasswordBusy]=useState(false);const[passwordMsg,setPasswordMsg]=useState("");
@@ -58,6 +59,7 @@ export default function StudentPortal({cacheUserId=""}:{cacheUserId?:string}){
     }catch(e){if(cached?.data?.portal)setData(cached.data.portal as PortalData);else setError(niceError(e))}
   }
   useEffect(()=>{void load()},[cacheUserId]);
+  useEffect(()=>{rpc<Medal[]>("api_student_medals").then(rows=>setMedals(Array.isArray(rows)?rows:[])).catch(()=>setMedals([]))},[cacheUserId]);
 
   async function uploadPhoto(e:React.ChangeEvent<HTMLInputElement>){
     const file=e.target.files?.[0];if(!file)return;setPhotoBusy(true);setPhotoMsg("");
@@ -89,6 +91,7 @@ export default function StudentPortal({cacheUserId=""}:{cacheUserId?:string}){
     {id:"home",label:"الرئيسية",icon:"⌂"},
     {id:"competitions",label:"المسابقات",icon:"★",count:competitions.length},
     {id:"rewards",label:"المكافآت",icon:"◆"},
+    {id:"medals",label:"ميدالياتي",icon:"🏅",count:medals.length},
     {id:"followup",label:"ملاحظات المعلمين",icon:"✎",count:activeNotes.length},
     {id:"checks",label:"شيكات التميز",icon:"✓",count:data.checks.length},
     {id:"announcements",label:"الإعلانات",icon:"◉",count:announcements.length},
@@ -142,6 +145,7 @@ export default function StudentPortal({cacheUserId=""}:{cacheUserId?:string}){
 
         {tab==="competitions"&&<StudentPrograms competitions={competitions} student={s}/>}
         {tab==="rewards"&&<StudentRedemptionPanel/>}
+        {tab==="medals"&&<MedalsPanel medals={medals}/>}
         {tab==="followup"&&<StudentFollowupPanel notes={activeNotes}/>}
 
         {tab==="checks"&&<section className="portal-panel">

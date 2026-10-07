@@ -40,7 +40,7 @@ async function prepareAvatar(file:File){
 }
 
 export default function StudentPortal({cacheUserId=""}:{cacheUserId?:string}){
-  const[data,setData]=useState<PortalData|null>(null);const[error,setError]=useState("");const[medals,setMedals]=useState<Medal[]>([]);
+  const[data,setData]=useState<PortalData|null>(null);const[error,setError]=useState("");const[medals,setMedals]=useState<Medal[]>([]);const[achievementRewards,setAchievementRewards]=useState<PortalData["checks"]>([]);
   const[tab,setTab]=useState<StudentTab>("home");
   const[photoBusy,setPhotoBusy]=useState(false);const[photoMsg,setPhotoMsg]=useState("");
   const[currentPassword,setCurrentPassword]=useState("");const[newPassword,setNewPassword]=useState("");const[confirmPassword,setConfirmPassword]=useState("");const[passwordBusy,setPasswordBusy]=useState(false);const[passwordMsg,setPasswordMsg]=useState("");
@@ -59,7 +59,27 @@ export default function StudentPortal({cacheUserId=""}:{cacheUserId?:string}){
     }catch(e){if(cached?.data?.portal)setData(cached.data.portal as PortalData);else setError(niceError(e))}
   }
   useEffect(()=>{void load()},[cacheUserId]);
-  useEffect(()=>{rpc<Medal[]>("api_student_medals").then(rows=>setMedals(Array.isArray(rows)?rows:[])).catch(()=>setMedals([]))},[cacheUserId]);
+  useEffect(()=>{
+    if(!data?.student?.id)return;
+    let alive=true;
+    const run=async()=>{
+      try{
+        const result=await rpc<{medals?:Medal[];achievement_rewards?:PortalData["checks"]}>("api_student_recognition");
+        if(!alive)return;
+        setMedals(Array.isArray(result?.medals)?result.medals:[]);
+        setAchievementRewards(Array.isArray(result?.achievement_rewards)?result.achievement_rewards:[]);
+      }catch{
+        if(!alive)return;
+        try{
+          const rows=await rpc<Medal[]>("api_student_medals");
+          if(alive)setMedals(Array.isArray(rows)?rows:[]);
+        }catch{if(alive)setMedals([])}
+        if(alive)setAchievementRewards([]);
+      }
+    };
+    void run();
+    return()=>{alive=false};
+  },[data?.student?.id]);
 
   async function uploadPhoto(e:React.ChangeEvent<HTMLInputElement>){
     const file=e.target.files?.[0];if(!file)return;setPhotoBusy(true);setPhotoMsg("");
@@ -85,7 +105,8 @@ export default function StudentPortal({cacheUserId=""}:{cacheUserId?:string}){
   const announcements=data.announcements.filter(a=>a.announcement_type!=="TARGETED_COMPETITION");
   const activeNotes=data.followup_notes||[];
   const recentNote=activeNotes[0];
-  const recentCheck=data.checks[0];
+  const allChecks=[...(data.checks||[]),...achievementRewards].sort((a,b)=>new Date(b.issued_at).getTime()-new Date(a.issued_at).getTime());
+  const recentCheck=allChecks[0];
 
   const tabs:Array<{id:StudentTab;label:string;icon:string;count?:number}>=[
     {id:"home",label:"الرئيسية",icon:"⌂"},
@@ -93,7 +114,7 @@ export default function StudentPortal({cacheUserId=""}:{cacheUserId?:string}){
     {id:"rewards",label:"المكافآت",icon:"◆"},
     {id:"medals",label:"ميداليات",icon:"🏅",count:medals.length},
     {id:"followup",label:"ملاحظات المعلمين",icon:"✎",count:activeNotes.length},
-    {id:"checks",label:"شيكات التميز",icon:"✓",count:data.checks.length},
+    {id:"checks",label:"شيكات التميز",icon:"✓",count:allChecks.length},
     {id:"announcements",label:"الإعلانات",icon:"◉",count:announcements.length},
     {id:"account",label:"حسابي",icon:"⚙"}
   ];
@@ -125,7 +146,7 @@ export default function StudentPortal({cacheUserId=""}:{cacheUserId?:string}){
         {tab==="home"&&<>
           <section className="student-home-stats">
             <button onClick={()=>setTab("checks")}><span>رصيد التميز</span><strong>{Number(s.points).toLocaleString("ar-SA")}</strong><small>نقطة</small></button>
-            <button onClick={()=>setTab("checks")}><span>شيكات التميز</span><strong>{data.checks.length}</strong><small>شيك</small></button>
+            <button onClick={()=>setTab("checks")}><span>شيكات التميز</span><strong>{allChecks.length}</strong><small>عملية</small></button>
             <button onClick={()=>setTab("followup")}><span>ملاحظات المعلمين</span><strong>{activeNotes.length}</strong><small>ملاحظة</small></button>
             <button onClick={()=>setTab("competitions")}><span>المسابقات الحالية</span><strong>{competitions.length}</strong><small>مسابقة</small></button>
           </section>
@@ -149,8 +170,8 @@ export default function StudentPortal({cacheUserId=""}:{cacheUserId?:string}){
         {tab==="followup"&&<StudentFollowupPanel notes={activeNotes}/>}
 
         {tab==="checks"&&<section className="portal-panel">
-          <div className="portal-panel-title"><div><h3>شيكات التميز الخاصة بي</h3><p>جميع الشيكات والنقاط المسجلة على حسابك</p></div><span>{data.checks.length}</span></div>
-          {data.checks.length?<div className="student-checks">{data.checks.map(c=><div className={c.status==="REVERSED"?"student-check-card reversed":"student-check-card"} key={c.id}><div><b>{c.rule_name}</b><small>{c.reason}</small><em>{date(c.issued_at)} · {c.issuer_name}</em>{c.status==="REVERSED"&&<div className="student-check-reversed-note"><b>تم إيقاف الشيك بواسطة المعلم: {c.issuer_name}</b><span>{c.reversal_reason||"تم إيقاف الشيك بواسطة المعلم المصدر"} · {date(c.reversed_at)}</span></div>}</div><strong>{c.status==="REVERSED"?"−":"+"}{c.points}</strong><span>{c.serial_no}</span></div>)}</div>:<div className="empty">لم يصدر لك أي شيك تميز حتى الآن.</div>}
+          <div className="portal-panel-title"><div><h3>شيكات ونقاط التميز الخاصة بي</h3><p>جميع الشيكات ومكافآت الإنجازات المسجلة على حسابك</p></div><span>{allChecks.length}</span></div>
+          {allChecks.length?<div className="student-checks">{allChecks.map(c=><div className={c.status==="REVERSED"?"student-check-card reversed":c.status==="BONUS"?"student-check-card achievement-bonus":"student-check-card"} key={c.id}><div><b>{c.rule_name}</b><small>{c.reason}</small><em>{date(c.issued_at)} · {c.issuer_name}</em>{c.status==="BONUS"&&<div className="student-achievement-tag">مكافأة إنجاز معتمدة</div>}{c.status==="REVERSED"&&<div className="student-check-reversed-note"><b>تم إيقاف الشيك بواسطة المعلم: {c.issuer_name}</b><span>{c.reversal_reason||"تم إيقاف الشيك بواسطة المعلم المصدر"} · {date(c.reversed_at)}</span></div>}</div><strong>{c.status==="REVERSED"?"−":"+"}{c.points}</strong><span>{c.serial_no}</span></div>)}</div>:<div className="empty">لم تُسجل لك شيكات أو مكافآت تميز حتى الآن.</div>}
         </section>}
 
         {tab==="announcements"&&<section className="portal-panel">

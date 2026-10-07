@@ -284,8 +284,8 @@ edit("src/StudentPrograms.tsx",s=>{
 });
 
 edit("src/GuardianPortal.tsx",s=>{
-  for(const marker of ["api_guardian_competition_history","guardian-competition-winner","تهانينا بفوز ابنكم","نقطة تميز"]){
-    if(!s.includes(marker))throw new Error("multischool-upgrade: Rifq guardian winner notice missing "+marker);
+  for(const marker of ["api_guardian_competition_history","api_guardian_student_medals","MedalCelebrations","الميداليات"]){
+    if(!s.includes(marker))throw new Error("multischool-upgrade: guardian medal workflow missing "+marker);
   }
   return s;
 });

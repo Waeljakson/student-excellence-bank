@@ -175,7 +175,9 @@ jobs:
               'api_referral_deduct_points',
               'api_complete_student_referral',
               'api_return_student_referral_to_teacher',
-              'api_forward_returned_referral_to_vice'
+              'api_forward_returned_referral_to_vice',
+              'api_dashboard',
+              'api_guardian_lookup_school'
             )
           ORDER BY p.proname;
           SELECT proname

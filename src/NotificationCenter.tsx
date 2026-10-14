@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import {isAppActive} from "./neon-sync";
 import { niceError, rpc } from "./client";
 import "./notifications.css";
 
@@ -32,7 +33,7 @@ export default function NotificationCenter(){
     let active=true;
     let checking=false;
     const refresh=async(force=false)=>{
-      if(!active||checking||(!force&&document.visibilityState!=="visible"))return;
+      if(!active||checking||(!force&&!isAppActive()))return;
       if(!force&&Date.now()-lastPoll<180000)return;
       lastPoll=Date.now();
       checking=true;

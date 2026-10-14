@@ -56,7 +56,7 @@ export default function StudentExitAnalytics(){
     finally{setBusy(false)}
   }
 
-  useEffect(()=>{void load();const t=window.setInterval(()=>void load(),60000);return()=>window.clearInterval(t)},[days]);
+  useEffect(()=>{void load();const t=window.setInterval(()=>{if(document.visibilityState==="visible")void load()},120000);return()=>window.clearInterval(t)},[days]);
 
   const maxDaily=useMemo(()=>Math.max(1,...(data?.daily||[]).map(x=>n(x.exit_count))),[data]);
   const maxLesson=useMemo(()=>Math.max(1,...(data?.lessons||[]).map(x=>n(x.exit_count))),[data]);

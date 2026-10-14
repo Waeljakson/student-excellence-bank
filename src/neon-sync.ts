@@ -41,3 +41,26 @@ export function expireCacheVersion(scope:string){
   const state=states.get(scope);
   if(state)state.at=0;
 }
+
+// Stop background database polling if a browser window is left open unattended.
+// Explicit user operations still request fresh data normally.
+const IDLE_POLL_PAUSE_MS=4*60*1000;
+let lastInteractionAt=Date.now();
+if(typeof window!=="undefined"){
+  const markActive=()=>{lastInteractionAt=Date.now()};
+  let lastMotionAt=0;
+  window.addEventListener("pointerdown",markActive,{passive:true});
+  window.addEventListener("keydown",markActive);
+  window.addEventListener("touchstart",markActive,{passive:true});
+  window.addEventListener("pointermove",()=>{
+    if(Date.now()-lastMotionAt>15000){lastMotionAt=Date.now();markActive()}
+  },{passive:true});
+  window.addEventListener("focus",markActive);
+  document.addEventListener("visibilitychange",()=>{
+    if(document.visibilityState==="visible")markActive();
+  });
+}
+export function isAppActive(){
+  return typeof document!=="undefined"&&document.visibilityState==="visible"
+    &&Date.now()-lastInteractionAt<IDLE_POLL_PAUSE_MS;
+}

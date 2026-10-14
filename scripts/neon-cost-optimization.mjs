@@ -84,6 +84,9 @@ const patchApp=function patchApp(s){
 `;
   s=s.slice(0,start)+newBlock+s.slice(end);
   s=s.replace('if(tab==="dashboard")void syncData(["dashboard","checks"],true);','if(tab==="dashboard")void syncData(["dashboard","checks"]);');
+  if(!s.includes('if(tab==="dashboard")void syncData(["dashboard","checks"]);')){
+    s=s.replace('    if(tab==="checks")void syncData(["students","rules","checks"]);','    if(tab==="dashboard")void syncData(["dashboard","checks"]);\n    else if(tab==="checks")void syncData(["students","rules","checks"]);');
+  }
   // Hide-when-inactive status polling to avoid waking expensive DB computations.
   s=s.replace('    loadIndicators();const timer=window.setInterval(loadIndicators,15000);',
    '    loadIndicators();const timer=window.setInterval(()=>{if(document.visibilityState==="visible")loadIndicators()},90000);');

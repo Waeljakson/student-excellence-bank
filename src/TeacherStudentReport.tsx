@@ -46,9 +46,9 @@ const errorText=(e:unknown)=>{
 };
 const quoteCsv=(v:unknown)=>'"'+String(v??"").replace(/"/g,'""')+'"';
 
-export default function TeacherStudentReport({schoolName}:{schoolName:string}){
+export default function TeacherStudentReport({schoolName,initialTeacherId=""}:{schoolName:string;initialTeacherId?:string}){
   const[data,setData]=useState<ReportData|null>(null);
-  const[teacherId,setTeacherId]=useState("");
+  const[teacherId,setTeacherId]=useState(initialTeacherId);
   const[classId,setClassId]=useState("");
   const[studentId,setStudentId]=useState("");
   const[from,setFrom]=useState("");
@@ -76,7 +76,7 @@ export default function TeacherStudentReport({schoolName}:{schoolName:string}){
         const result=await rpc<ReportData>("api_teacher_student_report",args);
         if(!active||request!==requestRef.current)return;
         setData(result);
-        if(result.can_select_teacher&&!teacherId&&result.teachers?.length)setTeacherId(result.teachers[0].id);
+        // Administrators deliberately choose the teacher; never export the first teacher by default.
       }catch(e){if(active&&request===requestRef.current){setData(null);setError(errorText(e));}}
       finally{if(active&&request===requestRef.current)setBusy(false);}
     }
@@ -95,6 +95,7 @@ export default function TeacherStudentReport({schoolName}:{schoolName:string}){
   const selectedStudent=students.find(s=>s.id===studentId);
   const selectedClass=data?.classes?.find(c=>c.id===classId);
   const total=data?.summary||blank;
+  const reportReady=Boolean(data?.teacher)&&!busy&&(!data?.can_select_teacher||data.teacher?.id===teacherId);
   const countByCategory=(key:string)=>data?.activities?.filter(a=>a.category===key).length||0;
   const stats=useMemo(()=>{
     const counts=new Map((data?.student_stats||[]).map(s=>[s.student_id,s]));
@@ -104,20 +105,42 @@ export default function TeacherStudentReport({schoolName}:{schoolName:string}){
       followup:0,checks:0,evaluations:0,valid_points:0
     });
   },[data?.student_stats,students]);
-  const csv=()=>{
-    const cols=["التاريخ","المعلم","الطالب","الرقم","الصف","الفصل","التصنيف","الإجراء",
-      "التفاصيل","المادة","الحالة","النقاط الصادرة","النقاط الفعلية"];
-    const rows=activities.map(a=>[
-      stamp(a.event_at),data?.teacher?.name||"",a.student_name,a.student_no,
-      a.grade_name,a.class_name,categories.find(c=>c[0]===a.category)?.[1]||a.category,
-      a.title,a.detail||"",a.subject||"",statusText(a.status),a.points??"",a.effective_points??""
-    ]);
-    const file="\uFEFF"+[cols,...rows].map(r=>r.map(quoteCsv).join(",")).join("\r\n");
-    const url=URL.createObjectURL(new Blob([file],{type:"text/csv;charset=utf-8;"}));
-    const link=document.createElement("a");
-    link.href=url;
-    link.download="تقرير-المعلم-"+(data?.teacher?.name||"")+"-"+(selectedStudent?.name||selectedClass?.label||"كل-الفصول")+".csv";
-    document.body.appendChild(link);link.click();link.remove();window.setTimeout(()=>URL.revokeObjectURL(url),1000);
+  const exportExcel=async()=>{
+    if(!data?.teacher)return;
+    const XLSX=await import("xlsx");
+    const wb=XLSX.utils.book_new();
+    const summaryRows=stats.filter(s=>!studentId||s.student_id===studentId).map(s=>({
+      "اسم الطالب":s.student_name,"رقم الطالب":s.student_no,
+      "الصف":s.grade_name,"الفصل":s.class_name,"التحويلات":s.referrals,
+      "ملاحظات المتابعة":s.followup,"الشيكات":s.checks,"التقييمات":s.evaluations,
+      "إجمالي التعاملات":s.events,"النقاط السارية التي منحها المعلم":s.valid_points
+    }));
+    // Force data strings beginning with spreadsheet control symbols to be treated as text.
+    const excelSafe=(v:unknown)=>typeof v==="string"&&/^[=+\\-@]/.test(v)?"'"+v:v;
+    const detailRows=activities.map(a=>({
+      "التاريخ":stamp(a.event_at),"المعلم":data.teacher!.name,"الطالب":a.student_name,
+      "رقم الطالب":a.student_no,"الصف":a.grade_name,"الفصل":a.class_name,
+      "نوع التعامل":categories.find(c=>c[0]===a.category)?.[1]||a.category,
+      "الإجراء":a.title,"التفاصيل":a.detail||"","المادة":a.subject||"",
+      "الحالة":statusText(a.status),"النقاط الصادرة":a.points??"",
+      "النقاط السارية":a.effective_points??""
+    }));
+    const meta=[
+      ["المدرسة",schoolName],["المعلم",data.teacher.name],
+      ["المادة",data.teacher.subject||"—"],["الفصل",selectedClass?.label||"جميع الفصول المسندة"],
+      ["الطالب",selectedStudent?.name||"جميع الطلاب"],
+      ["الفترة",from||"من البداية",to||"حتى اليوم"],
+      ["تاريخ الإصدار",new Date().toLocaleDateString("ar-SA",{timeZone:"Asia/Riyadh"})]
+    ];
+    const cover=XLSX.utils.aoa_to_sheet(meta);
+    const summary=XLSX.utils.json_to_sheet(summaryRows.map(row=>Object.fromEntries(Object.entries(row).map(([k,v])=>[k,excelSafe(v)]))));
+    const detail=XLSX.utils.json_to_sheet(detailRows.map(row=>Object.fromEntries(Object.entries(row).map(([k,v])=>[k,excelSafe(v)]))));
+    XLSX.utils.book_append_sheet(wb,cover,"بيانات التقرير");
+    XLSX.utils.book_append_sheet(wb,summary,"ملخص الطلاب");
+    XLSX.utils.book_append_sheet(wb,detail,"سجل التعاملات");
+    const fileName=["تقارير المعلم",data.teacher.name,selectedStudent?.name||selectedClass?.label||"كل الفصول"]
+      .join("-").replace(/[\\\\/:*?"<>|]/g,"_")+".xlsx";
+    XLSX.writeFile(wb,fileName);
   };
   const changeClass=(id:string)=>{setClassId(id);setStudentId("");};
   const changeTeacher=(id:string)=>{setTeacherId(id);setClassId("");setStudentId("");};
@@ -126,13 +149,13 @@ export default function TeacherStudentReport({schoolName}:{schoolName:string}){
       <p>سجل موحد لكل ما سجله المعلم على الطالب أو طلاب الفصل في بنك التميز.</p></div></header>
     <main className="content tsr-content">
       <section className="panel tsr-filter tsr-no-print">
-        <div className="panel-title"><div><h3>تحديد نطاق التقرير</h3>
-          <p>اختر الفصل والطالب أو اترك الطالب على «جميع الطلاب» لاستخراج تقرير الفصل بالكامل.</p></div>
+        <div className="panel-title"><div><h3>اختيار المعلم وإصدار التقرير</h3>
+          <p>مدير النظام يحدد المعلم والفصل أو الطالب، ثم يصدر السجل الكامل PDF أو Excel. ويمكن اختيار كل الفصول للحصول على تقرير شامل.</p></div>
           <button className="mini-btn" type="button" onClick={()=>setRefresh(v=>v+1)} disabled={busy}>تحديث البيانات</button></div>
         <div className="tsr-fields">
           {data?.can_select_teacher&&<label>المعلم
             <select value={teacherId} onChange={e=>changeTeacher(e.target.value)}>
-              <option value="">اختر المعلم</option>
+              <option value="">— اختر المعلم لإصدار التقرير —</option>
               {(data.teachers||[]).map(t=><option key={t.id} value={t.id}>{t.name} — {t.subject||"—"}</option>)}
             </select>
           </label>}
@@ -152,8 +175,8 @@ export default function TeacherStudentReport({schoolName}:{schoolName:string}){
           <label>إلى تاريخ<input type="date" min={from||undefined} value={to} onChange={e=>setTo(e.target.value)}/></label>
         </div>
         <div className="tsr-actions">
-          <button className="btn primary" type="button" onClick={()=>window.print()} disabled={busy||!data?.teacher}>طباعة / حفظ PDF</button>
-          <button className="btn ghost" type="button" onClick={csv} disabled={busy||!data?.teacher}>تصدير Excel (CSV)</button>
+          <button className="btn primary" type="button" onClick={()=>window.print()} disabled={!reportReady}>إصدار تقرير PDF / طباعة</button>
+          <button className="btn ghost" type="button" onClick={()=>void exportExcel()} disabled={!reportReady}>إصدار تقرير Excel</button>
           {(classId||studentId||from||to||query||category!=="ALL")&&<button className="mini-btn" type="button" onClick={()=>{
             setClassId("");setStudentId("");setFrom("");setTo("");setQuery("");setCategory("ALL");
           }}>مسح عوامل التصفية</button>}

@@ -223,7 +223,7 @@ import TeacherAchievementStats from "./TeacherAchievementStats";
 import TeacherStudentReport from "./TeacherStudentReport";
 import TeacherHomeAchievementCard from "./TeacherHomeAchievementCard";
 import { readDataCache, writeDataCache, sameCacheVersion, type CacheVersions } from "./data-cache";
-import {loadCacheVersions,coalesceCachePull} from "./neon-sync";
+import {loadCacheVersions,coalesceCachePull,isAppActive} from "./neon-sync";
 import { DEFAULT_SCHOOL_NAME, setCurrentSchoolBrand } from "./school-brand";
 
 type Profile = {
@@ -424,7 +424,7 @@ function AppShell({ profile, children, tab, setTab }: { profile: Profile; childr
       if(handlesReferrals){try{const rows=await rpc<any[]>("api_student_referrals",{p_status:"OPEN"});if(alive)setReferralCount(Array.isArray(rows)?rows.length:0)}catch{}}
       if(canWatchBehavior){try{const data=await rpc<any>("api_behavioral_excellence");if(alive)setBehaviorStatus(data)}catch{}}
     }
-    loadIndicators();const timer=window.setInterval(()=>{if(document.visibilityState==="visible")loadIndicators()},90000);
+    loadIndicators();const timer=window.setInterval(()=>{if(isAppActive())loadIndicators()},90000);
     const onVisible=()=>{if(document.visibilityState==="visible")loadIndicators()};
     window.addEventListener("behavioral-status-changed",loadIndicators);document.addEventListener("visibilitychange",onVisible);
     return()=>{alive=false;window.clearInterval(timer);window.removeEventListener("behavioral-status-changed",loadIndicators);document.removeEventListener("visibilitychange",onVisible)};
@@ -829,7 +829,7 @@ function BankApp({ profile, refreshProfile }: { profile: Profile; refreshProfile
       return [];
     };
     const refresh=()=>{
-      if(document.visibilityState!=="visible")return;
+      if(!isAppActive())return;
       const keys=visibleDomains();
       if(keys.length)void syncData(keys);
     };

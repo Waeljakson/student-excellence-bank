@@ -29,7 +29,7 @@ BEGIN
   SELECT job_title_ar INTO v_job FROM public.staff_directory
     WHERE school_id=v_school AND linked_app_user_id=v_user AND is_active=true
     ORDER BY updated_at DESC NULLS LAST LIMIT 1;
-  v_teacher_role:=(v_job='معلم') OR (v_job IS NULL AND EXISTS(
+  v_teacher_role:=COALESCE(v_job='معلم',false) OR (v_job IS NULL AND EXISTS(
     SELECT 1 FROM public.user_roles WHERE user_id=v_user AND role='TEACHER'));
   v_admin:=(v_job IS DISTINCT FROM 'معلم') AND EXISTS(
     SELECT 1 FROM public.user_roles WHERE user_id=v_user

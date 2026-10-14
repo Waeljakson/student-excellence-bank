@@ -1,6 +1,7 @@
 -- 2026-10-07
 -- Reliable student recognition payload: medals + achievement point rewards.
 -- Also repairs any missing behavioral medal/20-point reward without duplicating existing ledger rows.
+-- CACHE_SHAPE_V2: portal payload always includes medals and achievement_rewards.
 
 BEGIN;
 

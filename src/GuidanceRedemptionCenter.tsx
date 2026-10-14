@@ -64,8 +64,9 @@ export default function GuidanceRedemptionCenter() {
   }
 
   useEffect(() => {
-    load();
-    const t = window.setInterval(load, 15000);
+    void load();
+    // Pending requests refresh at a moderate rate, only while this tab is visible.
+    const t = window.setInterval(()=>{if(document.visibilityState==="visible")void load()},60000);
     return () => window.clearInterval(t);
   }, []);
 

@@ -67,12 +67,15 @@ export default function TeacherStudentReport({schoolName,initialTeacherId=""}:{s
       if(from&&to&&from>to){setError("تاريخ البداية يجب أن يسبق تاريخ النهاية.");return;}
       setBusy(true);setError("");
       try{
-        const args:Record<string,string>={};
-        if(teacherId)args.p_teacher_user_id=teacherId;
-        if(classId)args.p_class_id=classId;
-        if(studentId)args.p_student_id=studentId;
-        if(from)args.p_from_date=from;
-        if(to)args.p_to_date=to;
+        // Send the complete RPC signature, including explicit nulls. This avoids
+        // PostgREST treating an empty filter object as a no-argument RPC.
+        const args:Record<string,string|null>={
+          p_teacher_user_id:teacherId||null,
+          p_class_id:classId||null,
+          p_student_id:studentId||null,
+          p_from_date:from||null,
+          p_to_date:to||null
+        };
         const result=await rpc<ReportData>("api_teacher_student_report",args);
         if(!active||request!==requestRef.current)return;
         setData(result);

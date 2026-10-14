@@ -215,3 +215,35 @@ const addRefresh=function addRefresh(s){
   const after=addRefresh(before);
   if(before!==after)writeFileSync("src/App.tsx",after);
 }
+
+const patchIdle=function patchIdle(path,s){
+  if(path==="src/App.tsx"){
+    s=s.replace('import {loadCacheVersions,coalesceCachePull} from "./neon-sync";',
+                'import {loadCacheVersions,coalesceCachePull,isAppActive} from "./neon-sync";');
+    s=s.replace('if(document.visibilityState==="visible")loadIndicators()', 'if(isAppActive())loadIndicators()');
+    s=s.replace('      if(document.visibilityState!=="visible")return;\n      const keys=visibleDomains();',
+                '      if(!isAppActive())return;\n      const keys=visibleDomains();');
+  }else{
+    if(!s.includes('import {isAppActive} from "./neon-sync";')){
+      const firstImport=s.indexOf('\n');
+      if(firstImport<0)throw Error("Missing imports");
+      s=s.slice(0,firstImport+1)+'import {isAppActive} from "./neon-sync";\n'+s.slice(firstImport+1);
+    }
+    if(path==="src/NotificationCenter.tsx"){
+      s=s.replace('(!force&&document.visibilityState!=="visible")','(!force&&!isAppActive())');
+    }else if(path==="src/GuidanceRedemptionCenter.tsx"){
+      s=s.replace('if(document.visibilityState==="visible")void load()', 'if(isAppActive())void load()');
+    }else if(path==="src/StudentExitAnalytics.tsx"){
+      s=s.replace('if(document.visibilityState==="visible")void load()', 'if(isAppActive())void load()');
+    }else if(path==="src/StudentPortal.tsx"){
+      s=s.replace('(!force&&document.visibilityState!=="visible")','(!force&&!isAppActive())');
+    }
+  }
+  return s;
+};
+for(const file of ["src/App.tsx","src/NotificationCenter.tsx","src/GuidanceRedemptionCenter.tsx","src/StudentExitAnalytics.tsx","src/StudentPortal.tsx"]){
+  const before=readFileSync(file,"utf8");
+  const after=patchIdle(file,before);
+  if(before!==after)writeFileSync(file,after);
+}
+console.log("neon-cost-optimization: idle browsers do not keep compute awake");

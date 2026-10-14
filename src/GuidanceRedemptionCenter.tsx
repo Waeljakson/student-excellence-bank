@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import {isAppActive} from "./neon-sync";
 import { niceError, rpc } from "./client";
 import "./engagement.css";
 
@@ -66,7 +67,7 @@ export default function GuidanceRedemptionCenter() {
   useEffect(() => {
     void load();
     // Pending requests refresh at a moderate rate, only while this tab is visible.
-    const t = window.setInterval(()=>{if(document.visibilityState==="visible")void load()},60000);
+    const t = window.setInterval(()=>{if(isAppActive())void load()},60000);
     return () => window.clearInterval(t);
   }, []);
 

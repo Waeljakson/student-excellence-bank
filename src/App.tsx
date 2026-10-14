@@ -815,6 +815,29 @@ function BankApp({ profile, refreshProfile }: { profile: Profile; refreshProfile
     else if(tab==="admin"&&isAdmin)void syncData(["admin"]);
   },[tab]);
 
+  // NEON_IDLE_REFRESH_V4: revalidate only the currently visible data domain.
+  // No network read occurs when the page is hidden; returning to a tab checks
+  // version tokens (rather than downloading all rows) after the four-minute TTL.
+  useEffect(()=>{
+    const visibleDomains=():Array<"dashboard"|"students"|"rules"|"checks"|"rankings"|"rewards"|"admin">=>{
+      if(tab==="dashboard")return ["dashboard","checks"];
+      if(tab==="checks")return ["students","rules","checks"];
+      if(["students","referrals","student-evaluations","behavioral"].includes(tab))return ["students"];
+      if(tab==="rankings")return ["rankings"];
+      if(tab==="rewards")return ["rewards"];
+      if(tab==="admin"&&isAdmin)return ["admin"];
+      return [];
+    };
+    const refresh=()=>{
+      if(document.visibilityState!=="visible")return;
+      const keys=visibleDomains();
+      if(keys.length)void syncData(keys);
+    };
+    const timer=window.setInterval(refresh,240000);
+    document.addEventListener("visibilitychange",refresh);
+    return()=>{window.clearInterval(timer);document.removeEventListener("visibilitychange",refresh)};
+  },[tab,cacheScope]);
+
   async function refreshStudents(){await syncData(["students","rankings","dashboard"],true)}
   function removeStudentLocally(studentId:string){
     setStudents(prev=>prev.filter(s=>s.id!==studentId));

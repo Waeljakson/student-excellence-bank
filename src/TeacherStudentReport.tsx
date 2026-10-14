@@ -116,7 +116,7 @@ export default function TeacherStudentReport({schoolName,initialTeacherId=""}:{s
       "إجمالي التعاملات":s.events,"النقاط السارية التي منحها المعلم":s.valid_points
     }));
     // Force data strings beginning with spreadsheet control symbols to be treated as text.
-    const excelSafe=(v:unknown)=>typeof v==="string"&&/^[=+\\-@]/.test(v)?"'"+v:v;
+    const excelSafe=(v:unknown)=>typeof v==="string"&&/^[=+@-]/.test(v)?"'"+v:v;
     const detailRows=activities.map(a=>({
       "التاريخ":stamp(a.event_at),"المعلم":data.teacher!.name,"الطالب":a.student_name,
       "رقم الطالب":a.student_no,"الصف":a.grade_name,"الفصل":a.class_name,
@@ -139,7 +139,7 @@ export default function TeacherStudentReport({schoolName,initialTeacherId=""}:{s
     XLSX.utils.book_append_sheet(wb,summary,"ملخص الطلاب");
     XLSX.utils.book_append_sheet(wb,detail,"سجل التعاملات");
     const fileName=["تقارير المعلم",data.teacher.name,selectedStudent?.name||selectedClass?.label||"كل الفصول"]
-      .join("-").replace(/[\\\\/:*?"<>|]/g,"_")+".xlsx";
+      .join("-").replace(/[^\p{L}\p{N}_. -]/gu,"_")+".xlsx";
     XLSX.writeFile(wb,fileName);
   };
   const changeClass=(id:string)=>{setClassId(id);setStudentId("");};

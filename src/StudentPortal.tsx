@@ -94,8 +94,16 @@ export default function StudentPortal({cacheUserId=""}:{cacheUserId?:string}){
   useEffect(()=>{
     if(!data?.student?.id)return;
     let active=true;
-    const refresh=async()=>{if(active)await loadRecognition()};
-    void refresh();
+    let checking=false;
+    let lastCheck=0;
+    const refresh=async(force=false)=>{
+      if(!active||checking||(!force&&document.visibilityState!=="visible"))return;
+      if(!force&&Date.now()-lastCheck<120000)return;
+      lastCheck=Date.now();
+      checking=true;
+      try{await loadRecognition()}finally{checking=false}
+    };
+    void refresh(true);
     const onFocus=()=>void refresh();
     const onVisible=()=>{if(document.visibilityState==="visible")void refresh()};
     window.addEventListener("focus",onFocus);

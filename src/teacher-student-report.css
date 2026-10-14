@@ -13,6 +13,8 @@
 .tsr-actions .btn{min-height:39px;font-size:13px}
 .tsr-actions .mini-btn{min-height:37px}
 .tsr-loading{font-size:12px;color:#386b97}
+.tsr-detail-tools{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:7px 0 13px}
+.tsr-detail-tools .btn{font-size:12px;min-height:37px}
 .tsr-printable{padding:24px}
 .tsr-print-heading{display:flex;align-items:center;gap:15px;justify-content:space-between;border-bottom:2px solid #123e72;padding-bottom:17px}
 .tsr-print-heading>div:nth-child(2){flex:1;min-width:0}
@@ -76,6 +78,10 @@
   .tsr-root{position:absolute!important;top:0!important;right:0!important;left:0!important;width:100%!important;display:block!important;font-size:10px!important}
   .tsr-root .tsr-no-print,.tsr-root .tsr-no-print *{display:none!important;visibility:hidden!important}
   .tsr-content{padding:0!important;margin:0!important;max-width:none!important;width:100%!important}
+  /* Global styles.css hides .content > section:not(.check-print), which
+     previously made the print preview a blank page. Override it only here. */
+  .content.tsr-content > section.tsr-printable{display:block!important;visibility:visible!important}
+  .content.tsr-content > section.tsr-no-print{display:none!important}
   .tsr-printable{border:0!important;box-shadow:none!important;background:#fff!important;padding:0!important;margin:0!important}
   .tsr-print-heading{padding-bottom:8px}
   .tsr-print-heading h2{font-size:16px}

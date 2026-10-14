@@ -94,3 +94,88 @@ const old=readFileSync(path,"utf8");
 const next=patchApp(old);
 if(next!==old)writeFileSync(path,next);
 console.log("neon-cost-optimization: version-based and deduplicated tab sync ready");
+
+const optimizeFile=function optimizeFile(path,s){
+  if(path==="src/NotificationCenter.tsx"){
+    const old=`  useEffect(()=>{
+    void load();
+    const timer=window.setInterval(()=>void load(),45000);
+    const onFocus=()=>void load();
+    const onVisible=()=>{if(document.visibilityState==="visible")void load()};
+    window.addEventListener("focus",onFocus);
+    document.addEventListener("visibilitychange",onVisible);
+    return()=>{window.clearInterval(timer);window.removeEventListener("focus",onFocus);document.removeEventListener("visibilitychange",onVisible)};
+  },[]);`;
+    const next=`  useEffect(()=>{
+    let lastPoll=0;
+    let active=true;
+    let checking=false;
+    const refresh=async(force=false)=>{
+      if(!active||checking||(!force&&document.visibilityState!=="visible"))return;
+      if(!force&&Date.now()-lastPoll<180000)return;
+      lastPoll=Date.now();
+      checking=true;
+      try{await load()}finally{checking=false}
+    };
+    void refresh(true);
+    const timer=window.setInterval(()=>void refresh(),180000);
+    const onFocus=()=>void refresh();
+    const onVisible=()=>{if(document.visibilityState==="visible")void refresh()};
+    window.addEventListener("focus",onFocus);
+    document.addEventListener("visibilitychange",onVisible);
+    return()=>{active=false;window.clearInterval(timer);window.removeEventListener("focus",onFocus);document.removeEventListener("visibilitychange",onVisible)};
+  },[]);`;
+    if(s.includes(old))s=s.replace(old,next);
+    else if(!s.includes("let lastPoll=0;"))throw Error("NotificationCenter marker missing");
+  }
+  if(path==="src/GuidanceRedemptionCenter.tsx"){
+    const old=`  useEffect(() => {
+    load();
+    const t = window.setInterval(load, 15000);
+    return () => window.clearInterval(t);
+  }, []);`;
+    const next=`  useEffect(() => {
+    void load();
+    // Pending requests refresh at a moderate rate, only while this tab is visible.
+    const t = window.setInterval(()=>{if(document.visibilityState==="visible")void load()},60000);
+    return () => window.clearInterval(t);
+  }, []);`;
+    if(s.includes(old))s=s.replace(old,next);
+    else if(!s.includes("Pending requests refresh at a moderate rate"))throw Error("GuidanceRedemptionCenter marker missing");
+  }
+  if(path==="src/StudentExitAnalytics.tsx"){
+    const old='  useEffect(()=>{void load();const t=window.setInterval(()=>void load(),60000);return()=>window.clearInterval(t)},[days]);';
+    const next='  useEffect(()=>{void load();const t=window.setInterval(()=>{if(document.visibilityState==="visible")void load()},120000);return()=>window.clearInterval(t)},[days]);';
+    if(s.includes(old))s=s.replace(old,next);
+    else if(!s.includes('setInterval(()=>{if(document.visibilityState==="visible")void load()},120000)'))throw Error("StudentExitAnalytics marker missing");
+  }
+  if(path==="src/StudentPortal.tsx"){
+    const old=`    let active=true;
+    const refresh=async()=>{if(active)await loadRecognition()};
+    void refresh();
+    const onFocus=()=>void refresh();
+    const onVisible=()=>{if(document.visibilityState==="visible")void refresh()};`;
+    const next=`    let active=true;
+    let checking=false;
+    let lastCheck=0;
+    const refresh=async(force=false)=>{
+      if(!active||checking||(!force&&document.visibilityState!=="visible"))return;
+      if(!force&&Date.now()-lastCheck<120000)return;
+      lastCheck=Date.now();
+      checking=true;
+      try{await loadRecognition()}finally{checking=false}
+    };
+    void refresh(true);
+    const onFocus=()=>void refresh();
+    const onVisible=()=>{if(document.visibilityState==="visible")void refresh()};`;
+    if(s.includes(old))s=s.replace(old,next);
+    else if(!s.includes("let lastCheck=0;"))throw Error("StudentPortal marker missing");
+  }
+  return s;
+};
+for(const file of ["src/NotificationCenter.tsx","src/GuidanceRedemptionCenter.tsx","src/StudentExitAnalytics.tsx","src/StudentPortal.tsx"]){
+  const before=readFileSync(file,"utf8");
+  const after=optimizeFile(file,before);
+  if(after!==before)writeFileSync(file,after);
+}
+console.log("neon-cost-optimization: background polling bounded to visible tabs");

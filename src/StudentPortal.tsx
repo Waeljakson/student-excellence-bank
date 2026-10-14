@@ -1,4 +1,5 @@
 import { FormEvent, useEffect, useState } from "react";
+import {isAppActive} from "./neon-sync";
 import { forceSignOut, neon, niceError, prepareAuthenticatedSession, rpc } from "./client";
 import { readDataCache, writeDataCache, sameCacheVersion, type CacheVersions } from "./data-cache";
 import "./feature-upgrade.css";
@@ -97,7 +98,7 @@ export default function StudentPortal({cacheUserId=""}:{cacheUserId?:string}){
     let checking=false;
     let lastCheck=0;
     const refresh=async(force=false)=>{
-      if(!active||checking||(!force&&document.visibilityState!=="visible"))return;
+      if(!active||checking||(!force&&!isAppActive()))return;
       if(!force&&Date.now()-lastCheck<120000)return;
       lastCheck=Date.now();
       checking=true;

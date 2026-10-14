@@ -223,6 +223,7 @@ import TeacherAchievementStats from "./TeacherAchievementStats";
 import TeacherStudentReport from "./TeacherStudentReport";
 import TeacherHomeAchievementCard from "./TeacherHomeAchievementCard";
 import { readDataCache, writeDataCache, sameCacheVersion, type CacheVersions } from "./data-cache";
+import {loadCacheVersions,coalesceCachePull} from "./neon-sync";
 import { DEFAULT_SCHOOL_NAME, setCurrentSchoolBrand } from "./school-brand";
 
 type Profile = {
@@ -423,7 +424,7 @@ function AppShell({ profile, children, tab, setTab }: { profile: Profile; childr
       if(handlesReferrals){try{const rows=await rpc<any[]>("api_student_referrals",{p_status:"OPEN"});if(alive)setReferralCount(Array.isArray(rows)?rows.length:0)}catch{}}
       if(canWatchBehavior){try{const data=await rpc<any>("api_behavioral_excellence");if(alive)setBehaviorStatus(data)}catch{}}
     }
-    loadIndicators();const timer=window.setInterval(loadIndicators,15000);
+    loadIndicators();const timer=window.setInterval(()=>{if(document.visibilityState==="visible")loadIndicators()},90000);
     const onVisible=()=>{if(document.visibilityState==="visible")loadIndicators()};
     window.addEventListener("behavioral-status-changed",loadIndicators);document.addEventListener("visibilitychange",onVisible);
     return()=>{alive=false;window.clearInterval(timer);window.removeEventListener("behavioral-status-changed",loadIndicators);document.removeEventListener("visibilitychange",onVisible)};
@@ -725,46 +726,77 @@ function BankApp({ profile, refreshProfile }: { profile: Profile; refreshProfile
     if(Array.isArray(data?.adminClasses))setAdminClasses(data.adminClasses);
   }
 
+  // NEON_EFFICIENT_SYNC_V4: persistent snapshots + one version query per user/session window.
+  // Only sections with new revision tokens are transferred; changed sections are isolated.
   async function syncData(keys:Array<"dashboard"|"students"|"rules"|"checks"|"rankings"|"rewards"|"admin">,force=false){
+    const wanted=keys.filter(k=>k!=="admin"||isAdmin);
+    if(!wanted.length){setLoading(false);return}
     setError("");
-    const cached=readDataCache<any>(cacheScope);
-    const base:any={...(cached?.data||{})};
-    const oldVersions:CacheVersions={...(cached?.versions||{})};
-    const nextVersions:CacheVersions={...oldVersions};
-    let serverVersions:CacheVersions|null=null;
-
-    async function pull(key:string){
-      if(key==="dashboard"){base.dashboard=await rpc<Dashboard>("api_dashboard");setDashboard(base.dashboard)}
-      else if(key==="students"){base.students=await rpc<Student[]>("api_students");setStudents(base.students)}
-      else if(key==="rules"){base.rules=await rpc<Rule[]>("api_point_rules");setRules(base.rules)}
-      else if(key==="checks"){base.checks=await rpc<Check[]>("api_recent_checks");setChecks(base.checks)}
-      else if(key==="rankings"){base.rankings=await rpc<Rankings>("api_rankings");setRankings(base.rankings)}
-      else if(key==="rewards"){base.rewards=await rpc<Reward[]>("api_rewards");setRewards(base.rewards)}
-      else if(key==="admin"&&isAdmin){
-        const [u,st,cl]=await Promise.all([rpc<ManagedUser[]>("api_managed_users"),rpc<StaffMember[]>("api_staff_directory"),rpc<AdminClass[]>("api_admin_classes")]);
-        base.users=u;base.staff=st;base.adminClasses=cl;setUsers(u);setStaff(st);setAdminClasses(cl);
-      }
-      if(serverVersions)nextVersions[key]=serverVersions[key];
+    let currentVersions:CacheVersions|null=null;
+    const updates:Record<string,unknown>={};
+    const revised:CacheVersions={};
+    function hasData(data:any,key:string){
+      return key==="admin"
+        ?Array.isArray(data?.users)&&Array.isArray(data?.staff)&&Array.isArray(data?.adminClasses)
+        :data?.[key]!==undefined;
     }
-
-    try{
-      serverVersions=await rpc<CacheVersions>("api_cache_versions");
-      const needs=(key:string)=>{
-        const hasData=key==="admin"?Array.isArray(base.users)&&Array.isArray(base.staff)&&Array.isArray(base.adminClasses):base[key]!==undefined;
-        return force||!hasData||!sameCacheVersion(oldVersions,serverVersions||{},key);
-      };
-      await Promise.all(keys.filter(k=>k!=="admin"||isAdmin).filter(needs).map(k=>pull(k)));
-      const latest=readDataCache<any>(cacheScope);
-      writeDataCache(cacheScope,{...(latest?.versions||{}),...nextVersions},{...(latest?.data||{}),...base});
-    }catch(e){
-      if(force||!cached){
-        try{
-          serverVersions=null;
-          await Promise.all(keys.filter(k=>k!=="admin"||isAdmin).map(k=>pull(k)));
-          const latest=readDataCache<any>(cacheScope);
-          writeDataCache(cacheScope,{...(latest?.versions||{})},{...(latest?.data||{}),...base});
-        }catch(inner){setError(niceError(inner))}
+    async function fetchDomain(key:string):Promise<Record<string,unknown>>{
+      if(key==="dashboard")return {dashboard:await rpc<Dashboard>("api_dashboard")};
+      if(key==="students")return {students:await rpc<Student[]>("api_students")};
+      if(key==="rules")return {rules:await rpc<Rule[]>("api_point_rules")};
+      if(key==="checks")return {checks:await rpc<Check[]>("api_recent_checks")};
+      if(key==="rankings")return {rankings:await rpc<Rankings>("api_rankings")};
+      if(key==="rewards")return {rewards:await rpc<Reward[]>("api_rewards")};
+      if(key==="admin"&&isAdmin){
+        const [users,staff,adminClasses]=await Promise.all([
+          rpc<ManagedUser[]>("api_managed_users"),rpc<StaffMember[]>("api_staff_directory"),
+          rpc<AdminClass[]>("api_admin_classes")
+        ]);
+        return {users,staff,adminClasses};
       }
+      return {};
+    }
+    async function pull(key:string){
+      const fresh=await coalesceCachePull(cacheScope,key,()=>fetchDomain(key));
+      Object.assign(updates,fresh);
+      if(fresh.dashboard!==undefined)setDashboard(fresh.dashboard as Dashboard);
+      if(Array.isArray(fresh.students))setStudents(fresh.students as Student[]);
+      if(Array.isArray(fresh.rules))setRules(fresh.rules as Rule[]);
+      if(Array.isArray(fresh.checks))setChecks(fresh.checks as Check[]);
+      if(fresh.rankings!==undefined)setRankings(fresh.rankings as Rankings);
+      if(Array.isArray(fresh.rewards))setRewards(fresh.rewards as Reward[]);
+      if(Array.isArray(fresh.users))setUsers(fresh.users as ManagedUser[]);
+      if(Array.isArray(fresh.staff))setStaff(fresh.staff as StaffMember[]);
+      if(Array.isArray(fresh.adminClasses))setAdminClasses(fresh.adminClasses as AdminClass[]);
+      if(currentVersions)revised[key]=currentVersions[key];
+    }
+    function commitUpdates(){
+      if(!Object.keys(updates).length)return;
+      const latest=readDataCache<any>(cacheScope);
+      writeDataCache(cacheScope,
+        {...(latest?.versions||{}),...revised},
+        {...(latest?.data||{}),...updates});
+    }
+    try{
+      // First entry compares the local snapshot with Neon; subsequent tab switches
+      // within four minutes reuse the authenticated revision response in memory.
+      currentVersions=await loadCacheVersions(cacheScope,()=>rpc<CacheVersions>("api_cache_versions"),force);
+      const latest=readDataCache<any>(cacheScope);
+      const changed=wanted.filter(key=>force||!hasData(latest?.data,key)||
+        typeof currentVersions?.[key]!=="string"||
+        !sameCacheVersion(latest?.versions||{},currentVersions||{},key));
+      await Promise.all(changed.map(pull));
+      commitUpdates();
+    }catch(e){
+      // Keep the last successful snapshot if version validation temporarily fails.
+      // On a cold start (or manual force), still try only the requested sections.
+      const latest=readDataCache<any>(cacheScope);
+      const missing=wanted.filter(key=>force||!hasData(latest?.data,key));
+      if(missing.length){
+        currentVersions=null;
+        try{await Promise.all(missing.map(pull));commitUpdates()}
+        catch(inner){setError(niceError(inner))}
+      }else if(force){setError(niceError(e))}
     }finally{setLoading(false)}
   }
 
@@ -775,7 +807,7 @@ function BankApp({ profile, refreshProfile }: { profile: Profile; refreshProfile
   },[cacheScope]);
 
   useEffect(()=>{
-    if(tab==="dashboard")void syncData(["dashboard","checks"],true);
+    if(tab==="dashboard")void syncData(["dashboard","checks"]);
     else if(tab==="checks")void syncData(["students","rules","checks"]);
     else if(tab==="students"||tab==="referrals"||tab==="student-evaluations"||tab==="behavioral")void syncData(["students"]);
     else if(tab==="rankings")void syncData(["rankings"]);

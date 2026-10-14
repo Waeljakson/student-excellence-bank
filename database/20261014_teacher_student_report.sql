@@ -255,3 +255,5 @@ END;
 $body$;
 REVOKE ALL ON FUNCTION public.api_teacher_student_report(uuid,uuid,uuid,date,date) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION public.api_teacher_student_report(uuid,uuid,uuid,date,date) TO authenticated;
+-- Keep the Data API aware of this newly created RPC (PostgREST metadata refresh).
+NOTIFY pgrst, 'reload schema';

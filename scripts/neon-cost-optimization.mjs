@@ -179,3 +179,39 @@ for(const file of ["src/NotificationCenter.tsx","src/GuidanceRedemptionCenter.ts
   if(after!==before)writeFileSync(file,after);
 }
 console.log("neon-cost-optimization: background polling bounded to visible tabs");
+
+const addRefresh=function addRefresh(s){
+  if(s.includes("// NEON_IDLE_REFRESH_V4"))return s;
+  const marker=`  async function refreshStudents(){await syncData(["students","rankings","dashboard"],true)}`;
+  if(!s.includes(marker))throw Error("Tab refresh marker missing");
+  const addition=`  // NEON_IDLE_REFRESH_V4: revalidate only the currently visible data domain.
+  // No network read occurs when the page is hidden; returning to a tab checks
+  // version tokens (rather than downloading all rows) after the four-minute TTL.
+  useEffect(()=>{
+    const visibleDomains=():Array<"dashboard"|"students"|"rules"|"checks"|"rankings"|"rewards"|"admin">=>{
+      if(tab==="dashboard")return ["dashboard","checks"];
+      if(tab==="checks")return ["students","rules","checks"];
+      if(["students","referrals","student-evaluations","behavioral"].includes(tab))return ["students"];
+      if(tab==="rankings")return ["rankings"];
+      if(tab==="rewards")return ["rewards"];
+      if(tab==="admin"&&isAdmin)return ["admin"];
+      return [];
+    };
+    const refresh=()=>{
+      if(document.visibilityState!=="visible")return;
+      const keys=visibleDomains();
+      if(keys.length)void syncData(keys);
+    };
+    const timer=window.setInterval(refresh,240000);
+    document.addEventListener("visibilitychange",refresh);
+    return()=>{window.clearInterval(timer);document.removeEventListener("visibilitychange",refresh)};
+  },[tab,cacheScope]);
+
+`;
+  return s.replace(marker,addition+marker);
+};
+{
+  const before=readFileSync("src/App.tsx","utf8");
+  const after=addRefresh(before);
+  if(before!==after)writeFileSync("src/App.tsx",after);
+}

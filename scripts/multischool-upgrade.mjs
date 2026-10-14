@@ -8,9 +8,14 @@ function edit(path,fn){
 function once(s,from,to){return s.includes(to)?s:s.replace(from,to)}
 
 edit("src/App.tsx",s=>{
-  s=once(s,
-    'import { readDataCache, writeDataCache, sameCacheVersion, type CacheVersions } from "./data-cache";',
-    'import { readDataCache, writeDataCache, sameCacheVersion, type CacheVersions } from "./data-cache";\nimport { DEFAULT_SCHOOL_NAME, setCurrentSchoolBrand } from "./school-brand";');
+  // Check imports independently: additional cache helpers can be inserted between
+  // these imports by later upgrades, so adjacent-string detection is unsafe.
+  if(!s.includes('from "./school-brand";')){
+    s=s.replace(
+      'import { readDataCache, writeDataCache, sameCacheVersion, type CacheVersions } from "./data-cache";',
+      'import { readDataCache, writeDataCache, sameCacheVersion, type CacheVersions } from "./data-cache";\nimport { DEFAULT_SCHOOL_NAME, setCurrentSchoolBrand } from "./school-brand";'
+    );
+  }
   if(!s.includes("school_name?: string;")){
     s=s.replace('  email?: string;\n  avatar?: string | null;',
       '  email?: string;\n  avatar?: string | null;\n  school_id?: string;\n  school_name?: string;\n  school_code?: string;');

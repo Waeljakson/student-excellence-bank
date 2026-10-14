@@ -28,13 +28,23 @@ export default function NotificationCenter(){
   }
 
   useEffect(()=>{
-    void load();
-    const timer=window.setInterval(()=>void load(),45000);
-    const onFocus=()=>void load();
-    const onVisible=()=>{if(document.visibilityState==="visible")void load()};
+    let lastPoll=0;
+    let active=true;
+    let checking=false;
+    const refresh=async(force=false)=>{
+      if(!active||checking||(!force&&document.visibilityState!=="visible"))return;
+      if(!force&&Date.now()-lastPoll<180000)return;
+      lastPoll=Date.now();
+      checking=true;
+      try{await load()}finally{checking=false}
+    };
+    void refresh(true);
+    const timer=window.setInterval(()=>void refresh(),180000);
+    const onFocus=()=>void refresh();
+    const onVisible=()=>{if(document.visibilityState==="visible")void refresh()};
     window.addEventListener("focus",onFocus);
     document.addEventListener("visibilitychange",onVisible);
-    return()=>{window.clearInterval(timer);window.removeEventListener("focus",onFocus);document.removeEventListener("visibilitychange",onVisible)};
+    return()=>{active=false;window.clearInterval(timer);window.removeEventListener("focus",onFocus);document.removeEventListener("visibilitychange",onVisible)};
   },[]);
 
   const unread=useMemo(()=>items.filter(x=>!x.read_at),[items]);

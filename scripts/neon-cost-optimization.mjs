@@ -1,6 +1,6 @@
 import {readFileSync,writeFileSync} from "node:fs";
 const patchApp=function patchApp(s){
-  if(!s.includes('import {loadCacheVersions,coalesceCachePull} from "./neon-sync";')){
+  if(!s.includes('from "./neon-sync";')){
     const mark='import { readDataCache, writeDataCache, sameCacheVersion, type CacheVersions } from "./data-cache";';
     if(!s.includes(mark))throw Error("App cache import missing");
     s=s.replace(mark,mark+'\nimport {loadCacheVersions,coalesceCachePull} from "./neon-sync";');
@@ -147,7 +147,7 @@ const optimizeFile=function optimizeFile(path,s){
     const old='  useEffect(()=>{void load();const t=window.setInterval(()=>void load(),60000);return()=>window.clearInterval(t)},[days]);';
     const next='  useEffect(()=>{void load();const t=window.setInterval(()=>{if(document.visibilityState==="visible")void load()},120000);return()=>window.clearInterval(t)},[days]);';
     if(s.includes(old))s=s.replace(old,next);
-    else if(!s.includes('setInterval(()=>{if(document.visibilityState==="visible")void load()},120000)'))throw Error("StudentExitAnalytics marker missing");
+    else if(!s.includes('setInterval(()=>{if(isAppActive())void load()},120000)') && !s.includes('setInterval(()=>{if(document.visibilityState==="visible")void load()},120000)'))throw Error("StudentExitAnalytics marker missing");
   }
   if(path==="src/StudentPortal.tsx"){
     const old=`    let active=true;

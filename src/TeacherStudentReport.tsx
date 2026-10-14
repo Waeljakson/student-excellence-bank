@@ -145,6 +145,160 @@ export default function TeacherStudentReport({schoolName,initialTeacherId=""}:{s
       .join("-").replace(/[^\p{L}\p{N}_. -]/gu,"_")+".xlsx";
     XLSX.writeFile(wb,fileName);
   };
+
+  const safeExportName=(type:string)=>[
+    type,data?.teacher?.name||"المعلم",selectedStudent?.name||selectedClass?.label||"كل الفصول"
+  ].join("-").replace(/[^\p{L}\p{N}_. -]/gu,"_");
+
+  const exportDetailsExcel=async()=>{
+    if(!reportReady||!data?.teacher)return;
+    try{
+      const XLSX=await import("xlsx");
+      const headers=["التاريخ","المعلم","اسم الطالب","رقم الطالب","الصف","الفصل",
+        "نوع التعامل","الإجراء المسجل","التفاصيل","المادة","الحالة","النقاط الصادرة","النقاط السارية"];
+      const excelSafe=(v:unknown)=>typeof v==="string"&&/^[=+@-]/.test(v)?"'"+v:v;
+      const rows=activities.map(a=>[
+        stamp(a.event_at),data.teacher!.name,a.student_name,a.student_no,
+        a.grade_name,a.class_name,categories.find(c=>c[0]===a.category)?.[1]||a.category,
+        a.title,a.detail||"",a.subject||"",statusText(a.status),
+        a.points??"",a.effective_points??""
+      ].map(excelSafe));
+      const wb=XLSX.utils.book_new();
+      const info=XLSX.utils.aoa_to_sheet([
+        ["سجل التعاملات التفصيلي — بنك التميز"],["المدرسة",schoolName],
+        ["المعلم",data.teacher.name],["المادة",data.teacher.subject||"—"],
+        ["الفصل",selectedClass?.label||"جميع الفصول"],
+        ["الطالب",selectedStudent?.name||"جميع الطلاب"],
+        ["الفترة",from||"من البداية",to||"حتى اليوم"],
+        ["نوع التعامل",categories.find(c=>c[0]===category)?.[1]||"جميع التعاملات"],
+        ["البحث",query||"بدون تصفية"],
+        ["السجلات المصدرة",rows.length]
+      ]);
+      const sheet=XLSX.utils.aoa_to_sheet([headers,...rows]);
+      sheet["!cols"]=[{wch:23},{wch:27},{wch:30},{wch:17},{wch:20},{wch:18},
+        {wch:19},{wch:30},{wch:60},{wch:18},{wch:20},{wch:16},{wch:16}];
+      sheet["!autofilter"]={ref:"A1:M"+Math.max(1,rows.length+1)};
+      XLSX.utils.book_append_sheet(wb,info,"بيانات الاستخراج");
+      XLSX.utils.book_append_sheet(wb,sheet,"السجل التفصيلي");
+      XLSX.writeFile(wb,safeExportName("السجل التفصيلي للتعاملات")+".xlsx");
+    }catch(e){setError("تعذر تصدير السجل التفصيلي: "+niceError(e))}
+  };
+
+  // Open a separate document for print preview. App-wide print rules previously
+  // hide .content > section, causing an apparently successful blank PDF.
+  const openPrintPreview=(detailsOnly=false)=>{
+    if(!reportReady||!data?.teacher)return;
+    const preview=window.open("","_blank");
+    if(!preview){setError("المتصفح منع فتح معاينة الطباعة. اسمح بالنوافذ المنبثقة لموقع بنك التميز وأعد المحاولة.");return;}
+    const esc=(v:unknown)=>String(v??"").replace(/[&<>"']/g,c=>({
+      "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
+    }[c]||c));
+    const td=(value:unknown)=>"<td>"+esc(value)+"</td>";
+    const th=(value:unknown)=>"<th>"+esc(value)+"</th>";
+    const line=(label:string,value:unknown)=>"<div class='metadata'><small>"+esc(label)+"</small><strong>"+esc(value)+"</strong></div>";
+    const schoolLogo=new URL(import.meta.env.BASE_URL+"school-logo.png",window.location.origin).href;
+    const guidanceLogo=new URL(import.meta.env.BASE_URL+"guidance-logo.png",window.location.origin).href;
+    const rows=activities.map(a=>"<tr>"+[
+      stamp(a.event_at),a.student_name,a.student_no,a.grade_name+" / "+a.class_name,
+      categories.find(c=>c[0]===a.category)?.[1]||a.category,
+      a.title,a.detail||"—",a.subject||"—",statusText(a.status),
+      a.points==null?"—":formatNumber(a.points),
+      a.effective_points==null?"—":formatNumber(a.effective_points)
+    ].map(td).join("")+"</tr>").join("");
+    const detailHead=["التاريخ","الطالب","رقم الطالب","الصف / الفصل","التصنيف",
+      "الإجراء","التفاصيل","المادة","الحالة","النقاط","النقاط السارية"].map(th).join("");
+    const statsHead=["الطالب","رقم الطالب","الصف / الفصل","التحويلات","المتابعة",
+      "الشيكات","التقييمات","النقاط السارية","الإجمالي"].map(th).join("");
+    const statsRows=stats.map(a=>"<tr>"+[
+      a.student_name,a.student_no,a.grade_name+" / "+a.class_name,a.referrals,
+      a.followup,a.checks,a.evaluations,a.valid_points,a.events
+    ].map(td).join("")+"</tr>").join("");
+    const statsHtml=!detailsOnly&&!studentId
+      ?"<section><h3>ملخص الطلاب ("+esc(stats.length)+")</h3><table><thead><tr>"+statsHead+
+        "</tr></thead><tbody>"+(statsRows||"<tr><td colspan='9'>لا يوجد طلاب</td></tr>")+"</tbody></table></section>":"";
+    const kpis=!detailsOnly
+      ?"<div class='kpis'>"+
+        [["إجمالي التعاملات",total.events],["التحويلات",total.referrals],
+          ["ملاحظات المتابعة",total.followup],["الشيكات",total.checks],
+          ["التقييمات",total.evaluations],["النقاط السارية",total.valid_points]]
+          .map(p=>"<div><small>"+esc(p[0])+"</small><b>"+esc(p[1])+"</b></div>").join("")+"</div>":"";
+    const css=[
+      "@page{size:A4 landscape;margin:12mm}",
+      "*{box-sizing:border-box}html,body{margin:0;background:#fff;color:#193047;direction:rtl}",
+      "body{font-family:Cairo,Tahoma,Arial,sans-serif;font-size:11px;line-height:1.6}",
+      ".toolbar{position:sticky;top:0;z-index:10;display:flex;align-items:center;gap:12px;",
+      "padding:12px 20px;background:#e9f0f8;border-bottom:1px solid #cedae6}",
+      ".toolbar button{border:0;border-radius:8px;padding:10px 20px;background:#185787;",
+      "color:white;font:inherit;font-weight:bold;cursor:pointer}",
+      ".toolbar button.secondary{background:#596b7a}.toolbar span{flex:1;color:#456}",
+      ".document{padding:22px;max-width:1450px;margin:auto;min-height:100px}",
+      ".header{display:flex;align-items:center;gap:14px;border-bottom:3px solid #174b79;padding-bottom:14px}",
+      ".header img{width:60px;height:60px;object-fit:contain}",
+      ".header .title{flex:1;text-align:center}.header h1{font-size:20px;color:#153c64;margin:4px 0}",
+      ".header h2{font-size:13px;margin:0}.header small{font-size:11px;color:#677f91}",
+      ".grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;",
+      "border:1px solid #e2e8ef;background:#f5f8fc;padding:10px;margin:12px 0}",
+      ".metadata{min-width:0}.metadata small{display:block;color:#61768a}",
+      ".metadata strong{display:block;overflow-wrap:anywhere}",
+      ".kpis{display:grid;grid-template-columns:repeat(6,1fr);gap:7px;margin:12px 0}",
+      ".kpis>div{background:#eff5fb;padding:9px;border:1px solid #dce6f0}",
+      ".kpis small{display:block}.kpis b{font-size:18px;color:#164b78}",
+      "h3{font-size:15px;margin:18px 0 8px;color:#163d63}",
+      "table{width:100%;border-collapse:collapse;table-layout:auto;font-size:10px}",
+      "th,td{border:1px solid #cfdce8;padding:6px;text-align:right;vertical-align:top;",
+      "overflow-wrap:anywhere;white-space:pre-wrap}",
+      "th{background:#e9f1f9;color:#173c60;font-weight:700}",
+      "tbody tr:nth-child(even){background:#fafcff}",
+      "p.note{font-size:10px;margin:16px 0 0;color:#596c7e}",
+      "thead{display:table-header-group}tfoot{display:table-footer-group}",
+      "tr{break-inside:avoid;page-break-inside:avoid}",
+      "@media print{html,body{background:white!important}body{print-color-adjust:exact;",
+      "-webkit-print-color-adjust:exact}.toolbar{display:none!important}",
+      ".document{padding:0;margin:0;max-width:none}.header img{width:47px;height:47px}",
+      "th,td{padding:4px;font-size:9px}section{break-inside:auto}",
+      "h3{break-after:avoid}.kpis{grid-template-columns:repeat(6,1fr)}}"
+    ].join("");
+    const html="<!doctype html><html lang='ar' dir='rtl'><head><meta charset='utf-8'>"+
+      "<meta name='viewport' content='width=device-width,initial-scale=1'>"+
+      "<title>"+esc(detailsOnly?"السجل التفصيلي للتعاملات":"تقرير المعلم")+" — "+esc(data.teacher.name)+"</title>"+
+      "<style>"+css+"</style></head><body>"+
+      "<nav class='toolbar'><button type='button' onclick='window.print()'>طباعة / حفظ PDF</button>"+
+      "<button type='button' class='secondary' onclick='window.close()'>إغلاق المعاينة</button>"+
+      "<span>راجع البيانات أدناه ثم اختر حفظ PDF من إعدادات الطباعة.</span></nav>"+
+      "<main class='document'><header class='header'>"+
+      "<img alt='شعار المدرسة' src='"+esc(schoolLogo)+"'>"+
+      "<div class='title'><h2>"+esc(schoolName)+"</h2><h1>"+
+      (detailsOnly?"السجل التفصيلي لتعاملات المعلم":"تقرير المعلم عن الطلاب")+
+      "</h1><small>بنك التميز — تاريخ الإصدار: "+
+      esc(new Date().toLocaleString("ar-SA",{timeZone:"Asia/Riyadh"}))+
+      "</small></div><img alt='شعار التوجيه' src='"+esc(guidanceLogo)+"'></header>"+
+      "<div class='grid'>"+line("المعلم",data.teacher.name)+
+      line("المادة",data.teacher.subject||"—")+
+      line("الفصل",selectedClass?.label||"كل الفصول المسندة")+
+      line("الطالب",selectedStudent?.name||"جميع الطلاب")+
+      line("الفترة",(from||"من البداية")+" — "+(to||"حتى اليوم"))+
+      line("نوع السجل",categories.find(c=>c[0]===category)?.[1]||"جميع التعاملات")+
+      line("بحث السجل",query.trim()||"بدون تصفية")+
+      line("عدد السجلات المعروضة",activities.length)+
+      "</div>"+kpis+statsHtml+
+      "<section><h3>السجل التفصيلي للتعاملات ("+esc(activities.length)+" سجل)</h3>"+
+      "<table><thead><tr>"+detailHead+"</tr></thead><tbody>"+
+      (rows||"<tr><td colspan='11'>لا توجد تعاملات مطابقة للنطاق المختار.</td></tr>")+
+      "</tbody></table></section>"+
+      "<p class='note'>يحتوي هذا المستند على تعاملات المعلم المحدد وفق النطاق والفلاتر المبينة أعلاه. "+
+      "النقاط السارية لا تمثل الرصيد الإجمالي لمحفظة الطالب.</p></main></body></html>";
+    try{
+      preview.document.open();
+      preview.document.write(html);
+      preview.document.close();
+      preview.opener=null;
+      preview.focus();
+    }catch(e){
+      preview.close();
+      setError("تعذر فتح معاينة التقرير: "+niceError(e));
+    }
+  };
+
   const changeClass=(id:string)=>{setClassId(id);setStudentId("");};
   const changeTeacher=(id:string)=>{setTeacherId(id);setClassId("");setStudentId("");};
   return <div className="tsr-root">
@@ -178,7 +332,7 @@ export default function TeacherStudentReport({schoolName,initialTeacherId=""}:{s
           <label>إلى تاريخ<input type="date" min={from||undefined} value={to} onChange={e=>setTo(e.target.value)}/></label>
         </div>
         <div className="tsr-actions">
-          <button className="btn primary" type="button" onClick={()=>window.print()} disabled={!reportReady}>إصدار تقرير PDF / طباعة</button>
+          <button className="btn primary" type="button" onClick={()=>openPrintPreview(false)} disabled={!reportReady}>معاينة / طباعة التقرير PDF</button>
           <button className="btn ghost" type="button" onClick={()=>void exportExcel()} disabled={!reportReady}>إصدار تقرير Excel</button>
           {(classId||studentId||from||to||query||category!=="ALL")&&<button className="mini-btn" type="button" onClick={()=>{
             setClassId("");setStudentId("");setFrom("");setTo("");setQuery("");setCategory("ALL");
@@ -234,6 +388,10 @@ export default function TeacherStudentReport({schoolName,initialTeacherId=""}:{s
           <div className="tsr-section">
             <div className="tsr-section-title"><h3>السجل التفصيلي للتعاملات</h3>
               <small>{formatNumber(activities.length)} سجل</small></div>
+            <div className="tsr-detail-tools tsr-no-print">
+              <button className="btn ghost" type="button" onClick={()=>void exportDetailsExcel()} disabled={!reportReady}>تصدير السجل التفصيلي Excel</button>
+              <button className="btn primary" type="button" onClick={()=>openPrintPreview(true)} disabled={!reportReady}>معاينة / طباعة السجل التفصيلي PDF</button>
+            </div>
             <div className="tsr-categories tsr-no-print">
               {categories.map(([id,label])=><button type="button" key={id}
                 className={category===id?"active":""} onClick={()=>setCategory(id)}>

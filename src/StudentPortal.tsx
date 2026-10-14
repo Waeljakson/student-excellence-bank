@@ -59,7 +59,7 @@ export default function StudentPortal({cacheUserId=""}:{cacheUserId?:string}){
     setError("");
     try{
       const versions=await rpc<CacheVersions>("api_student_cache_version");
-      if(!force&&cached?.data?.portal&&Array.isArray(cached.data.portal.followup_notes)&&sameCacheVersion(cached.versions,versions,"student_portal")){setData(cached.data.portal as PortalData);return}
+      if(!force&&cached?.data?.portal&&Array.isArray(cached.data.portal.followup_notes)&&Array.isArray(cached.data.portal.medals)&&Array.isArray(cached.data.portal.achievement_rewards)&&sameCacheVersion(cached.versions,versions,"student_portal")){const cachedPortal=cached.data.portal as PortalData;setData(cachedPortal);setMedals(cachedPortal.medals||[]);setAchievementRewards(cachedPortal.achievement_rewards||[]);return}
       const fresh=await rpc<PortalData>("api_student_portal");
       setData(fresh);
       if(Array.isArray(fresh.medals))setMedals(fresh.medals);

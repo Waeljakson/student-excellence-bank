@@ -212,11 +212,16 @@ function isAuthSessionError(message:string){
   return /AuthRequiredError|Authentication required|AUTH_REQUIRED|JWT expired|jwt expired|token.*expired|invalid.*jwt|invalid.*token|invalid input syntax for type uuid:\s*["']anonymous["']|PGRST301|401|Unauthorized/i.test(message);
 }
 function isSchemaCacheError(message:string){
-  return /schema cache|Could not find the function/i.test(message);
+  return /schema cache|Could not find the function|PGRST202/i.test(message);
 }
 async function runRpc<T>(client:any,name:string,args:Record<string,unknown>):Promise<T>{
   const {data,error}=await withTimeout(Promise.resolve(client.rpc(name,args)),5500,"RPC_TIMEOUT");
-  if(error)throw new Error(rpcErrorMessage(error));
+  if(error){
+    const message=rpcErrorMessage(error);
+    // Preserve the RPC identifier for actionable diagnosis instead of a generic
+    // "updating database link" message across unrelated application features.
+    throw new Error(isSchemaCacheError(message)?"RPC_MISSING ["+name+"]: "+message:message);
+  }
   return data as T;
 }
 
@@ -227,13 +232,34 @@ export async function rpc<T = any>(name: string, args: Record<string, unknown> =
   // Better Auth hook/session after refresh while keeping public RPCs available anonymously.
   const stored=getValidAuthFallback();
   if(stored){
-    try{
-      return await runRpc<T>(fallbackDataClient,name,args);
-    }catch(error){
-      primaryError=error;
-      const message=rpcErrorMessage(error);
-      if(isAuthSessionError(message))clearAuthFallback();
-      else throw error;
+    // The durable JWT path previously threw schema-cache errors immediately:
+    // it never reached the existing RPC retries or session recovery below.
+    for(let attempt=0;attempt<3;attempt++){
+      try{
+        return await runRpc<T>(fallbackDataClient,name,args);
+      }catch(error){
+        primaryError=error;
+        const message=rpcErrorMessage(error);
+        if(isAuthSessionError(message)){clearAuthFallback();break}
+        if(isSchemaCacheError(message)){
+          // A stale token can make the RPC invisible to the anonymous role;
+          // recheck live session before attributing it to a schema refresh.
+          try{
+            const liveToken=await getLiveAuthJwt();
+            if(liveToken&&liveToken!==stored.token){
+              persistAuthJwt(liveToken);
+              return await runRpc<T>(liveJwtDataClient,name,args);
+            }
+          }catch{}
+          if(attempt<2){
+            await new Promise(resolve=>setTimeout(resolve,350*(attempt+1)));
+            continue;
+          }
+          // Allow the normal authenticated client to retry too.
+          break;
+        }
+        throw error;
+      }
     }
   }
 
@@ -277,6 +303,13 @@ export async function rpc<T = any>(name: string, args: Record<string, unknown> =
 export function niceError(error: unknown) {
   const message = error instanceof Error ? error.message : String(error);
   if (/RPC_TIMEOUT|AUTH_SESSION_TIMEOUT|AUTH_JWT_TIMEOUT/i.test(message)) return "تعذر الاتصال بالخدمة في الوقت المحدد. أعد المحاولة أو سجل الخروج ثم ادخل مرة أخرى.";
+  if (/RPC_MISSING \[api_excellence_path_(?:data|save)\]|api_excellence_path_(?:data|save).*PGRST202/i.test(message))
+    return "تعذر استدعاء وظيفة طريق التفوق من خدمة Neon (PGRST202). تم التحقق من وجود الوظيفة في قاعدة البيانات؛ أعد فتح الصفحة أو اضغط تحديث السجل. إذا استمرت المشكلة فراجع تحديث ذاكرة مخطط Data API.";
+  if (message.includes("EXCELLENCE_PATH_ACCESS_DENIED"))return "ليس لديك صلاحية الاطلاع على طريق التفوق.";
+  if (message.includes("EXCELLENCE_PATH_TEACHER_REQUIRED"))return "تسجيل درجات طريق التفوق متاح لحساب المعلم فقط.";
+  if (message.includes("EXCELLENCE_PATH_STUDENT_FORBIDDEN"))return "الطالب غير مسند إلى فصول حسابك أو غير مسجل بالعام الدراسي الحالي.";
+  if (message.includes("EXCELLENCE_PATH_EDIT_FORBIDDEN"))return "لا يمكن تعديل هذا القياس إلا من حساب المعلم الذي سجّله.";
+  if (message.includes("EXCELLENCE_PATH_INVALID_SCORES"))return "راجع نوع الاختبار والفترة والدرجات؛ لا يجوز تجاوز الدرجة الكلية أو إدخال درجة سالبة.";
   if (/invalid input syntax for type uuid:\\s*["\']anonymous["\']/i.test(message)) return "جلسة الدخول غير مكتملة. أعد المحاولة بعد لحظات.";
   if (message.includes("api_admin_set_staff_vice_principal") && /schema cache|Could not find the function/i.test(message)) return "صلاحية تحويل المعلم إلى وكيل لم تُفعّل بعد في قاعدة البيانات. يلزم تفعيل تحديث Neon مرة واحدة.";
   if (message.includes("APPROVAL_REQUIRED")) return "الحساب غير مرتبط بالنظام. استخدم طريقة الدخول المخصصة لك.";
@@ -376,7 +409,10 @@ export function niceError(error: unknown) {
   if (message.includes("STUDENT_MOBILE_INVALID")) return "رقم الجوال غير صحيح. استخدم الصيغة 05xxxxxxxx.";
   if (message.includes("IMPORT_ROWS_EMPTY") || message.includes("IMPORT_ROWS_REQUIRED")) return "لا توجد صفوف طلاب صالحة للاستيراد.";
   if (message.includes("IMPORT_CHUNK_TOO_LARGE")) return "عدد الطلاب في دفعة الاستيراد كبير جدًا. سيتم تقسيم الملف إلى دفعات تلقائيًا.";
-  if (message.includes("schema cache") || message.includes("Could not find the function")) return "يتم الآن تحديث ربط النظام بقاعدة البيانات. أعد المحاولة بعد لحظات.";
+  if (isSchemaCacheError(message)){
+    const found=message.match(/(?:RPC_MISSING \[|Could not find the function (?:public\\.)?)(api_[a-z0-9_]+)/i);
+    return "تعذر استدعاء وظيفة قاعدة البيانات"+(found?" («"+found[1]+"»)":"")+". تحقق من تحديث مخطط Neon Data API، ثم أعد تحميل الصفحة.";
+  }
   if (message.includes("Monthly point budget exceeded")) return "تم استهلاك الحد الشهري المسموح لإصدار النقاط.";
   if (message.includes("Points outside allowed range")) return "عدد النقاط خارج النطاق المسموح لهذه الفئة.";
   return message;

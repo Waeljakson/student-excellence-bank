@@ -8,7 +8,7 @@ type Student={id:string;name:string;student_no:string;class_id:string;class_name
 type Activity={
   source_id:string;student_id:string;student_no:string;student_name:string;
   class_id:string;class_name:string;grade_name:string;event_at:string;
-  category:string;title:string;detail?:string|null;subject?:string|null;
+  category:string;title:string;detail?:string|null;teacher_action?:string|null;subject?:string|null;
   status?:string|null;points?:number|null;effective_points?:number|null;
 };
 type StudentStats={student_id:string;student_name:string;student_no:string;class_id:string;class_name:string;
@@ -21,7 +21,7 @@ const categories:[string,string][]=[
   ["ALL","جميع التعاملات"],["REFERRAL","التحويلات"],["FOLLOWUP","دفتر المتابعة"],
   ["CHECK","شيكات التميز"],["EVALUATION_REPORT","تقارير التقييم"],
   ["PERIODIC_EVALUATION","التقييم الدوري"],["BEHAVIORAL","التميز السلوكي"],
-  ["ABSENCE","غياب الحصص"],["CLASS_EXIT","الاستئذان"]
+  ["ABSENCE","غياب الحصص"],["CLASS_EXIT","الاستئذان"],["EXCELLENCE_PATH","طريق التفوق"]
 ];
 const stateNames:Record<string,string>={
   OPEN:"مفتوح",COMPLETED:"مكتمل",PENDING:"بانتظار الاستكمال",
@@ -29,7 +29,7 @@ const stateNames:Record<string,string>={
   CANCELLED:"ملغي",REVERSED:"مسترجع",EXPIRED:"منتهي",
   POSITIVE:"إيجابي",NEGATIVE:"سلبي",HOMEWORK:"واجبات",GENERAL:"عام",
   NOMINATED:"مرشح",ABSENT:"غائب",RETURNED:"عاد",OUT:"خرج",
-  NOT_EXITED:"لم يخرج"
+  NOT_EXITED:"لم يخرج",STABLE:"ثابت"
 };
 const stamp=(raw:string)=>raw?new Date(raw).toLocaleString("ar-SA",{timeZone:"Asia/Riyadh",dateStyle:"medium",timeStyle:"short"}):"—";
 const statusText=(s?:string|null)=>s?s.split(" / ").map(x=>stateNames[x]||x).join(" / "):"—";
@@ -91,7 +91,7 @@ export default function TeacherStudentReport({schoolName,initialTeacherId=""}:{s
     const all=data?.activities||[];
     const text=query.trim().toLocaleLowerCase("ar");
     return all.filter(a=>(category==="ALL"||a.category===category) &&
-      (!text||[a.student_name,a.student_no,a.title,a.detail,a.subject,a.grade_name,a.class_name]
+      (!text||[a.student_name,a.student_no,a.title,a.detail,a.teacher_action,a.subject,a.grade_name,a.class_name]
         .some(v=>String(v||"").toLocaleLowerCase("ar").includes(text))));
   },[data?.activities,category,query]);
   const students=useMemo(()=>data?.students||[],[data?.students]);
@@ -124,7 +124,7 @@ export default function TeacherStudentReport({schoolName,initialTeacherId=""}:{s
       "التاريخ":stamp(a.event_at),"المعلم":data.teacher!.name,"الطالب":a.student_name,
       "رقم الطالب":a.student_no,"الصف":a.grade_name,"الفصل":a.class_name,
       "نوع التعامل":categories.find(c=>c[0]===a.category)?.[1]||a.category,
-      "الإجراء":a.title,"التفاصيل":a.detail||"","المادة":a.subject||"",
+      "الإجراء":a.title,"التفاصيل":a.detail||"","ما تم عمله مع الطالب":a.teacher_action||"","المادة":a.subject||"",
       "الحالة":statusText(a.status),"النقاط الصادرة":a.points??"",
       "النقاط السارية":a.effective_points??""
     }));
@@ -155,12 +155,12 @@ export default function TeacherStudentReport({schoolName,initialTeacherId=""}:{s
     try{
       const XLSX=await import("xlsx");
       const headers=["التاريخ","المعلم","اسم الطالب","رقم الطالب","الصف","الفصل",
-        "نوع التعامل","الإجراء المسجل","التفاصيل","المادة","الحالة","النقاط الصادرة","النقاط السارية"];
+        "نوع التعامل","الإجراء المسجل","التفاصيل","ما تم عمله مع الطالب","المادة","الحالة","النقاط الصادرة","النقاط السارية"];
       const excelSafe=(v:unknown)=>typeof v==="string"&&/^[=+@-]/.test(v)?"'"+v:v;
       const rows=activities.map(a=>[
         stamp(a.event_at),data.teacher!.name,a.student_name,a.student_no,
         a.grade_name,a.class_name,categories.find(c=>c[0]===a.category)?.[1]||a.category,
-        a.title,a.detail||"",a.subject||"",statusText(a.status),
+        a.title,a.detail||"",a.teacher_action||"",a.subject||"",statusText(a.status),
         a.points??"",a.effective_points??""
       ].map(excelSafe));
       const wb=XLSX.utils.book_new();
@@ -176,8 +176,8 @@ export default function TeacherStudentReport({schoolName,initialTeacherId=""}:{s
       ]);
       const sheet=XLSX.utils.aoa_to_sheet([headers,...rows]);
       sheet["!cols"]=[{wch:23},{wch:27},{wch:30},{wch:17},{wch:20},{wch:18},
-        {wch:19},{wch:30},{wch:60},{wch:18},{wch:20},{wch:16},{wch:16}];
-      sheet["!autofilter"]={ref:"A1:M"+Math.max(1,rows.length+1)};
+        {wch:19},{wch:30},{wch:60},{wch:60},{wch:18},{wch:20},{wch:16},{wch:16}];
+      sheet["!autofilter"]={ref:"A1:N"+Math.max(1,rows.length+1)};
       XLSX.utils.book_append_sheet(wb,info,"بيانات الاستخراج");
       XLSX.utils.book_append_sheet(wb,sheet,"السجل التفصيلي");
       XLSX.writeFile(wb,safeExportName("السجل التفصيلي للتعاملات")+".xlsx");
@@ -201,12 +201,12 @@ export default function TeacherStudentReport({schoolName,initialTeacherId=""}:{s
     const rows=activities.map(a=>"<tr>"+[
       stamp(a.event_at),a.student_name,a.student_no,a.grade_name+" / "+a.class_name,
       categories.find(c=>c[0]===a.category)?.[1]||a.category,
-      a.title,a.detail||"—",a.subject||"—",statusText(a.status),
+      a.title,a.detail||"—",a.teacher_action||"—",a.subject||"—",statusText(a.status),
       a.points==null?"—":formatNumber(a.points),
       a.effective_points==null?"—":formatNumber(a.effective_points)
     ].map(td).join("")+"</tr>").join("");
     const detailHead=["التاريخ","الطالب","رقم الطالب","الصف / الفصل","التصنيف",
-      "الإجراء","التفاصيل","المادة","الحالة","النقاط","النقاط السارية"].map(th).join("");
+      "الإجراء","التفاصيل","ما تم عمله مع الطالب","المادة","الحالة","النقاط","النقاط السارية"].map(th).join("");
     const statsHead=["الطالب","رقم الطالب","الصف / الفصل","التحويلات","المتابعة",
       "الشيكات","التقييمات","النقاط السارية","الإجمالي"].map(th).join("");
     const statsRows=stats.map(a=>"<tr>"+[
@@ -283,7 +283,7 @@ export default function TeacherStudentReport({schoolName,initialTeacherId=""}:{s
       "</div>"+kpis+statsHtml+
       "<section><h3>السجل التفصيلي للتعاملات ("+esc(activities.length)+" سجل)</h3>"+
       "<table><thead><tr>"+detailHead+"</tr></thead><tbody>"+
-      (rows||"<tr><td colspan='11'>لا توجد تعاملات مطابقة للنطاق المختار.</td></tr>")+
+      (rows||"<tr><td colspan='12'>لا توجد تعاملات مطابقة للنطاق المختار.</td></tr>")+
       "</tbody></table></section>"+
       "<p class='note'>يحتوي هذا المستند على تعاملات المعلم المحدد وفق النطاق والفلاتر المبينة أعلاه. "+
       "النقاط السارية لا تمثل الرصيد الإجمالي لمحفظة الطالب.</p></main></body></html>";
@@ -402,18 +402,19 @@ export default function TeacherStudentReport({schoolName,initialTeacherId=""}:{s
               placeholder="ابحث باسم الطالب أو نص الملاحظة أو المادة أو نوع التعامل"/></div>
             <div className="table-wrap"><table className="tsr-table tsr-events">
               <thead><tr><th>التاريخ</th>{!studentId&&<th>الطالب</th>}<th>النوع</th>
-                <th>الإجراء المسجل</th><th>التفاصيل</th><th>المادة</th><th>الحالة</th><th>النقاط</th></tr></thead>
+                <th>الإجراء المسجل</th><th>التفاصيل</th><th className="tsr-action-heading">ما تم عمله مع الطالب</th><th>المادة</th><th>الحالة</th><th>النقاط</th></tr></thead>
               <tbody>
                 {activities.map(a=><tr key={a.category+":"+a.source_id}>
                   <td className="tsr-date">{stamp(a.event_at)}</td>
                   {!studentId&&<td><b>{a.student_name}</b><small>{a.grade_name} / {a.class_name}</small></td>}
                   <td><span className={"tsr-type tsr-"+a.category.toLowerCase()}>{categories.find(c=>c[0]===a.category)?.[1]||a.category}</span></td>
                   <td><b>{a.title}</b></td><td className="tsr-detail">{a.detail||"—"}</td>
+                  <td className="tsr-teacher-action">{a.teacher_action?.trim()||"—"}</td>
                   <td>{a.subject||"—"}</td><td>{statusText(a.status)}</td>
                   <td>{a.points==null?"—":<><b>{formatNumber(a.points)}</b>
                     {a.effective_points===0&&<small>غير محتسبة</small>}</>}</td>
                 </tr>)}
-                {!activities.length&&<tr><td colSpan={studentId?7:8} className="tsr-empty">لا توجد تعاملات مطابقة للفلاتر المختارة.</td></tr>}
+                {!activities.length&&<tr><td colSpan={studentId?8:9} className="tsr-empty">لا توجد تعاملات مطابقة للفلاتر المختارة.</td></tr>}
               </tbody>
             </table></div>
           </div>

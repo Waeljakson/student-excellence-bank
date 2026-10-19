@@ -210,7 +210,7 @@ export default function ExcellencePath({schoolName}:{schoolName:string}){
             <span>{relative==null?"التغير النسبي غير محدد لأن درجة البداية صفر":
               "التغير النسبي عن درجة البداية: "+diffNumber(Number(relative.toFixed(2)))+"%"}</span>
           </div>}
-          <label className="path-note">ما تم فعله مع الطالب <span className="path-required">(إجباري)</span>
+          <label className="path-note"><span>ما تم فعله مع الطالب <em className="path-required">(إجباري)</em></span>
             <textarea rows={2} minLength={1} maxLength={1000} required value={note}
               onChange={e=>setNote(e.target.value)}
               placeholder="مثال: مراجعة المهارات الأساسية مع الطالب وحل تدريبات علاجية فردية."/>

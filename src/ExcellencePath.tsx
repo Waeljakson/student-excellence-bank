@@ -112,6 +112,7 @@ export default function ExcellencePath({schoolName}:{schoolName:string}){
     setError("");setNotice("");
     if(!selected){setError("اختر الطالب أولًا.");return}
     if(!subject.trim()){setError("حدد المادة الدراسية.");return}
+    if(!note.trim()){setError("اكتب ما تم فعله مع الطالب لتحسين مستواه قبل حفظ الدرجات.");return}
     if(!validScores){setError("أدخل الدرجتين بشكل صحيح، وألا تتجاوز أي درجة الدرجة النهائية للاختبار.");return}
     setSaving(true);
     try{
@@ -209,12 +210,14 @@ export default function ExcellencePath({schoolName}:{schoolName:string}){
             <span>{relative==null?"التغير النسبي غير محدد لأن درجة البداية صفر":
               "التغير النسبي عن درجة البداية: "+diffNumber(Number(relative.toFixed(2)))+"%"}</span>
           </div>}
-          <label className="path-note">ملاحظات التحسين (اختياري)
-            <textarea rows={2} maxLength={1000} value={note} onChange={e=>setNote(e.target.value)}
-              placeholder="ما الإجراءات التي ساعدت على تحسين أداء الطالب؟"/>
+          <label className="path-note">ما تم فعله مع الطالب <span className="path-required">(إجباري)</span>
+            <textarea rows={2} minLength={1} maxLength={1000} required value={note}
+              onChange={e=>setNote(e.target.value)}
+              placeholder="مثال: مراجعة المهارات الأساسية مع الطالب وحل تدريبات علاجية فردية."/>
+            <small>اكتب باختصار الإجراءات التي نفذتها مع الطالب لتحسين مستواه. لا يمكن الحفظ بدونها.</small>
           </label>
           <div className="path-form-footer">
-            <button className="btn primary" type="submit" disabled={!selected||!validScores||!subject.trim()||saving}>
+            <button className="btn primary" type="submit" disabled={!selected||!validScores||!subject.trim()||!note.trim()||saving}>
               {saving?"جارٍ الحفظ...":editingId?"حفظ تعديل القياس":"حفظ درجات الطالب"}
             </button>
             <small>يُحتسب التغير تلقائيًا، دون إضافة نقاط إلى محفظة التميز.</small>
@@ -256,7 +259,7 @@ export default function ExcellencePath({schoolName}:{schoolName:string}){
             <tbody>
               {filtered.map(r=><tr key={r.id}>
                 <td><b>{r.student_name}</b><small>{r.grade_name} / فصل {r.class_name}</small></td>
-                <td><b>{r.subject}</b><small>{examLabel(r.test_type)}</small>{r.note&&<small title={r.note}>{r.note}</small>}</td>
+                <td><b>{r.subject}</b><small>{examLabel(r.test_type)}</small>{r.note&&<small title={r.note}><b>ما تم مع الطالب:</b> {r.note}</small>}</td>
                 <td>الفصل {r.semester===1?"الأول":"الثاني"}<small>الفترة {r.period===1?"الأولى":"الثانية"}</small></td>
                 <td>{fmt(r.before_score)}<small>من {fmt(r.max_score)}</small></td>
                 <td><b>{fmt(r.after_score)}</b><small>من {fmt(r.max_score)}</small></td>

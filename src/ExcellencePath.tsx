@@ -144,7 +144,12 @@ export default function ExcellencePath({schoolName}:{schoolName:string}){
         </div>
         <div className="path-hero-score">↑ <span>قِس التحسن<br/>وتابع الأثر</span></div>
       </section>
-      {error&&<div className="notice error" role="alert">{error}</div>}
+      {error&&<div className="notice error" role="alert">{error}
+        {!data&&<div style={{marginTop:10}}><button type="button" className="mini-btn"
+          disabled={loading} onClick={()=>void load()}>
+          {loading?"جارٍ إعادة الاتصال...":"إعادة محاولة تحميل طريق التفوق"}
+        </button></div>}
+      </div>}
       {notice&&<div className="notice" role="status">{notice}</div>}
       {loading&&!data&&<section className="panel"><p>جارٍ تحميل سجلات طريق التفوق...</p></section>}
       {data?.can_manage&&<section className="panel path-entry">

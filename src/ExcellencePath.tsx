@@ -255,22 +255,24 @@ export default function ExcellencePath({schoolName}:{schoolName:string}){
           <table className="path-table">
             <thead><tr><th>الطالب</th><th>المادة / الاختبار</th><th>الفصل / الفترة</th>
               <th>قبل</th><th>بعد</th><th>فرق الدرجات</th><th>التغير النسبي</th>
-              <th>اتجاه الأداء</th><th>المعلم / التاريخ</th>{data.can_manage&&<th>إجراء</th>}</tr></thead>
+              <th>اتجاه الأداء</th><th className="path-teacher-action-head">ما تم عمله مع الطالب</th>
+              <th>المعلم / التاريخ</th>{data.can_manage&&<th>إجراء</th>}</tr></thead>
             <tbody>
               {filtered.map(r=><tr key={r.id}>
                 <td><b>{r.student_name}</b><small>{r.grade_name} / فصل {r.class_name}</small></td>
-                <td><b>{r.subject}</b><small>{examLabel(r.test_type)}</small>{r.note&&<small title={r.note}><b>ما تم مع الطالب:</b> {r.note}</small>}</td>
+                <td><b>{r.subject}</b><small>{examLabel(r.test_type)}</small></td>
                 <td>الفصل {r.semester===1?"الأول":"الثاني"}<small>الفترة {r.period===1?"الأولى":"الثانية"}</small></td>
                 <td>{fmt(r.before_score)}<small>من {fmt(r.max_score)}</small></td>
                 <td><b>{fmt(r.after_score)}</b><small>من {fmt(r.max_score)}</small></td>
                 <td><b>{diffNumber(Number(r.difference))}</b><small>{diffNumber(Number(r.percentage_points))} نقطة مئوية</small></td>
                 <td>{r.change_percent==null?"غير محدد (قبل = صفر)":diffNumber(Number(r.change_percent))+"%"}</td>
                 <td><span className={"path-badge path-"+r.status.toLowerCase()}>{stateLabel[r.status]}</span></td>
+                <td className="path-teacher-action">{r.note?.trim()||"لم يُسجل إجراء"}</td>
                 <td><b>{r.teacher_name}</b><small>{dateLabel(r.updated_at)}</small></td>
                 {data.can_manage&&<td>{r.teacher_id===data.teacher_id
                   ?<button type="button" className="mini-btn" onClick={()=>editRecord(r)}>تعديل</button>:"—"}</td>}
               </tr>)}
-              {!filtered.length&&<tr><td colSpan={data.can_manage?10:9} className="path-empty">
+              {!filtered.length&&<tr><td colSpan={data.can_manage?11:10} className="path-empty">
                 لا توجد قياسات مطابقة حتى الآن. {data.can_manage?"سجل قياسًا للطالب لتظهر النتيجة هنا.":""}
               </td></tr>}
             </tbody>

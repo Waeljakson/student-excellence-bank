@@ -62,6 +62,9 @@
 .path-table tr:nth-child(even){background:#fbfdff}
 .path-table td b{display:block;color:#173e5a;font-weight:800}
 .path-table td small{display:block;color:#738698;font-size:11px}
+.path-table th.path-teacher-action-head{min-width:230px;white-space:normal}
+.path-table td.path-teacher-action{min-width:230px;max-width:420px;
+  line-height:1.9;white-space:pre-wrap;overflow-wrap:anywhere;color:#193d5c;font-weight:650}
 .path-badge{display:inline-flex;padding:4px 9px;border:1px solid;
   font-size:11px;font-weight:800;border-radius:20px;white-space:nowrap}
 .path-method{border-top:1px solid #e3eaf0;margin:18px 0 0;padding-top:12px;

@@ -38,6 +38,8 @@
 .path-live.path-negative,.path-badge.path-negative{color:#ad4d3b;background:#fff0ec;border-color:#f5d0c5}
 .path-live.path-stable,.path-badge.path-stable{color:#6a7180;background:#eff2f5;border-color:#dce1e8}
 .path-note{margin:16px 0}.path-note textarea{resize:vertical;min-height:73px}
+.path-note small{font-size:11px;color:#65798b;font-weight:500}
+.path-note .path-required{font-size:12px;font-style:normal;font-weight:800;color:#b13b33}
 .path-form-footer{display:flex;align-items:center;flex-wrap:wrap;gap:13px;margin-top:14px}
 .path-form-footer small{color:#637588;font-size:12px}
 .path-filters{display:grid;grid-template-columns:1fr 1fr 2fr;gap:13px;margin:15px 0}

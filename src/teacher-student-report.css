@@ -55,6 +55,9 @@
 .tsr-table .mini-btn{white-space:nowrap}
 .tsr-events td.tsr-detail{min-width:170px;max-width:350px;white-space:normal;overflow-wrap:anywhere}
 .tsr-events td.tsr-date{min-width:125px;white-space:nowrap}
+.tsr-events th.tsr-action-heading{min-width:210px;white-space:normal}
+.tsr-events td.tsr-teacher-action{min-width:210px;max-width:420px;white-space:pre-wrap;
+  overflow-wrap:anywhere;color:#244d66;font-weight:650;line-height:1.9}
 .tsr-type{display:inline-block;border-radius:7px;background:#e4f2ff;color:#16517d;padding:2px 7px;white-space:nowrap;font-size:11px;font-weight:800}
 .tsr-type.tsr-referral{background:#fff0e6;color:#ad502a}
 .tsr-type.tsr-followup{background:#e7f5f0;color:#25644c}

@@ -309,6 +309,7 @@ export function niceError(error: unknown) {
   if (message.includes("EXCELLENCE_PATH_TEACHER_REQUIRED"))return "تسجيل درجات طريق التفوق متاح لحساب المعلم فقط.";
   if (message.includes("EXCELLENCE_PATH_STUDENT_FORBIDDEN"))return "الطالب غير مسند إلى فصول حسابك أو غير مسجل بالعام الدراسي الحالي.";
   if (message.includes("EXCELLENCE_PATH_EDIT_FORBIDDEN"))return "لا يمكن تعديل هذا القياس إلا من حساب المعلم الذي سجّله.";
+  if (message.includes("EXCELLENCE_PATH_ACTION_REQUIRED"))return "اكتب ما تم فعله مع الطالب قبل حفظ درجات طريق التفوق.";
   if (message.includes("EXCELLENCE_PATH_INVALID_SCORES"))return "راجع نوع الاختبار والفترة والدرجات؛ لا يجوز تجاوز الدرجة الكلية أو إدخال درجة سالبة.";
   if (/invalid input syntax for type uuid:\\s*["\']anonymous["\']/i.test(message)) return "جلسة الدخول غير مكتملة. أعد المحاولة بعد لحظات.";
   if (message.includes("api_admin_set_staff_vice_principal") && /schema cache|Could not find the function/i.test(message)) return "صلاحية تحويل المعلم إلى وكيل لم تُفعّل بعد في قاعدة البيانات. يلزم تفعيل تحديث Neon مرة واحدة.";

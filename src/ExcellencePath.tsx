@@ -24,6 +24,8 @@ const stateLabel:Record<string,string>={POSITIVE:"تحسّن إيجابي",NEGAT
 const fmt=(value:number|null|undefined)=>value==null?"—":Number(value).toLocaleString("ar-SA",{maximumFractionDigits:2});
 const diffNumber=(n:number)=>(n>0?"+":"")+fmt(n);
 const dateLabel=(value:string)=>new Date(value).toLocaleDateString("ar-SA",{day:"numeric",month:"short",year:"numeric"});
+const ALL_SUBJECTS="__ALL_SUBJECTS__";
+const subjectKey=(value:string)=>String(value||"").trim().replace(/\s+/g," ").toLocaleLowerCase("ar");
 
 export default function ExcellencePath({schoolName}:{schoolName:string}){
   const[data,setData]=useState<PathData|null>(null);
@@ -44,6 +46,7 @@ export default function ExcellencePath({schoolName}:{schoolName:string}){
   const[note,setNote]=useState("");
   const[editingId,setEditingId]=useState("");
   const[classFilter,setClassFilter]=useState("ALL");
+  const[subjectFilter,setSubjectFilter]=useState(ALL_SUBJECTS);
   const[statusFilter,setStatusFilter]=useState("ALL");
   const[search,setSearch]=useState("");
 
@@ -82,13 +85,28 @@ export default function ExcellencePath({schoolName}:{schoolName:string}){
     ?students.filter(s=>s.grade_name===gradeSelection&&(!formClassId||s.class_id===formClassId))
       .sort((a,b)=>a.name.localeCompare(b.name,"ar"))
     :[],[students,gradeSelection,formClassId]);
+  // Subject tabs are derived from the current school's recorded assessments.
+  // Show unique student counts (one student can have multiple assessments).
+  const subjects=useMemo(()=>{
+    const map=new Map<string,{key:string;label:string;students:Set<string>}>();
+    records.forEach(r=>{
+      const label=String(r.subject||"").trim().replace(/\s+/g," ")||"غير محدد";
+      const key=subjectKey(label);
+      if(!map.has(key))map.set(key,{key,label,students:new Set<string>()});
+      map.get(key)!.students.add(r.student_id);
+    });
+    return [...map.values()].sort((a,b)=>a.label.localeCompare(b.label,"ar",{numeric:true}))
+      .map(item=>({key:item.key,label:item.label,count:item.students.size}));
+  },[records]);
+  const allStudentCount=useMemo(()=>new Set(records.map(r=>r.student_id)).size,[records]);
   const filtered=useMemo(()=>{
     const q=search.trim().toLocaleLowerCase("ar");
-    return records.filter(r=>(classFilter==="ALL"||r.class_id===classFilter)
+    return records.filter(r=>(subjectFilter===ALL_SUBJECTS||subjectKey(r.subject)===subjectFilter)
+      &&(classFilter==="ALL"||r.class_id===classFilter)
       &&(statusFilter==="ALL"||r.status===statusFilter)
       &&(!q||[r.student_name,r.student_no,r.teacher_name,r.subject,r.note,r.grade_name,
         r.class_name,examLabel(r.test_type)].some(t=>String(t||"").toLocaleLowerCase("ar").includes(q))));
-  },[records,classFilter,statusFilter,search]);
+  },[records,subjectFilter,classFilter,statusFilter,search]);
   const stats=useMemo(()=>({
     positive:filtered.filter(r=>r.status==="POSITIVE").length,
     negative:filtered.filter(r=>r.status==="NEGATIVE").length,
@@ -270,6 +288,29 @@ export default function ExcellencePath({schoolName}:{schoolName:string}){
           <p>القياسات المسجلة للعام الحالي، مع اتجاه التغير في درجات الطلاب.</p></div>
           <button className="mini-btn" type="button" onClick={()=>void load()} disabled={loading}>
             {loading?"جارٍ التحديث...":"تحديث السجل"}</button></div>
+        {data.can_monitor&&<div className="path-subject-section">
+          <div className="path-subject-heading">
+            <strong>تصنيف الطلاب حسب المادة الدراسية</strong>
+            <small>اختر مادة لعرض طلابها ونتائجهم، أو اختر «كل المواد» لعرض جميع الطلاب المسجلين.</small>
+          </div>
+          <div className="path-subject-tabs" role="group" aria-label="تصفية نتائج طريق التفوق حسب المادة">
+            <button type="button" className={subjectFilter===ALL_SUBJECTS?"active":""}
+              aria-pressed={subjectFilter===ALL_SUBJECTS}
+              onClick={()=>setSubjectFilter(ALL_SUBJECTS)}>
+              <b>كل المواد</b><small>{fmt(allStudentCount)} طالب</small>
+            </button>
+            {subjects.map(item=><button type="button" key={item.key}
+              className={subjectFilter===item.key?"active":""}
+              aria-pressed={subjectFilter===item.key}
+              onClick={()=>setSubjectFilter(item.key)}>
+              <b>{item.label}</b><small>{fmt(item.count)} طالب</small>
+            </button>)}
+          </div>
+          <p className="path-subject-selected">
+            {subjectFilter===ALL_SUBJECTS?"عرض جميع المواد":("المادة المختارة: "+(subjects.find(x=>x.key===subjectFilter)?.label||"—"))}
+            {" · "}{fmt(new Set(filtered.map(r=>r.student_id)).size)} طالب مطابق · {fmt(filtered.length)} قياس
+          </p>
+        </div>}
         <div className="path-filters">
           <label>الفصل<select value={classFilter} onChange={e=>setClassFilter(e.target.value)}>
             <option value="ALL">كل الفصول</option>

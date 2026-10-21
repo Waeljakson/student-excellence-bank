@@ -32,6 +32,8 @@ export default function ExcellencePath({schoolName}:{schoolName:string}){
   const[error,setError]=useState("");
   const[notice,setNotice]=useState("");
   const[studentId,setStudentId]=useState("");
+  const[gradeSelection,setGradeSelection]=useState("");
+  const[formClassId,setFormClassId]=useState("");
   const[subject,setSubject]=useState("");
   const[testType,setTestType]=useState("PERIOD_TEST");
   const[semester,setSemester]=useState("1");
@@ -66,7 +68,20 @@ export default function ExcellencePath({schoolName}:{schoolName:string}){
     students.forEach(s=>map.set(s.class_id,s.grade_name+" / فصل "+s.class_name));
     return [...map].sort((a,b)=>a[1].localeCompare(b[1],"ar"));
   },[students]);
-  const visibleStudents=useMemo(()=>students.filter(s=>classFilter==="ALL"||s.class_id===classFilter),[students,classFilter]);
+  // Only select from the teacher's assigned roster, grouped by grade and then class.
+  // These filters are independent of the history table's classFilter.
+  const availableGrades=useMemo(()=>[...new Set(students.map(s=>s.grade_name))]
+    .sort((a,b)=>a.localeCompare(b,"ar",{numeric:true})),[students]);
+  const gradeClasses=useMemo(()=>{
+    const map=new Map<string,string>();
+    students.filter(s=>s.grade_name===gradeSelection)
+      .forEach(s=>map.set(s.class_id,s.class_name));
+    return [...map].sort((a,b)=>a[1].localeCompare(b[1],"ar",{numeric:true}));
+  },[students,gradeSelection]);
+  const selectableStudents=useMemo(()=>gradeSelection
+    ?students.filter(s=>s.grade_name===gradeSelection&&(!formClassId||s.class_id===formClassId))
+      .sort((a,b)=>a.name.localeCompare(b.name,"ar"))
+    :[],[students,gradeSelection,formClassId]);
   const filtered=useMemo(()=>{
     const q=search.trim().toLocaleLowerCase("ar");
     return records.filter(r=>(classFilter==="ALL"||r.class_id===classFilter)
@@ -81,7 +96,7 @@ export default function ExcellencePath({schoolName}:{schoolName:string}){
     average:filtered.length?filtered.reduce((a,r)=>a+Number(r.percentage_points||0),0)/filtered.length:0
   }),[filtered]);
 
-  const selected=students.find(s=>s.id===studentId);
+  const selected=selectableStudents.find(s=>s.id===studentId);
   const score1=before.trim()===""?null:Number(before);
   const score2=after.trim()===""?null:Number(after);
   const maximum=Number(maxScore);
@@ -94,13 +109,14 @@ export default function ExcellencePath({schoolName}:{schoolName:string}){
   const trend=delta>0?"POSITIVE":delta<0?"NEGATIVE":"STABLE";
 
   function resetForm(){
-    setEditingId("");setStudentId("");setBefore("");setAfter("");setNote("");
+    setEditingId("");setStudentId("");setGradeSelection("");setFormClassId("");setBefore("");setAfter("");setNote("");
     setMaxScore("100");setTestType("PERIOD_TEST");setSemester("1");setPeriod("1");
     setSubject(data?.default_subject||"");
   }
   function editRecord(r:PathRecord){
     if(!data?.can_manage||r.teacher_id!==data.teacher_id)return;
-    setEditingId(r.id);setStudentId(r.student_id);setSubject(r.subject);
+    setEditingId(r.id);setStudentId(r.student_id);setGradeSelection(r.grade_name);
+    setFormClassId(r.class_id);setSubject(r.subject);
     setTestType(r.test_type);setSemester(String(r.semester));setPeriod(String(r.period));
     setMaxScore(String(r.max_score));setBefore(String(r.before_score));setAfter(String(r.after_score));
     setNote(r.note||"");setNotice("");setError("");
@@ -126,7 +142,11 @@ export default function ExcellencePath({schoolName}:{schoolName:string}){
       setNotice((editingId?"تم تحديث":"تم تسجيل")+" درجات الطالب بنجاح. النتيجة: "+
         (stateLabel[result.status]||result.status)+" ("+diffNumber(Number(result.difference))+" درجة).");
       const keep=studentId;
+      const currentGrade=gradeSelection;
+      const currentClass=formClassId;
       resetForm();
+      setGradeSelection(currentGrade);
+      setFormClassId(currentClass);
       setStudentId(keep);
       await load(true);
     }catch(e){setError(niceError(e))}
@@ -156,15 +176,35 @@ export default function ExcellencePath({schoolName}:{schoolName:string}){
       {data?.can_manage&&<section className="panel path-entry">
         <div className="panel-title"><div>
           <h3>{editingId?"تعديل قياس سابق":"تسجيل قياس جديد"}</h3>
-          <p>حدد الطالب والاختبار والفصل والفترة، ثم أدخل درجته قبل التحسين وبعده.</p>
+          <p>اختر الصف الدراسي أولًا، ثم الفصل إن أردت، وبعدها اختر الطالب وسجّل درجاته قبل التحسين وبعده.</p>
         </div>{editingId&&<button type="button" className="mini-btn" onClick={resetForm}>إلغاء التعديل</button>}</div>
         <form onSubmit={e=>void save(e)}>
           <div className="path-form-grid">
-            <label className="path-wide">الطالب
-              <select value={studentId} required onChange={e=>setStudentId(e.target.value)} disabled={!!editingId}>
-                <option value="">اختر الطالب</option>
-                {students.map(s=><option key={s.id} value={s.id}>{s.name} — {s.grade_name} / فصل {s.class_name}</option>)}
+            <label>الصف الدراسي
+              <select value={gradeSelection} required disabled={!!editingId}
+                onChange={e=>{setGradeSelection(e.target.value);setFormClassId("");setStudentId("")}}>
+                <option value="">اختر الصف الدراسي أولًا</option>
+                {availableGrades.map(grade=><option key={grade} value={grade}>{grade}</option>)}
               </select>
+            </label>
+            <label>الفصل
+              <select value={formClassId} disabled={!gradeSelection||!!editingId}
+                onChange={e=>{setFormClassId(e.target.value);setStudentId("")}}>
+                <option value="">كل فصول الصف</option>
+                {gradeClasses.map(([id,name])=><option key={id} value={id}>فصل {name}</option>)}
+              </select>
+            </label>
+            <label className="path-student-picker">الطالب
+              <select value={studentId} required disabled={!gradeSelection||!!editingId}
+                onChange={e=>setStudentId(e.target.value)}>
+                <option value="">{gradeSelection?"اختر الطالب":"اختر الصف أولًا"}</option>
+                {selectableStudents.map(s=><option key={s.id} value={s.id}>
+                  {s.name} — {formClassId?s.student_no:"فصل "+s.class_name}
+                </option>)}
+              </select>
+              <small>{gradeSelection
+                ?selectableStudents.length+" طالب متاح في التصنيف المختار"
+                :"حدد الصف الدراسي لعرض طلابه فقط"}</small>
             </label>
             <label>المادة الدراسية
               <input value={subject} required maxLength={120} onChange={e=>setSubject(e.target.value)}

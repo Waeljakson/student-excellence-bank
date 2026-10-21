@@ -335,7 +335,7 @@ export default function ExcellencePath({schoolName}:{schoolName:string}){
             </button>)}
           </div>
         </div>}
-        <div className="path-filters">
+        <div className={"path-filters"+(data.can_monitor?" path-filters-admin":"")}>
           {!data.can_monitor&&<label>الصف الدراسي
             <select value={gradeFilter} onChange={e=>setGradeFilter(e.target.value)}>
               <option value="ALL">كل الصفوف</option>

@@ -1,5 +1,6 @@
 import {FormEvent,useEffect,useMemo,useState} from "react";
 import {niceError,rpc} from "./client";
+import {openExcellencePathPrintPreview} from "./ExcellencePathPrint";
 import "./excellence-path.css";
 
 type Student={id:string;name:string;student_no:string;class_id:string;class_name:string;grade_name:string};
@@ -119,6 +120,21 @@ export default function ExcellencePath({schoolName}:{schoolName:string}){
     stable:filtered.filter(r=>r.status==="STABLE").length,
     average:filtered.length?filtered.reduce((a,r)=>a+Number(r.percentage_points||0),0)/filtered.length:0
   }),[filtered]);
+
+  const openPrintPreview=()=>{
+    setError("");
+    try{
+      const selectedSubject=subjectFilter===ALL_SUBJECTS?"كل المواد":
+        subjects.find(item=>item.key===subjectFilter)?.label||"المادة المختارة";
+      const selectedStatus=statusFilter==="ALL"?"جميع النتائج":stateLabel[statusFilter]||statusFilter;
+      const opened=openExcellencePathPrintPreview({
+        schoolName,academicYear:data?.academic_year||"الحالي",records:filtered,
+        subject:selectedSubject,grade:gradeFilter==="ALL"?"كل الصفوف":gradeFilter,
+        status:selectedStatus,query:search.trim()
+      });
+      if(!opened)setError("المتصفح منع فتح معاينة الطباعة. اسمح بالنوافذ المنبثقة لموقع بنك التميز، ثم اضغط زر معاينة / طباعة التقرير مرة أخرى.");
+    }catch(e){setError("تعذر فتح تقرير طريق التفوق للطباعة: "+niceError(e))}
+  };
 
   const selected=selectableStudents.find(s=>s.id===studentId);
   const score1=before.trim()===""?null:Number(before);
@@ -292,8 +308,14 @@ export default function ExcellencePath({schoolName}:{schoolName:string}){
       {data&&<section className="panel path-history">
         <div className="panel-title"><div><h3>متابعة نتائج طريق التفوق</h3>
           <p>القياسات المسجلة للعام الحالي، مع اتجاه التغير في درجات الطلاب.</p></div>
-          <button className="mini-btn" type="button" onClick={()=>void load()} disabled={loading}>
-            {loading?"جارٍ التحديث...":"تحديث السجل"}</button></div>
+          <div className="path-history-actions">
+            <button className="btn primary" type="button" onClick={openPrintPreview} disabled={loading}>
+              معاينة / طباعة تقرير طريق التفوق PDF
+            </button>
+            <button className="mini-btn" type="button" onClick={()=>void load()} disabled={loading}>
+              {loading?"جارٍ التحديث...":"تحديث السجل"}
+            </button>
+          </div></div>
         {data.can_monitor&&<div className="path-subject-section">
           <div className="path-subject-heading">
             <strong>تصنيف الطلاب حسب المادة الدراسية</strong>

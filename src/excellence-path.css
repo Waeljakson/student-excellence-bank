@@ -62,7 +62,10 @@
 .path-subject-tabs button.active small{color:#d5ebf7}
 .path-subject-tabs button:focus-visible{outline:3px solid #96c5e2;outline-offset:3px}
 .path-subject-selected{color:#536d81;font-size:12px;margin:11px 0 0;line-height:1.9}
+.path-grade-section{margin-top:10px;background:#f8fbf7;border-color:#dfebde}
+.path-grade-tabs button.active{background:#236858;border-color:#236858;box-shadow:0 4px 14px #154b351f}
 .path-filters{display:grid;grid-template-columns:1fr 1fr 2fr;gap:13px;margin:15px 0}
+.path-filters-admin{grid-template-columns:1fr 2fr}
 .path-stats{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px;margin:18px 0}
 .path-stats>div{display:flex;min-width:0;flex-direction:column;gap:6px;background:#f5f9fd;
   border:1px solid #e1eaf1;border-radius:12px;padding:13px}

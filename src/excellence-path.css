@@ -93,6 +93,8 @@
 .path-method{border-top:1px solid #e3eaf0;margin:18px 0 0;padding-top:12px;
   color:#65798b;font-size:11px;line-height:1.9}
 .path-empty{text-align:center;padding:24px!important;color:#7b8b99!important}
+.path-history-actions{display:flex;align-items:center;flex-wrap:wrap;gap:9px}
+.path-history-actions .btn{font-size:12px;padding:10px 15px}
 @media(max-width:950px){
   .path-form-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
   .path-stats{grid-template-columns:repeat(3,minmax(0,1fr))}
@@ -114,5 +116,34 @@
   .path-subject-tabs{flex-wrap:nowrap;overflow-x:auto;padding:2px 0 8px;scrollbar-width:thin}
   .path-subject-tabs button{flex:0 0 auto;min-width:118px}
 }
-@media print{.excellence-path .path-entry,.excellence-path .path-filters,
-  .excellence-path .path-hero{display:none!important}}
+/* Keep Ctrl+P usable even with the application's global receipt/report print
+   rules. The dedicated print-preview window is preferred for full-width PDFs. */
+@media print{
+  @page{size:A4 landscape;margin:10mm}
+  body #root .excellence-path,body #root .excellence-path *{visibility:visible!important}
+  .excellence-path .path-entry,.excellence-path .path-hero,
+  .excellence-path .path-history-actions,.excellence-path .path-subject-section,
+  .excellence-path .path-filters{display:none!important}
+  .excellence-path .content.excellence-content{display:block!important;position:static!important;
+    visibility:visible!important;overflow:visible!important;max-width:none!important;
+    width:100%!important;padding:0!important;margin:0!important;background:#fff!important}
+  .excellence-path .content.excellence-content > section.path-history{display:block!important;
+    visibility:visible!important;break-inside:auto!important;margin:0!important;
+    padding:0!important;max-width:none!important;width:100%!important;
+    border:0!important;box-shadow:none!important;background:#fff!important}
+  .excellence-path .path-history .panel-title{display:flex!important;margin-bottom:10px}
+  .excellence-path .path-history .table-wrap{display:block!important;overflow:visible!important;
+    max-height:none!important;border:0!important}
+  .excellence-path .path-table{width:100%!important;min-width:0!important;table-layout:fixed;
+    border-collapse:collapse!important}
+  .excellence-path .path-table th,.excellence-path .path-table td{
+    min-width:0!important;max-width:none!important;white-space:normal!important;
+    overflow-wrap:anywhere!important;padding:5px!important;font-size:8px!important;
+    line-height:1.6!important}
+  .excellence-path .path-table thead{display:table-header-group}
+  .excellence-path .path-table tr{break-inside:avoid;page-break-inside:avoid}
+  .excellence-path .path-stats{grid-template-columns:repeat(5,minmax(0,1fr))!important;gap:6px!important;
+    margin:8px 0!important}
+  .excellence-path .path-stats>div{padding:6px!important}
+  .excellence-path .path-stats strong{font-size:15px!important}
+}

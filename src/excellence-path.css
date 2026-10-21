@@ -44,6 +44,24 @@
 .path-note .path-required{font-size:12px;font-style:normal;font-weight:800;color:#b13b33}
 .path-form-footer{display:flex;align-items:center;flex-wrap:wrap;gap:13px;margin-top:14px}
 .path-form-footer small{color:#637588;font-size:12px}
+.path-subject-section{margin:18px 0 15px;padding:16px 16px 12px;background:#f5f9fc;
+  border:1px solid #deebf3;border-radius:14px}
+.path-subject-heading{display:flex;flex-wrap:wrap;gap:8px 16px;align-items:baseline;margin-bottom:13px}
+.path-subject-heading strong{font-size:15px;color:#16466b}
+.path-subject-heading small{font-size:11px;font-weight:500;color:#61768c;line-height:1.9}
+.path-subject-tabs{display:flex;flex-wrap:wrap;align-items:stretch;gap:9px}
+.path-subject-tabs button{display:flex;flex-direction:column;gap:5px;min-width:116px;max-width:240px;
+  text-align:right;border:1px solid #d4e2ed;background:#fff;border-radius:11px;
+  padding:11px 15px;cursor:pointer;color:#31546c;font:inherit;
+  transition:background-color .15s,border-color .15s,box-shadow .15s}
+.path-subject-tabs button b{font-size:13px;font-weight:800;white-space:normal;overflow-wrap:anywhere}
+.path-subject-tabs button small{font-size:11px;color:#71889a}
+.path-subject-tabs button:hover{background:#eaf3f9;border-color:#75acc4}
+.path-subject-tabs button.active{background:#185b80;border-color:#185b80;color:white;
+  box-shadow:0 4px 14px #174e731f}
+.path-subject-tabs button.active small{color:#d5ebf7}
+.path-subject-tabs button:focus-visible{outline:3px solid #96c5e2;outline-offset:3px}
+.path-subject-selected{color:#536d81;font-size:12px;margin:11px 0 0;line-height:1.9}
 .path-filters{display:grid;grid-template-columns:1fr 1fr 2fr;gap:13px;margin:15px 0}
 .path-stats{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px;margin:18px 0}
 .path-stats>div{display:flex;min-width:0;flex-direction:column;gap:6px;background:#f5f9fd;
@@ -89,6 +107,9 @@
   .path-score-arrow{font-size:18px}
   .path-stats{grid-template-columns:repeat(2,minmax(0,1fr))}
   .path-filters{grid-template-columns:1fr}
+  .path-subject-section{padding:12px}
+  .path-subject-tabs{flex-wrap:nowrap;overflow-x:auto;padding:2px 0 8px;scrollbar-width:thin}
+  .path-subject-tabs button{flex:0 0 auto;min-width:118px}
 }
 @media print{.excellence-path .path-entry,.excellence-path .path-filters,
   .excellence-path .path-hero{display:none!important}}

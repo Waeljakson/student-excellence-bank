@@ -15,6 +15,8 @@
 .path-form-grid label,.path-score-entry label,.path-note,.path-filters label{
   display:flex;flex-direction:column;gap:7px;color:#29445c;font-size:13px;font-weight:800}
 .path-form-grid .path-wide{grid-column:span 2}
+.path-student-picker small{font-size:11px;font-weight:500;color:#60778b;line-height:1.5}
+.path-form-grid select:disabled{background:#f3f6f9;color:#7d8e9e;cursor:not-allowed}
 .path-form-grid input,.path-form-grid select,.path-score-entry input,.path-note textarea,
 .path-filters input,.path-filters select{width:100%;max-width:100%;min-width:0;box-sizing:border-box;
   background:#fff;border:1px solid #d2dfeb;border-radius:10px;padding:10px 12px;min-height:44px;
@@ -81,7 +83,7 @@
   .path-hero-score span{display:none}
   .path-entry,.path-history{padding:14px}
   .path-form-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
-  .path-form-grid .path-wide{grid-column:span 2}
+  .path-form-grid .path-wide,.path-form-grid .path-student-picker{grid-column:span 2}
   .path-score-entry{grid-template-columns:1fr 25px 1fr;gap:6px;padding:9px}
   .path-score-entry input{font-size:20px}
   .path-score-arrow{font-size:18px}

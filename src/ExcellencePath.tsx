@@ -45,7 +45,7 @@ export default function ExcellencePath({schoolName}:{schoolName:string}){
   const[after,setAfter]=useState("");
   const[note,setNote]=useState("");
   const[editingId,setEditingId]=useState("");
-  const[classFilter,setClassFilter]=useState("ALL");
+  const[gradeFilter,setGradeFilter]=useState("ALL");
   const[subjectFilter,setSubjectFilter]=useState(ALL_SUBJECTS);
   const[statusFilter,setStatusFilter]=useState("ALL");
   const[search,setSearch]=useState("");
@@ -66,13 +66,9 @@ export default function ExcellencePath({schoolName}:{schoolName:string}){
 
   const students=data?.students||[];
   const records=data?.records||[];
-  const classes=useMemo(()=>{
-    const map=new Map<string,string>();
-    students.forEach(s=>map.set(s.class_id,s.grade_name+" / فصل "+s.class_name));
-    return [...map].sort((a,b)=>a[1].localeCompare(b[1],"ar"));
-  },[students]);
+  // Grade and class selection for entering a student's assessment is independent
+  // of the grade/subject filters on the results table.
   // Only select from the teacher's assigned roster, grouped by grade and then class.
-  // These filters are independent of the history table's classFilter.
   const availableGrades=useMemo(()=>[...new Set(students.map(s=>s.grade_name))]
     .sort((a,b)=>a.localeCompare(b,"ar",{numeric:true})),[students]);
   const gradeClasses=useMemo(()=>{
@@ -99,14 +95,24 @@ export default function ExcellencePath({schoolName}:{schoolName:string}){
       .map(item=>({key:item.key,label:item.label,count:item.students.size}));
   },[records]);
   const allStudentCount=useMemo(()=>new Set(records.map(r=>r.student_id)).size,[records]);
+  const grades=useMemo(()=>{
+    const map=new Map<string,Set<string>>();
+    records.forEach(r=>{
+      const grade=String(r.grade_name||"").trim()||"غير محدد";
+      if(!map.has(grade))map.set(grade,new Set<string>());
+      map.get(grade)!.add(r.student_id);
+    });
+    return [...map].sort((a,b)=>a[0].localeCompare(b[0],"ar",{numeric:true}))
+      .map(([name,studentIds])=>({name,count:studentIds.size}));
+  },[records]);
   const filtered=useMemo(()=>{
     const q=search.trim().toLocaleLowerCase("ar");
     return records.filter(r=>(subjectFilter===ALL_SUBJECTS||subjectKey(r.subject)===subjectFilter)
-      &&(classFilter==="ALL"||r.class_id===classFilter)
+      &&(gradeFilter==="ALL"||r.grade_name===gradeFilter)
       &&(statusFilter==="ALL"||r.status===statusFilter)
       &&(!q||[r.student_name,r.student_no,r.teacher_name,r.subject,r.note,r.grade_name,
         r.class_name,examLabel(r.test_type)].some(t=>String(t||"").toLocaleLowerCase("ar").includes(q))));
-  },[records,subjectFilter,classFilter,statusFilter,search]);
+  },[records,subjectFilter,gradeFilter,statusFilter,search]);
   const stats=useMemo(()=>({
     positive:filtered.filter(r=>r.status==="POSITIVE").length,
     negative:filtered.filter(r=>r.status==="NEGATIVE").length,
@@ -308,14 +314,34 @@ export default function ExcellencePath({schoolName}:{schoolName:string}){
           </div>
           <p className="path-subject-selected">
             {subjectFilter===ALL_SUBJECTS?"عرض جميع المواد":("المادة المختارة: "+(subjects.find(x=>x.key===subjectFilter)?.label||"—"))}
+            {" · "}{gradeFilter==="ALL"?"كل الصفوف":gradeFilter}
             {" · "}{fmt(new Set(filtered.map(r=>r.student_id)).size)} طالب مطابق · {fmt(filtered.length)} قياس
           </p>
         </div>}
+        {data.can_monitor&&<div className="path-subject-section path-grade-section">
+          <div className="path-subject-heading">
+            <strong>تصنيف الطلاب حسب الصف الدراسي</strong>
+            <small>التصنيف على مستوى الصف كاملًا، وليس فصوله الفردية.</small>
+          </div>
+          <div className="path-subject-tabs path-grade-tabs" role="group" aria-label="تصفية نتائج طريق التفوق حسب الصف الدراسي">
+            <button type="button" className={gradeFilter==="ALL"?"active":""}
+              aria-pressed={gradeFilter==="ALL"} onClick={()=>setGradeFilter("ALL")}>
+              <b>كل الصفوف</b><small>{fmt(allStudentCount)} طالب</small>
+            </button>
+            {grades.map(item=><button type="button" key={item.name}
+              className={gradeFilter===item.name?"active":""}
+              aria-pressed={gradeFilter===item.name} onClick={()=>setGradeFilter(item.name)}>
+              <b>{item.name}</b><small>{fmt(item.count)} طالب</small>
+            </button>)}
+          </div>
+        </div>}
         <div className="path-filters">
-          <label>الفصل<select value={classFilter} onChange={e=>setClassFilter(e.target.value)}>
-            <option value="ALL">كل الفصول</option>
-            {classes.map(([id,name])=><option key={id} value={id}>{name}</option>)}
-          </select></label>
+          {!data.can_monitor&&<label>الصف الدراسي
+            <select value={gradeFilter} onChange={e=>setGradeFilter(e.target.value)}>
+              <option value="ALL">كل الصفوف</option>
+              {grades.map(item=><option key={item.name} value={item.name}>{item.name}</option>)}
+            </select>
+          </label>}
           <label>النتيجة<select value={statusFilter} onChange={e=>setStatusFilter(e.target.value)}>
             <option value="ALL">جميع النتائج</option>
             <option value="POSITIVE">تحسن إيجابي</option>

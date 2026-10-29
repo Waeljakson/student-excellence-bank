@@ -1,5 +1,6 @@
 import {useEffect,useMemo,useState} from "react";
 import {niceError,rpc} from "./client";
+import {splitOriginalExcelNotices,type OriginalNoticeUpload} from "./PeriodNoticeOriginalExcel";
 import "./period-notices.css";
 
 type Subject={subject:string;maximum:number|null;total:number|null;assessments:Record<string,number|null>;note:string};
@@ -7,7 +8,7 @@ type Incoming={student_no:string;student_name:string;grade_name:string;class_nam
   academic_year:string;semester:string;period_title:string;subjects:Subject[];
   sum_max:number|null;sum_total:number|null;attendance:number|null;
   behavior_excellence:number|null;behavior_positive:number|null};
-type FileDraft={name:string;entries:Incoming[];warnings:string[]};
+type FileDraft={name:string;entries:Incoming[];originals:OriginalNoticeUpload[];warnings:string[]};
 type AdminBatch={id:string;title:string;published_at:string|null;created_at:string;student_count:number;
   unmatched_count:number;
   unmatched:Array<{student_no:string;student_name:string;source_file:string;error:string}>;
@@ -37,8 +38,10 @@ async function parseExcelFiles(files:File[]):Promise<FileDraft[]>{
   for(const file of files){
     if(!/\.xlsx$/i.test(file.name))throw new Error("مسموح بملفات Excel بصيغة xlsx فقط: "+file.name);
     if(file.size>15_000_000)throw new Error("حجم الملف أكبر من 15 ميجابايت: "+file.name);
-    const workbook=XLSX.read(await file.arrayBuffer(),{type:"array",cellDates:false});
+    const buffer=await file.arrayBuffer();
+    const workbook=XLSX.read(buffer,{type:"array",cellDates:false});
     const entries:Incoming[]=[];const warnings:string[]=[];
+    const originalRequests:{sheetName:string;studentNo:string}[]=[];
     for(const sheetName of workbook.SheetNames){
       const sheet=XLSX.utils.sheet_to_json<unknown[]>(workbook.Sheets[sheetName],
         {header:1,defval:null,blankrows:true,raw:true});
@@ -60,6 +63,7 @@ async function parseExcelFiles(files:File[]):Promise<FileDraft[]>{
           note:asString(cell(sheet,r,2))});
       }
       if(!subjects.length){warnings.push(sheetName+": لم تُعثر على مواد دراسية؛ لم يُدرج.");continue;}
+      originalRequests.push({sheetName,studentNo:student_no});
       entries.push({student_no,student_name,
         academic_year:asString(cell(sheet,2,1)),semester:asString(cell(sheet,4,1)),
         grade_name:asString(cell(sheet,6,1)),class_name:asString(cell(sheet,13,1)),
@@ -70,7 +74,8 @@ async function parseExcelFiles(files:File[]):Promise<FileDraft[]>{
         behavior_positive:asNumber(cell(sheet,41,2))});
     }
     if(!entries.length)warnings.push("الملف لا يحتوي على إشعارات طلاب قابلة للاستيراد.");
-    results.push({name:file.name,entries,warnings});
+    const originals=await splitOriginalExcelNotices(buffer,originalRequests);
+    results.push({name:file.name,entries,originals,warnings});
   }
   return results;
 }
@@ -120,7 +125,7 @@ export default function PeriodNoticeAdmin({schoolName}:{schoolName:string}){
     if(batch?.published_at){setError("لا يمكن إضافة ملفات إلى دفعة منشورة. اختر إنشاء مسودة جديدة.");return;}
     setBusy(true);setError("");setMessage("");setMissing([]);
     let id=chosenBatch||null;
-    const errors:StageResult["missing"]=[];let saved=0;
+    const errors:StageResult["missing"]=[];let saved=0;let originalsSaved=0;
     try{
       for(const file of fileDrafts){
         for(let start=0;start<file.entries.length;start+=35){
@@ -130,15 +135,28 @@ export default function PeriodNoticeAdmin({schoolName}:{schoolName:string}){
           id=d.batch_id;saved+=d.saved;errors.push(...(d.missing||[]));
         }
       }
+      // Upload each student's original isolated Excel worksheet. If this step
+      // fails, keep the selected files and do NOT consider staging complete.
+      // The original workbook preserves formatting, graphics and print layout.
+      if(!id)throw new Error("تعذر تحديد دفعة الإشعارات لحفظ الملفات الأصلية.");
+      for(const file of fileDrafts){
+        for(let start=0;start<file.originals.length;start+=5){
+          const chunk=file.originals.slice(start,start+5);
+          const result=await rpc<{saved:number}>("api_period_notice_stage_originals",{
+            p_batch_id:id,p_files:chunk
+          });
+          originalsSaved+=Number(result.saved||0);
+        }
+      }
       if(id)setChosenBatch(id);
       setMissing(errors);setFileDrafts([]);await load();
-      setMessage("تم حفظ "+saved+" إشعارًا كمسودات غير منشورة. "+
+      setMessage("تم حفظ "+saved+" إشعارًا كمسودات، مع "+originalsSaved+" ملف أصلي بنفس تنسيق Excel دون تغيير. "+
         (errors.length?"هناك "+errors.length+" طالبًا لم تُطابق بياناته؛ راجع القائمة أدناه.":
           "تمت مطابقة الطلاب بنجاح.")+" لا يستطيع أولياء الأمور أو الطلاب رؤيتها قبل ضغط «انشر الإشعارات».");
     }catch(e){
       if(id)setChosenBatch(id);
       await load();
-      setError("توقف حفظ المسودات بعد "+saved+" سجلًا. قد تكون بعض الملفات حُفظت في الدفعة؛ راجع القائمة ثم أعد المحاولة: "+niceError(e));
+      setError("توقف حفظ المسودات بعد "+saved+" سجلًا وحُفظت "+originalsSaved+" نسخة أصلية. لم يُنشر أي سجل جديد. راجع الدفعة ثم أعد المحاولة: "+niceError(e));
     }finally{setBusy(false)}
   }
   async function publish(){
@@ -165,7 +183,7 @@ export default function PeriodNoticeAdmin({schoolName}:{schoolName:string}){
               {b.title} — {b.student_count} طالب — {b.published_at?"منشورة":"مسودة"}
             </option>)}
           </select></label><button type="button" className="mini-btn" onClick={()=>void load()} disabled={busy}>تحديث</button></div>
-        <p className="period-hint">يمكنك رفع الملفات الثمانية معًا. اقرأ كل ملف بجميع أوراقه؛ كل ورقة تمثل إشعار طالب.</p>
+        <p className="period-hint">يمكنك رفع الملفات الثمانية معًا. سيُحفظ لكل طالب ملف الإشعار الأصلي منفصلًا بنفس تنسيقه وصوره، دون مشاركة أوراق الطلاب الآخرين.</p>
       </section>
       <section className="panel"><h3>2. رفع ملفات Excel للمراجعة</h3>
         <input type="file" accept=".xlsx" multiple disabled={busy||Boolean(batch?.published_at)}

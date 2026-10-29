@@ -1,6 +1,7 @@
 import {useEffect,useState} from "react";
 import {forceSignOut,neon,niceError,rpc} from "./client";
 import "./guardian-portal.css";
+import PeriodNoticeCelebration from "./PeriodNoticeCelebration";
 import MedalsPanel,{MedalCelebrations,type Medal} from "./MedalsPanel";
 
 type Note={id:string;subject_ar?:string;note_kind?:string;category_ar?:string;note_text:string;note_date:string;teacher_name?:string};
@@ -337,6 +338,7 @@ export default function GuardianPortal({token,studentNo,schoolCode,initialData}:
   const c=children.find(x=>x.id===childId)||children[0];
 
   return <div className="guardian-portal">
+    <PeriodNoticeCelebration mode="guardian" children={children} guardianScope={String(data.guardian?.id||((data.school_id||"school")+":"+children.map(child=>child.id).sort().join(",")))}/>
     <header className="guardian-head">
       <div className="guardian-school-brand">
         <div className="guardian-school-logos"><img src={`${import.meta.env.BASE_URL}school-logo.png`} alt="شعار المدرسة"/><img src={`${import.meta.env.BASE_URL}guidance-logo.png`} alt="شعار التوجيه الطلابي"/></div>

@@ -183,7 +183,7 @@ export default function PeriodNoticeAdmin({schoolName}:{schoolName:string}){
               {b.title} — {b.student_count} طالب — {b.published_at?"منشورة":"مسودة"}
             </option>)}
           </select></label><button type="button" className="mini-btn" onClick={()=>void load()} disabled={busy}>تحديث</button></div>
-        <p className="period-hint">يمكنك رفع الملفات الثمانية معًا. سيُحفظ لكل طالب ملف الإشعار الأصلي منفصلًا بنفس تنسيقه وصوره، دون مشاركة أوراق الطلاب الآخرين.</p>
+        <p className="period-hint">يمكنك رفع الملفات الثمانية معًا. سيُحفظ لكل طالب ملف الإشعار الأصلي منفصلًا بنفس تنسيقه وصوره، دون مشاركة أوراق الطلاب الآخرين. عند تصحيح النتائج ونشر دفعة جديدة لنفس العام والفصل والفترة، تظهر تلقائيًا أحدث نسخة فقط للطالب وولي الأمر، وتبقى النسخ السابقة محفوظة في سجل الإدارة.</p>
       </section>
       <section className="panel"><h3>2. رفع ملفات Excel للمراجعة</h3>
         <input type="file" accept=".xlsx" multiple disabled={busy||Boolean(batch?.published_at)}

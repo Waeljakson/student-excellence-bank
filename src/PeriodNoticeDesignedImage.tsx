@@ -30,7 +30,7 @@ function font(ctx:CanvasRenderingContext2D,size:number,weight=600){
 function txt(ctx:CanvasRenderingContext2D,text:unknown,x:number,y:number,size=16,color=navy,weight=600){
   font(ctx,size,weight);ctx.fillStyle=color;ctx.fillText(String(text??""),x,y);
 }
-function rounded(ctx:CanvasRenderingContext2D,x:number,y:number,w:number,h:number,r:number,color:string,stroke?:string){
+function rounded(ctx:CanvasRenderingContext2D,x:number,y:number,w:number,h:number,r:number,color:string|CanvasGradient,stroke?:string){
   ctx.beginPath();ctx.roundRect(x,y,w,h,r);ctx.fillStyle=color;ctx.fill();
   if(stroke){ctx.strokeStyle=stroke;ctx.lineWidth=1;ctx.stroke()}
 }

@@ -216,7 +216,9 @@ export default function GuardianPortal({token,studentNo,schoolCode,initialData}:
   const[medals,setMedals]=useState<Medal[]>([]);
   const[tripBusy,setTripBusy]=useState(false);
   const[tripMessage,setTripMessage]=useState("");
-  const[tab,setTab]=useState<"overview"|"medals"|"followup"|"periodic"|"individual"|"competitions">("overview");
+  const[tab,setTab]=useState<"overview"|"medals"|"followup"|"periodic"|"individual"|"competitions"|"period-notices">("overview");
+  const[periodNoticeLoading,setPeriodNoticeLoading]=useState(false);
+  const[periodNoticeError,setPeriodNoticeError]=useState("");
   const tokenMode=!!token;
   const identityMode=!!studentNo;
 
@@ -232,6 +234,38 @@ export default function GuardianPortal({token,studentNo,schoolCode,initialData}:
         :rpc<any>("api_guardian_portal");
     request.then(d=>{setData(d);setChildId(d.children?.[0]?.id||"")}).catch(e=>setError(niceError(e)));
   },[token,studentNo,tokenMode,identityMode,initialData]);
+
+  // The guardian portal may be kept open across an administrator's publication.
+  // Fetch the published notice list afresh on tab entry instead of relying on the
+  // initially loaded portal snapshot (or a previously cached login response).
+  async function refreshPeriodNotices(){
+    setPeriodNoticeLoading(true);setPeriodNoticeError("");
+    try{
+      let latest:any;
+      if(identityMode){
+        const lookup=schoolCode
+          ?await rpc<any>("api_guardian_lookup_school",{p_student_no:studentNo,p_school_code:schoolCode})
+          :await rpc<any>("api_guardian_lookup",{p_mobile:studentNo});
+        if(lookup?.source!=="student_no"||!lookup?.portal)throw new Error("STUDENT_NOT_FOUND");
+        latest=lookup.portal;
+      }else if(tokenMode){
+        latest=await rpc<any>("api_guardian_portal_by_token",{p_token:token});
+      }else{
+        latest=await rpc<any>("api_guardian_portal");
+      }
+      if(!Array.isArray(latest?.children))throw new Error("بيانات إشعارات النتائج غير متاحة حاليًا.");
+      const byId=new Map<string,any>(latest.children.map((item:any)=>[String(item.id),item]));
+      setData((current:any)=>current?{...current,children:(current.children||[]).map((item:any)=>{
+        const fresh=byId.get(String(item.id));
+        return {...item,period_notices:Array.isArray(fresh?.period_notices)?fresh.period_notices:[]};
+      })}:latest);
+    }catch(e){setPeriodNoticeError(niceError(e))}
+    finally{setPeriodNoticeLoading(false)}
+  }
+  useEffect(()=>{
+    if(tab==="period-notices"&&data)void refreshPeriodNotices();
+    // Avoid retriggering on setData: only refresh on tab entry or child selection.
+  },[tab,childId]);
 
   useEffect(()=>{
     const child=(data?.children||[]).find((x:any)=>x.id===childId)||(data?.children||[])[0];

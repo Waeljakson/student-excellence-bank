@@ -113,7 +113,7 @@ function drawDocument(
 
   pageStart();
   const nameLines=split(ctx,studentName,650,24,800);
-  const studentHeight=118+(Math.max(0,nameLines.length-1)*34);
+  const studentHeight=167+(Math.max(0,nameLines.length-1)*34);
   ensure(studentHeight+18);
   rounded(ctx,LEFT,y,WIDTH-LEFT*2,studentHeight,17,"#ffffff","#d6e4eb");
   txt(ctx,"اسم الطالب",RIGHT-20,y+32,13,muted,700);
@@ -123,6 +123,7 @@ function drawDocument(
   const info=(notice.grade||"—")+"  •  الفصل: "+(notice.class_name||"—");
   txt(ctx,info,RIGHT-20,lineY+30,14,navy,700);
   txt(ctx,(notice.period_title||notice.title||"نتائج الفترة")+"  |  "+(notice.semester||"")+"  |  "+(notice.academic_year||""),RIGHT-20,lineY+52,12,muted,600);
+  txt(ctx,"تاريخ نشر الإشعار: "+shortDate(notice.published_at),RIGHT-20,lineY+74,12,muted,600);
   y+=studentHeight+18;
 
   section("تفاصيل التحصيل الدراسي");

@@ -67,7 +67,7 @@ update("src/GuardianPortal.tsx",source=>{
     '           <button className={tab==="period-notices"?"active":""} onClick={()=>setTab("period-notices")}>إشعارات النتائج</button>\n',
     '<button className={tab==="competitions"?"active":""} onClick={()=>setTab("competitions")}>المسابقات</button>');
   s=insertOnce(s,
-    '         {tab==="period-notices"&&<PeriodNoticesInline children={[c]} />}\n',
+    '         {tab==="period-notices"&&<section className="portal-panel period-guardian-section"><div className="period-guardian-toolbar"><h3>إشعارات نتائج الفترات</h3><button type="button" className="mini-btn" disabled={periodNoticeLoading} onClick={()=>void refreshPeriodNotices()}>{periodNoticeLoading?"جارٍ تحديث الإشعارات...":"تحديث الإشعارات"}</button></div>{periodNoticeError&&<div className="notice error" role="alert">{periodNoticeError}</div>}{periodNoticeLoading?<p>جارٍ تحميل الإشعارات المنشورة...</p>:<PeriodNoticesInline children={[c]} />}</section>}\n',
     '{tab==="competitions"&&<section className="portal-panel">');
   if(!s.includes('tab==="period-notices"')||!s.includes('children={[c]}'))throw Error("Guardian portal notice tab wiring incomplete");
   return s;

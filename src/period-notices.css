@@ -71,3 +71,67 @@
   .period-original-actions{padding:13px}
   .period-original-actions .btn{width:100%}
 }
+
+
+/* Original full-page PDF is painted as a responsive image; no score-table reformatting. */
+.period-picture-area{padding:16px 16px 4px;max-width:100%}
+.period-picture-frame{position:relative;max-width:950px;margin:auto;border:1px solid #dce3e9;background:white;border-radius:9px;padding:8px;min-height:170px;overflow:hidden;box-shadow:0 12px 30px rgba(21,47,75,.09)}
+.period-picture-canvas{display:block;max-width:100%;width:100%;height:auto;background:white;margin:auto}
+.period-picture-canvas.waiting{opacity:.3}
+.period-picture-loading,.period-picture-fallback{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;text-align:center;padding:20px;font-weight:700;font-size:14px;color:#38617e;background:rgba(255,255,255,.72)}
+.period-picture-actions{display:flex;align-items:center;flex-wrap:wrap;gap:12px 18px;padding:15px 0}
+.period-picture-actions .btn{min-height:44px}
+.period-picture-actions small{font-size:12px;color:#556d80}
+.period-student-ranks{margin:6px 16px 18px;padding:18px;border:1px solid #cfe0ee;border-radius:12px;background:#f5faff}
+.period-student-ranks>h4{color:#194362;margin:0 0 12px;font-size:17px}
+.period-rank-cards{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.period-rank-cards article{min-width:0;border:1px solid #dbe7ee;background:white;border-radius:10px;text-align:center;padding:12px 6px}
+.period-rank-cards span,.period-rank-cards small{display:block;color:#637989;font-size:12px}
+.period-rank-cards strong{display:block;color:#136895;font-size:27px;margin:3px 0;font-weight:900}
+.period-school-leaders{margin-top:16px;background:#fff;border:1px solid #dbe7ef;border-radius:12px;overflow:hidden}
+.period-school-leaders h5{font-size:14px;color:#194462;margin:0;padding:13px;background:#edf5fa}
+.period-school-leaders ol{list-style:none;padding:0;margin:0}
+.period-school-leaders li{display:flex;align-items:center;gap:9px;padding:10px 13px;border-top:1px solid #ecf1f5;min-width:0}
+.period-school-leaders li b{font-size:13px;color:#284f65;min-width:0;flex:1;overflow-wrap:anywhere}
+.period-school-leaders li small{color:#678194;white-space:nowrap;font-weight:700}
+.period-leader-rank{width:26px;height:26px;flex:0 0 26px;border-radius:50%;background:#f9e5aa;color:#7e5a14;display:grid;place-items:center;font-weight:800}
+.period-ranking-note{color:#697b8b;font-size:11px;line-height:1.9;margin:12px 0 0}
+
+.period-celebration-overlay{position:fixed;inset:0;z-index:99999;display:flex;align-items:center;justify-content:center;overflow-y:auto;padding:18px;background:rgba(11,25,52,.82);backdrop-filter:blur(5px)}
+.period-celebration-box{position:relative;z-index:2;width:min(100%,535px);max-height:min(93vh,800px);overflow:auto;border-radius:22px;text-align:center;padding:32px 28px 25px;background:linear-gradient(160deg,#fffbee,#fff 52%,#eef9ff);box-shadow:0 24px 75px rgba(0,0,0,.38);border:2px solid #e6bd51;font-family:Cairo,Tahoma,sans-serif;animation:period-popup-bloom .65s cubic-bezier(.23,1.1,.5,1) both}
+.period-celebration-close{position:absolute;top:12px;left:13px;border:0!important;border-radius:50%;background:#eff1f5!important;color:#32485b!important;width:38px;height:38px;font-size:26px;line-height:1;cursor:pointer;z-index:5}
+.period-celebration-medal{font-size:70px;line-height:1.5;filter:drop-shadow(0 8px 10px rgba(174,110,15,.18));animation:period-trophy-bob 2.3s ease-in-out infinite}
+.period-celebration-eyebrow{display:inline-block;font-size:12px;padding:6px 12px;background:#fff0c3;border-radius:50px;color:#8c6419;font-weight:800}
+.period-celebration-box h2{font-size:28px;font-weight:900;margin:10px 0 5px;color:#16577e}
+.period-celebration-box h3{font-size:20px;font-weight:800;color:#b17f20;margin:0 0 10px}
+.period-celebration-box p{font-size:14px;line-height:2.05;color:#3f5162;max-width:440px;margin:0 auto 16px}
+.period-celebration-ranking{display:flex;gap:12px;max-width:360px;margin:10px auto 18px}
+.period-celebration-ranking>div{flex:1;background:#fff;border-radius:12px;padding:12px 8px;border:1px solid #ead49c}
+.period-celebration-ranking span{display:block;color:#6b6a62;font-size:12px}
+.period-celebration-ranking strong{display:block;color:#146488;font-size:24px;font-weight:900}
+.period-celebration-wish{font-size:13px;color:#976d20;line-height:1.9;font-weight:700;margin-bottom:15px}
+.period-celebration-cta{width:100%;min-height:49px;background:#176b95!important;color:#fff!important;font-weight:800;font-size:15px;border:0!important;border-radius:12px;cursor:pointer}
+.period-confetti{position:absolute;inset:0;pointer-events:none;overflow:hidden;z-index:1}
+.period-confetti i{position:absolute;top:-35px;display:block;height:16px;border-radius:3px;animation:period-confetti-drop linear infinite}
+@keyframes period-popup-bloom{from{opacity:0;transform:translateY(24px) scale(.9)}to{opacity:1;transform:translateY(0) scale(1)}}
+@keyframes period-trophy-bob{50%{transform:translateY(-8px)}}
+@keyframes period-confetti-drop{from{top:-25px;opacity:1;transform:translateX(0) rotate(0)}to{top:105%;opacity:.4;transform:translateX(70px) rotate(640deg)}}
+@media(max-width:610px){
+  .period-picture-area{padding:7px}
+  .period-student-ranks{margin:8px 7px;padding:12px}
+  .period-rank-cards{gap:5px}
+  .period-rank-cards article{padding:8px 3px}
+  .period-rank-cards strong{font-size:21px}
+  .period-rank-cards span,.period-rank-cards small{font-size:10px}
+  .period-celebration-box{padding:25px 16px}
+  .period-celebration-box h2{font-size:23px}
+  .period-celebration-ranking strong{font-size:21px}
+}
+@media(prefers-reduced-motion:reduce){
+  .period-confetti i,.period-celebration-medal,.period-celebration-box{animation:none!important}
+}
+@media print{
+  .period-celebration-overlay,.period-picture-actions{display:none!important}
+  .period-picture-frame{box-shadow:none;border:0}
+  .period-picture-canvas{max-width:100%;page-break-inside:avoid}
+}

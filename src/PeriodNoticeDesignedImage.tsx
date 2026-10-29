@@ -283,6 +283,7 @@ export default function PeriodNoticeDesignedImage({notice,studentName,schoolName
   const ref=useRef<HTMLCanvasElement>(null);
   const pages=useRef(0);
   const [busy,setBusy]=useState(true);
+  const [zoom,setZoom]=useState(false);
   const [exporting,setExporting]=useState<""|"pdf"|"png">("");
   const [error,setError]=useState("");
   useEffect(()=>{
@@ -332,11 +333,13 @@ export default function PeriodNoticeDesignedImage({notice,studentName,schoolName
   }
   return <div className="period-designed-wrap" dir="rtl">
     {busy&&<div className="period-design-loading" role="status">جارٍ تصميم الإشعار بخط Cairo العربي...</div>}
-    <div className="period-designed-image">
+    <div className={zoom?"period-designed-image zoom-open":"period-designed-image"}>
+      {zoom&&<button type="button" className="period-zoom-close" onClick={()=>setZoom(false)} aria-label="إغلاق تكبير الإشعار">إغلاق العرض المكبّر ×</button>}
       <canvas ref={ref} className={busy?"period-designed-canvas hidden":"period-designed-canvas"} role="img"
         aria-label={"صورة إشعار نتائج الطالب "+studentName+" مع الدرجات والترتيب"} />
     </div>
     <div className="period-designed-actions">
+      <button type="button" className="btn ghost" disabled={busy} onClick={()=>setZoom(v=>!v)}>{zoom?"إغلاق التكبير":"تكبير صورة الإشعار"}</button>
       <button type="button" className="btn primary" disabled={busy||!!exporting} onClick={()=>void exportFile("pdf")}>
         {exporting==="pdf"?"جارٍ إنشاء PDF...":"تنزيل الإشعار PDF للطباعة"}
       </button>

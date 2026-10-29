@@ -7,6 +7,7 @@ export type SchoolLeader={name:string;rank:number;score_percent:number|null};
 export type PeriodNotice={
   id:string;title:string;academic_year:string;semester:string;period_title:string;
   grade:string;class_name:string;published_at:string;
+  grade_rank?:number;grade_count?:number;grade_top_five?:SchoolLeader[];
   school_rank?:number;class_rank?:number;school_count?:number;class_count?:number;
   score_percent?:number|null;is_top_five?:boolean;school_top_five?:SchoolLeader[];
   subjects?:Array<{subject:string;maximum:number|null;total:number|null;assessments?:Record<string,number|null>;note?:string}>;

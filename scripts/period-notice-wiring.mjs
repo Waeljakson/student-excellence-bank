@@ -45,10 +45,10 @@ update("src/StudentPortal.tsx",source=>{
   }
   s=insertOnce(s,
     '     {id:"period-notices",label:"إشعارات النتائج",icon:"▤"},\n',
-    '     {id:"account",label:"حسابي",icon:"⚙"}');
+    '{id:"account",label:"حسابي",icon:"⚙"}');
   s=insertOnce(s,
     '         {tab==="period-notices"&&<PeriodNoticeViewer/>}\n',
-    '         {tab==="account"&&<section className="portal-panel student-account-panel">');
+    '{tab==="account"&&<section className="portal-panel student-account-panel">');
   if(!s.includes('tab==="period-notices"')||!s.includes('"period-notices"|"account"'))throw Error("Student portal notice tab wiring incomplete");
   return s;
 });
@@ -65,10 +65,10 @@ update("src/GuardianPortal.tsx",source=>{
   }
   s=insertOnce(s,
     '           <button className={tab==="period-notices"?"active":""} onClick={()=>setTab("period-notices")}>إشعارات النتائج</button>\n',
-    '           <button className={tab==="competitions"?"active":""} onClick={()=>setTab("competitions")}>المسابقات</button>');
+    '<button className={tab==="competitions"?"active":""} onClick={()=>setTab("competitions")}>المسابقات</button>');
   s=insertOnce(s,
     '         {tab==="period-notices"&&<PeriodNoticesInline children={[c]} />}\n',
-    '         {tab==="competitions"&&<section className="portal-panel">');
+    '{tab==="competitions"&&<section className="portal-panel">');
   if(!s.includes('tab==="period-notices"')||!s.includes('children={[c]}'))throw Error("Guardian portal notice tab wiring incomplete");
   return s;
 });

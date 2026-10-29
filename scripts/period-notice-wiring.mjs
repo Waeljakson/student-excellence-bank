@@ -64,7 +64,7 @@ update("src/GuardianPortal.tsx",source=>{
     'import MedalsPanel,{MedalCelebrations,type Medal} from "./MedalsPanel";');
   s=insertOnce(s,'import PeriodNoticeCelebration from "./PeriodNoticeCelebration";\n',
     'import {PeriodNoticesInline} from "./PeriodNoticeViewer";');
-  s=insertOnce(s,'\n    <PeriodNoticeCelebration mode="guardian" children={children} guardianScope={String(data.guardian?.id||((data.school_id||"school")+":"+children.map(child=>child.id).sort().join(",")))}/>',
+  s=insertOnce(s,'\n    <PeriodNoticeCelebration mode="guardian" children={periodNoticeReady?children:[]} guardianScope={String(data.guardian?.id||((data.school_id||"school")+":"+children.map(child=>child.id).sort().join(",")))}/>',
     'return <div className="guardian-portal">',"after");
   const oldType='"overview"|"medals"|"followup"|"periodic"|"individual"|"competitions">';
   if(!s.includes('"period-notices">')){

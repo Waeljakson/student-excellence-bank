@@ -24,10 +24,10 @@ update("src/App.tsx",source=>{
     s=s.replace(anchor,(_,union)=>'type Tab = '+union+' | "period-notices-admin";');
   }
   s=insertOnce(s,
-    '  if(profile.roles?.some(r=>["SUPER_ADMIN","SCHOOL_ADMIN"].includes(r))) nav.push(["period-notices-admin","إشعارات النتائج","▤"]);\n',
+    '  if(profile.school_code==="MISHKAT"&&profile.roles?.some(r=>["SUPER_ADMIN","SCHOOL_ADMIN"].includes(r))) nav.push(["period-notices-admin","إشعارات النتائج","▤"]);\n',
     '  nav.push(["account","حسابي","◉"]);');
   s=insertOnce(s,
-    '{tab==="period-notices-admin"&&profile.roles?.some(r=>["SUPER_ADMIN","SCHOOL_ADMIN"].includes(r))&&<PeriodNoticeAdmin schoolName={schoolName}/>} ',
+    '{tab==="period-notices-admin"&&profile.school_code==="MISHKAT"&&profile.roles?.some(r=>["SUPER_ADMIN","SCHOOL_ADMIN"].includes(r))&&<PeriodNoticeAdmin schoolName={schoolName}/>} ',
     '{tab==="account"&&<UserAccount profile={profile} onProfileChanged={refreshProfile}/>}',
   );
   if(!s.includes('tab==="period-notices-admin"')||!s.includes('nav.push(["period-notices-admin"'))throw Error("Admin notice navigation incomplete");
@@ -46,12 +46,12 @@ update("src/StudentPortal.tsx",source=>{
     s=s.replace(anchor,'|"period-notices"|"account";');
   }
   s=insertOnce(s,
-    '     {id:"period-notices",label:"إشعارات النتائج",icon:"▤"},\n',
+    '     ...(allowsPeriodNotices?[{id:"period-notices" as const,label:"إشعارات النتائج",icon:"▤"}]:[]),\n',
     '{id:"account",label:"حسابي",icon:"⚙"}');
   s=insertOnce(s,
-    '         {tab==="period-notices"&&<PeriodNoticeViewer schoolName={data.school_name}/>}\n',
+    '         {allowsPeriodNotices&&tab==="period-notices"&&<PeriodNoticeViewer schoolName={data.school_name}/>}\n',
     '{tab==="account"&&<section className="portal-panel student-account-panel">');
-  s=insertOnce(s,'\n    <PeriodNoticeCelebration mode="student" loadOwn/>',
+  s=insertOnce(s,'\n    {allowsPeriodNotices&&<PeriodNoticeCelebration mode="student" loadOwn/>}',
     'return <div className="student-portal">',"after");
   if(!s.includes('tab==="period-notices"')||!s.includes('"period-notices"|"account"'))throw Error("Student portal notice tab wiring incomplete");
   return s;
@@ -64,7 +64,7 @@ update("src/GuardianPortal.tsx",source=>{
     'import MedalsPanel,{MedalCelebrations,type Medal} from "./MedalsPanel";');
   s=insertOnce(s,'import PeriodNoticeCelebration from "./PeriodNoticeCelebration";\n',
     'import {PeriodNoticesInline} from "./PeriodNoticeViewer";');
-  s=insertOnce(s,'\n    <PeriodNoticeCelebration mode="guardian" children={periodNoticeReady?children:[]} guardianScope={String(data.guardian?.id||((data.school_id||"school")+":"+children.map(child=>child.id).sort().join(",")))}/>',
+  s=insertOnce(s,'\n    {allowsPeriodNotices&&<PeriodNoticeCelebration mode="guardian" children={periodNoticeReady?children:[]} guardianScope={String(data.guardian?.id||((data.school_id||"school")+":"+children.map(child=>child.id).sort().join(",")))}/>}',
     'return <div className="guardian-portal">',"after");
   const oldType='"overview"|"medals"|"followup"|"periodic"|"individual"|"competitions">';
   if(!s.includes('"period-notices">')){
@@ -72,10 +72,10 @@ update("src/GuardianPortal.tsx",source=>{
     s=s.replace(oldType,'"overview"|"medals"|"followup"|"periodic"|"individual"|"competitions"|"period-notices">');
   }
   s=insertOnce(s,
-    '           <button className={tab==="period-notices"?"active":""} onClick={()=>setTab("period-notices")}>إشعارات النتائج</button>\n',
+    '           {allowsPeriodNotices&&<button className={tab==="period-notices"?"active":""} onClick={()=>setTab("period-notices")}>إشعارات النتائج</button>}\n',
     '<button className={tab==="competitions"?"active":""} onClick={()=>setTab("competitions")}>المسابقات</button>');
   s=insertOnce(s,
-    '         {tab==="period-notices"&&<section className="portal-panel period-guardian-section"><div className="period-guardian-toolbar"><h3>إشعارات نتائج الفترات</h3><button type="button" className="mini-btn" disabled={periodNoticeLoading} onClick={()=>void refreshPeriodNotices()}>{periodNoticeLoading?"جارٍ تحديث الإشعارات...":"تحديث الإشعارات"}</button></div>{periodNoticeError&&<div className="notice error" role="alert">{periodNoticeError}</div>}{periodNoticeLoading?<p>جارٍ تحميل الإشعارات المنشورة...</p>:<PeriodNoticesInline children={[c]} schoolName={data?.school_name} access={{studentNo:identityMode?c.student_no:undefined,schoolCode:identityMode?(schoolCode||data?.school_code):undefined,token:tokenMode?token:undefined}} />}</section>}\n',
+    '         {allowsPeriodNotices&&tab==="period-notices"&&<section className="portal-panel period-guardian-section"><div className="period-guardian-toolbar"><h3>إشعارات نتائج الفترات</h3><button type="button" className="mini-btn" disabled={periodNoticeLoading} onClick={()=>void refreshPeriodNotices()}>{periodNoticeLoading?"جارٍ تحديث الإشعارات...":"تحديث الإشعارات"}</button></div>{periodNoticeError&&<div className="notice error" role="alert">{periodNoticeError}</div>}{periodNoticeLoading?<p>جارٍ تحميل الإشعارات المنشورة...</p>:<PeriodNoticesInline children={[c]} schoolName={data?.school_name} access={{studentNo:identityMode?c.student_no:undefined,schoolCode:identityMode?(schoolCode||data?.school_code):undefined,token:tokenMode?token:undefined}} />}</section>}\n',
     '{tab==="competitions"&&<section className="portal-panel">');
   if(!s.includes('tab==="period-notices"')||!s.includes('children={[c]}'))throw Error("Guardian portal notice tab wiring incomplete");
   return s;

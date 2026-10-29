@@ -167,7 +167,7 @@ function drawDocument(
   section("ترتيب الطالب");
   ensure(95);
   const rankWidth=(WIDTH-LEFT*2-12)/2;
-  [ {label:"الترتيب على مستوى المدرسة",rank:notice.school_rank,count:notice.school_count},
+  [ {label:"الترتيب على مستوى الصف",rank:notice.grade_rank??notice.school_rank,count:notice.grade_count??notice.school_count},
     {label:"الترتيب على مستوى الفصل",rank:notice.class_rank,count:notice.class_count}
   ].forEach((r,i)=>{
     const x=LEFT+i*(rankWidth+12);
@@ -181,12 +181,12 @@ function drawDocument(
   if(notice.is_top_five){
     ensure(54);
     rounded(ctx,LEFT,y,WIDTH-LEFT*2,46,12,"#fff3d8","#efd4a1");
-    txt(ctx,"تهانينا! الطالب من الخمسة الأوائل على مستوى المدرسة",RIGHT-17,y+30,17,"#8e611a",800);
+    txt(ctx,"تهانينا! الطالب من الخمسة الأوائل على مستوى الصف",RIGHT-17,y+30,17,"#8e611a",800);
     y+=58;
   }
-  const leaders=Array.isArray(notice.school_top_five)?notice.school_top_five:[];
+  const leaders=Array.isArray(notice.grade_top_five)?notice.grade_top_five:(Array.isArray(notice.school_top_five)?notice.school_top_five:[]);
   if(leaders.length){
-    section("لوحة الشرف  •  الخمسة الأوائل على المدرسة");
+    section("لوحة الشرف  •  أوائل "+(notice.grade||"الصف الدراسي"));
     for(let i=0;i<leaders.length;i++){
       const leader=leaders[i];
       ensure(51);
@@ -216,7 +216,7 @@ function drawDocument(
   ensure(86);
   rounded(ctx,LEFT,y+8,WIDTH-LEFT*2,69,12,"#f3f8fb");
   txt(ctx,"نعتز بجهود طلابنا، ونسأل الله لهم دوام التوفيق والتميز.",RIGHT-17,y+36,15,navy,700);
-  txt(ctx,"تُحسب المراكز بحسب نسبة التحصيل في الإشعارات المنشورة للفترة نفسها.",RIGHT-17,y+62,11,muted,500);
+  txt(ctx,"الترتيب بحسب نسبة التحصيل لطلاب الصف الدراسي نفسه في الفترة المنشورة.",RIGHT-17,y+62,11,muted,500);
   y+=90;
   return page+1;
 }

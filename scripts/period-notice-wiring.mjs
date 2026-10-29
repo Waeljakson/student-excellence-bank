@@ -49,7 +49,7 @@ update("src/StudentPortal.tsx",source=>{
     '     {id:"period-notices",label:"إشعارات النتائج",icon:"▤"},\n',
     '{id:"account",label:"حسابي",icon:"⚙"}');
   s=insertOnce(s,
-    '         {tab==="period-notices"&&<PeriodNoticeViewer/>}\n',
+    '         {tab==="period-notices"&&<PeriodNoticeViewer schoolName={data.school_name}/>}\n',
     '{tab==="account"&&<section className="portal-panel student-account-panel">');
   s=insertOnce(s,'\n    <PeriodNoticeCelebration mode="student" loadOwn/>',
     'return <div className="student-portal">',"after");
@@ -75,7 +75,7 @@ update("src/GuardianPortal.tsx",source=>{
     '           <button className={tab==="period-notices"?"active":""} onClick={()=>setTab("period-notices")}>إشعارات النتائج</button>\n',
     '<button className={tab==="competitions"?"active":""} onClick={()=>setTab("competitions")}>المسابقات</button>');
   s=insertOnce(s,
-    '         {tab==="period-notices"&&<section className="portal-panel period-guardian-section"><div className="period-guardian-toolbar"><h3>إشعارات نتائج الفترات</h3><button type="button" className="mini-btn" disabled={periodNoticeLoading} onClick={()=>void refreshPeriodNotices()}>{periodNoticeLoading?"جارٍ تحديث الإشعارات...":"تحديث الإشعارات"}</button></div>{periodNoticeError&&<div className="notice error" role="alert">{periodNoticeError}</div>}{periodNoticeLoading?<p>جارٍ تحميل الإشعارات المنشورة...</p>:<PeriodNoticesInline children={[c]} access={{studentNo:identityMode?c.student_no:undefined,schoolCode:identityMode?(schoolCode||data?.school_code):undefined,token:tokenMode?token:undefined}} />}</section>}\n',
+    '         {tab==="period-notices"&&<section className="portal-panel period-guardian-section"><div className="period-guardian-toolbar"><h3>إشعارات نتائج الفترات</h3><button type="button" className="mini-btn" disabled={periodNoticeLoading} onClick={()=>void refreshPeriodNotices()}>{periodNoticeLoading?"جارٍ تحديث الإشعارات...":"تحديث الإشعارات"}</button></div>{periodNoticeError&&<div className="notice error" role="alert">{periodNoticeError}</div>}{periodNoticeLoading?<p>جارٍ تحميل الإشعارات المنشورة...</p>:<PeriodNoticesInline children={[c]} schoolName={data?.school_name} access={{studentNo:identityMode?c.student_no:undefined,schoolCode:identityMode?(schoolCode||data?.school_code):undefined,token:tokenMode?token:undefined}} />}</section>}\n',
     '{tab==="competitions"&&<section className="portal-panel">');
   if(!s.includes('tab==="period-notices"')||!s.includes('children={[c]}'))throw Error("Guardian portal notice tab wiring incomplete");
   return s;

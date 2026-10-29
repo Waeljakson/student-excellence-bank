@@ -22,7 +22,7 @@ export default function PeriodNoticeCelebration({
   const [celebration,setCelebration]=useState<Celebration|null>(null);
   useEffect(()=>{
     setMyChildren(children);
-  },[children.map(x=>x.id+":"+(x.period_notices||[]).map(n=>n.id+":"+String(n.school_rank)).join(",")).join("|")]);
+  },[children.map(x=>x.id+":"+(x.period_notices||[]).map(n=>n.id+":"+String(n.grade_rank??n.school_rank)).join(",")).join("|")]);
   useEffect(()=>{
     if(!loadOwn)return;
     let active=true;
@@ -34,9 +34,9 @@ export default function PeriodNoticeCelebration({
   useEffect(()=>{
     if(celebration)return;
     for(const student of myChildren){
-      const notice=(student.period_notices||[]).find(n=>Number(n.school_rank)>=1&&Number(n.school_rank)<=5);
+      const notice=(student.period_notices||[]).find(n=>Number(n.grade_rank??n.school_rank)>=1&&Number(n.grade_rank??n.school_rank)<=5);
       if(!notice)continue;
-      const key=`period-notice-congrats-${mode}-${student.id}-${notice.id}`;
+      const key=`period-notice-grade-congrats-${mode}-${student.id}-${notice.id}`;
       try{if(sessionStorage.getItem(key)==="1")continue;sessionStorage.setItem(key,"1")}catch{}
       setCelebration({student:student.name,notice,id:key});break;
     }
@@ -48,7 +48,7 @@ export default function PeriodNoticeCelebration({
     return()=>window.removeEventListener("keydown",onKey);
   },[celebration]);
   if(!celebration)return null;
-  const n=celebration.notice;const rank=Number(n.school_rank);
+  const n=celebration.notice;const rank=Number(n.grade_rank??n.school_rank);
   return <div className="period-celebration-overlay" role="presentation" onMouseDown={e=>{if(e.target===e.currentTarget)setCelebration(null)}}>
     <div className="period-confetti" aria-hidden="true">{particles.map((particle,i)=>
       <i key={i} style={{
@@ -58,14 +58,15 @@ export default function PeriodNoticeCelebration({
     <section className="period-celebration-box" role="dialog" aria-modal="true" aria-labelledby="notice-celebration-title" dir="rtl">
       <button type="button" className="period-celebration-close" onClick={()=>setCelebration(null)} aria-label="إغلاق التهنئة">×</button>
       <div className="period-celebration-medal" aria-hidden="true">🏆</div>
-      <div className="period-celebration-eyebrow">من المتفوقين على مستوى المدرسة</div>
+      <div className="period-celebration-eyebrow">من المتفوقين على مستوى الصف الدراسي</div>
       <h2 id="notice-celebration-title">{mode==="guardian"?"ألف مبروك تفوق ابنكم!":"ألف مبروك تفوقك!"}</h2>
       <h3>{celebration.student}</h3>
+      <div className="period-celebration-grade">{n.grade||"الصف الدراسي"}</div>
       <p>{mode==="guardian"
-        ?"يسعدنا أن نشارككم فرحة هذا الإنجاز المتميز. لقد حصل ابنكم على أحد المراكز الخمسة الأولى على مستوى المدرسة."
-        :"تعبك واجتهادك أثمرا تميزًا تستحق أن تفخر به. أنت من الخمسة الأوائل على مستوى المدرسة!"}</p>
+        ?"يسعدنا أن نشارككم فرحة هذا الإنجاز المتميز. لقد حصل ابنكم على أحد المراكز الخمسة الأولى في صفه الدراسي."
+        :"تعبك واجتهادك أثمرا تميزًا تستحق أن تفخر به. أنت من الخمسة الأوائل على مستوى صفك الدراسي!"}</p>
       <div className="period-celebration-ranking">
-        <div><span>ترتيب المدرسة</span><strong>{labels[rank]||fmt(rank)}</strong></div>
+        <div><span>ترتيب الصف الدراسي</span><strong>{labels[rank]||fmt(rank)}</strong></div>
         <div><span>ترتيب الفصل</span><strong>{fmt(n.class_rank)}</strong></div>
       </div>
       <div className="period-celebration-wish">

@@ -109,6 +109,7 @@
 .period-celebration-ranking>div{flex:1;background:#fff;border-radius:12px;padding:12px 8px;border:1px solid #ead49c}
 .period-celebration-ranking span{display:block;color:#6b6a62;font-size:12px}
 .period-celebration-ranking strong{display:block;color:#146488;font-size:24px;font-weight:900}
+.period-celebration-grade{font-family:Cairo,Tahoma,sans-serif;font-size:13px;color:#247184;background:#e9f5f7;border-radius:24px;width:fit-content;margin:0 auto 13px;padding:5px 17px;font-weight:800}
 .period-celebration-wish{font-size:13px;color:#976d20;line-height:1.9;font-weight:700;margin-bottom:15px}
 .period-celebration-cta{width:100%;min-height:49px;background:#176b95!important;color:#fff!important;font-weight:800;font-size:15px;border:0!important;border-radius:12px;cursor:pointer}
 .period-confetti{position:absolute;inset:0;pointer-events:none;overflow:hidden;z-index:1}

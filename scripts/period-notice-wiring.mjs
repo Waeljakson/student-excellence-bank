@@ -59,11 +59,11 @@ update("src/StudentPortal.tsx",source=>{
 
 update("src/GuardianPortal.tsx",source=>{
   let s=source;
-  s=insertOnce(s,'import PeriodNoticeCelebration from "./PeriodNoticeCelebration";\n',
-    'import {PeriodNoticesInline} from "./PeriodNoticeViewer";');
   s=insertOnce(s,
     'import {PeriodNoticesInline} from "./PeriodNoticeViewer";\n',
     'import MedalsPanel,{MedalCelebrations,type Medal} from "./MedalsPanel";');
+  s=insertOnce(s,'import PeriodNoticeCelebration from "./PeriodNoticeCelebration";\n',
+    'import {PeriodNoticesInline} from "./PeriodNoticeViewer";');
   s=insertOnce(s,'\n    <PeriodNoticeCelebration mode="guardian" children={c?[c]:[]}/>',
     'return <div className="guardian-portal">',"after");
   const oldType='"overview"|"medals"|"followup"|"periodic"|"individual"|"competitions">';

@@ -1,0 +1,15 @@
+.period-designed-wrap{padding:14px 16px 8px;direction:rtl;font-family:Cairo,Tahoma,sans-serif}
+.period-designed-image{max-width:900px;margin:0 auto;border:1px solid #d9e7ef;border-radius:13px;background:#f8fafc;box-shadow:0 12px 32px rgba(9,46,69,.11);overflow:hidden}
+.period-designed-canvas{display:block;width:100%;height:auto;background:#f8fafc}
+.period-designed-canvas.hidden{visibility:hidden;height:0}
+.period-design-loading{padding:30px 15px;text-align:center;color:#225a78;font-weight:800}
+.period-designed-actions{display:flex;align-items:center;flex-wrap:wrap;gap:12px;padding:16px 0 8px}
+.period-designed-actions .btn{min-height:45px;font-family:Cairo,Tahoma,sans-serif;font-weight:800}
+.period-designed-actions .btn:disabled{opacity:.55;cursor:wait}
+@media(max-width:600px){
+ .period-designed-wrap{padding:7px}
+ .period-designed-image{border-radius:8px}
+ .period-designed-actions{flex-direction:column;align-items:stretch;gap:8px}
+ .period-designed-actions .btn{width:100%;white-space:normal}
+}
+@media print{.period-designed-actions{display:none!important}}

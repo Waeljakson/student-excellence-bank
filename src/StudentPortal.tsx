@@ -218,7 +218,7 @@ export default function StudentPortal({cacheUserId=""}:{cacheUserId?:string}){
           {announcements.length?<div className="announcement-list">{announcements.map(a=><div className="announcement-card" key={a.id}><span>إعلان</span><h4>{a.title_ar}</h4><p>{a.body_ar}</p><small>تاريخ الإعلان: {date(a.starts_at)}{a.ends_at?` · حتى ${date(a.ends_at)}`:""}</small></div>)}</div>:<div className="empty">لا توجد إعلانات عامة حاليًا.</div>}
         </section>}
 
-                 {tab==="period-notices"&&<PeriodNoticeViewer/>}
+                 {tab==="period-notices"&&<PeriodNoticeViewer schoolName={data.school_name}/>}
 {tab==="account"&&<section className="portal-panel student-account-panel">
           <div className="portal-panel-title"><div><h3>إعدادات حسابي</h3><p>الصورة الشخصية وكلمة المرور</p></div><span>⚙</span></div>
           <div className="student-account-grid">

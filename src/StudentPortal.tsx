@@ -6,6 +6,7 @@ import "./feature-upgrade.css";
 import "./student-account.css";
 import StudentPrograms from "./StudentPrograms";
 import StudentRedemptionPanel from "./StudentRedemptionPanel";
+import PeriodNoticeCelebration from "./PeriodNoticeCelebration";
 import PeriodNoticeViewer from "./PeriodNoticeViewer";
 import StudentFollowupPanel from "./StudentFollowupPanel";
 import MedalsPanel,{type Medal} from "./MedalsPanel";
@@ -157,6 +158,7 @@ export default function StudentPortal({cacheUserId=""}:{cacheUserId?:string}){
   ];
 
   return <div className="student-portal">
+    <PeriodNoticeCelebration mode="student" loadOwn/>
     <header className="student-portal-head">
       <div className="student-brand"><div className="logos"><img src={SCHOOL_LOGO}/><img src={GUIDANCE_LOGO}/></div><div><span>{data.school_name||"مدارس المشكاة الأهلية"}</span><h1>بوابة الطالب — بنك التميز</h1></div></div>
       <button className="btn ghost" onClick={()=>void forceSignOut()}>تسجيل الخروج</button>

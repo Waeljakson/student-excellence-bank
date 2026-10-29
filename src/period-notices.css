@@ -43,3 +43,31 @@
 .period-student-preview{font-size:11px;color:#4a6579;margin-top:8px}
 .period-student-preview summary{cursor:pointer;color:#1c6183;font-weight:700}
 .period-student-preview p{margin:3px 0;line-height:1.6}
+/* Original-document delivery: keep the uploaded school layout instead of
+   recreating assessment scores as an HTML table. */
+.period-original-card{max-width:850px;margin:14px 0 22px;background:#fff;border:1px solid #d8e5ed;border-radius:16px;overflow:hidden;box-shadow:0 5px 18px rgba(16,60,88,.06)}
+.period-original-top{padding:16px 18px;display:flex;align-items:center;gap:14px;background:#f2f8fc;border-bottom:1px solid #dce8ee}
+.period-original-icon{width:56px;height:64px;flex:0 0 auto;display:grid;place-items:center;border-radius:9px;background:white;border:1px solid #d6e5ed;color:#16769e;font-size:30px}
+.period-original-heading{min-width:0;flex:1}
+.period-original-heading>span{display:block;font-size:11px;color:#567b92;font-weight:800}
+.period-original-heading h4{font-size:18px;color:#153f60;margin:3px 0}
+.period-original-heading p{font-size:12px;color:#5e798c;margin:0}
+.period-original-published{border-radius:16px;padding:5px 9px;color:#14734e;background:#dff5ea;white-space:nowrap;font-size:11px;font-weight:800}
+.period-original-preview{display:flex;align-items:center;gap:20px;padding:20px 23px;border-bottom:1px solid #ecf2f6}
+.period-original-preview img{width:125px;max-width:28%;object-fit:contain}
+.period-original-preview>div{min-width:0}
+.period-original-preview b{display:block;font-size:15px;color:#214c6b}
+.period-original-preview p{max-width:550px;margin:7px 0 0;line-height:1.9;font-size:12px;color:#5b7788}
+.period-original-actions{padding:17px 22px;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.period-original-actions .btn{white-space:normal;text-align:center;min-height:42px}
+.period-original-actions small{font-size:11px;color:#678393}
+.period-guardian-toolbar{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.period-guardian-toolbar h3{margin:0}
+@media(max-width:600px){
+  .period-original-top{padding:12px;gap:10px;flex-wrap:wrap}
+  .period-original-heading h4{font-size:16px}
+  .period-original-preview{padding:13px;gap:13px}
+  .period-original-preview img{max-width:80px}
+  .period-original-actions{padding:13px}
+  .period-original-actions .btn{width:100%}
+}

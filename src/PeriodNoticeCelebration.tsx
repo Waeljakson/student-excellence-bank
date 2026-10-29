@@ -40,7 +40,7 @@ export default function PeriodNoticeCelebration({
     return()=>{active=false};
   },[loadOwn]);
   useEffect(()=>{
-    if(celebration||document.visibilityState==="hidden")return;
+    if(celebration||(mode==="student"&&document.visibilityState==="hidden"))return;
     if(mode==="student"){
       for(const student of myChildren){
         const notice=(student.period_notices||[]).find(n=>

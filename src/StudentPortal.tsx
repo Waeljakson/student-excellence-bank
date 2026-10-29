@@ -138,6 +138,7 @@ export default function StudentPortal({cacheUserId=""}:{cacheUserId?:string}){
   if(!data)return <div className="full-center"><div className="loader"/><p>جارٍ تحميل بوابة الطالب...</p></div>;
 
   const s=data.student;
+  const allowsPeriodNotices=data.school_code==="MISHKAT";
   const competitions=data.announcements.filter(a=>a.announcement_type==="TARGETED_COMPETITION");
   const announcements=data.announcements.filter(a=>a.announcement_type!=="TARGETED_COMPETITION");
   const activeNotes=data.followup_notes||[];
@@ -153,12 +154,12 @@ export default function StudentPortal({cacheUserId=""}:{cacheUserId?:string}){
     {id:"followup",label:"ملاحظات المعلمين",icon:"✎",count:activeNotes.length},
     {id:"checks",label:"شيكات التميز",icon:"✓",count:allChecks.length},
     {id:"announcements",label:"الإعلانات",icon:"◉",count:announcements.length},
-         {id:"period-notices",label:"إشعارات النتائج",icon:"▤"},
+         ...(allowsPeriodNotices?[{id:"period-notices" as const,label:"إشعارات النتائج",icon:"▤"}]:[]),
 {id:"account",label:"حسابي",icon:"⚙"}
   ];
 
   return <div className="student-portal">
-    <PeriodNoticeCelebration mode="student" loadOwn/>
+    {allowsPeriodNotices&&<PeriodNoticeCelebration mode="student" loadOwn/>}
     <header className="student-portal-head">
       <div className="student-brand"><div className="logos"><img src={SCHOOL_LOGO}/><img src={GUIDANCE_LOGO}/></div><div><span>{data.school_name||"مدارس المشكاة الأهلية"}</span><h1>بوابة الطالب — بنك التميز</h1></div></div>
       <button className="btn ghost" onClick={()=>void forceSignOut()}>تسجيل الخروج</button>
@@ -218,7 +219,7 @@ export default function StudentPortal({cacheUserId=""}:{cacheUserId?:string}){
           {announcements.length?<div className="announcement-list">{announcements.map(a=><div className="announcement-card" key={a.id}><span>إعلان</span><h4>{a.title_ar}</h4><p>{a.body_ar}</p><small>تاريخ الإعلان: {date(a.starts_at)}{a.ends_at?` · حتى ${date(a.ends_at)}`:""}</small></div>)}</div>:<div className="empty">لا توجد إعلانات عامة حاليًا.</div>}
         </section>}
 
-                 {tab==="period-notices"&&<PeriodNoticeViewer schoolName={data.school_name}/>}
+                 {allowsPeriodNotices&&tab==="period-notices"&&<PeriodNoticeViewer schoolName={data.school_name}/>}
 {tab==="account"&&<section className="portal-panel student-account-panel">
           <div className="portal-panel-title"><div><h3>إعدادات حسابي</h3><p>الصورة الشخصية وكلمة المرور</p></div><span>⚙</span></div>
           <div className="student-account-grid">

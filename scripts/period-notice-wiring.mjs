@@ -36,6 +36,8 @@ update("src/App.tsx",source=>{
 
 update("src/StudentPortal.tsx",source=>{
   let s=source;
+  s=insertOnce(s,'import PeriodNoticeCelebration from "./PeriodNoticeCelebration";\n',
+    'import PeriodNoticeViewer from "./PeriodNoticeViewer";');
   s=insertOnce(s,'import PeriodNoticeViewer from "./PeriodNoticeViewer";\n',
     'import StudentFollowupPanel from "./StudentFollowupPanel";');
   if(!s.includes('|"period-notices"|"account"')){
@@ -49,15 +51,21 @@ update("src/StudentPortal.tsx",source=>{
   s=insertOnce(s,
     '         {tab==="period-notices"&&<PeriodNoticeViewer/>}\n',
     '{tab==="account"&&<section className="portal-panel student-account-panel">');
+  s=insertOnce(s,'\n    <PeriodNoticeCelebration mode="student" loadOwn/>',
+    'return <div className="student-portal">',"after");
   if(!s.includes('tab==="period-notices"')||!s.includes('"period-notices"|"account"'))throw Error("Student portal notice tab wiring incomplete");
   return s;
 });
 
 update("src/GuardianPortal.tsx",source=>{
   let s=source;
+  s=insertOnce(s,'import PeriodNoticeCelebration from "./PeriodNoticeCelebration";\n',
+    'import {PeriodNoticesInline} from "./PeriodNoticeViewer";');
   s=insertOnce(s,
     'import {PeriodNoticesInline} from "./PeriodNoticeViewer";\n',
     'import MedalsPanel,{MedalCelebrations,type Medal} from "./MedalsPanel";');
+  s=insertOnce(s,'\n    <PeriodNoticeCelebration mode="guardian" children={c?[c]:[]}/>',
+    'return <div className="guardian-portal">',"after");
   const oldType='"overview"|"medals"|"followup"|"periodic"|"individual"|"competitions">';
   if(!s.includes('"period-notices">')){
     if(!s.includes(oldType))throw Error("Guardian tab type missing");

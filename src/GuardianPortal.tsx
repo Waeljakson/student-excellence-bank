@@ -220,6 +220,7 @@ export default function GuardianPortal({token,studentNo,schoolCode,initialData}:
   const[tab,setTab]=useState<"overview"|"medals"|"followup"|"periodic"|"individual"|"competitions"|"period-notices">("overview");
   const[periodNoticeLoading,setPeriodNoticeLoading]=useState(false);
   const[periodNoticeError,setPeriodNoticeError]=useState("");
+  const[periodNoticeReady,setPeriodNoticeReady]=useState(false);
   const tokenMode=!!token;
   const identityMode=!!studentNo;
 
@@ -261,8 +262,14 @@ export default function GuardianPortal({token,studentNo,schoolCode,initialData}:
         return {...item,period_notices:Array.isArray(fresh?.period_notices)?fresh.period_notices:[]};
       })}:latest);
     }catch(e){setPeriodNoticeError(niceError(e))}
-    finally{setPeriodNoticeLoading(false)}
+    finally{setPeriodNoticeLoading(false);setPeriodNoticeReady(true)}
   }
+  // Refresh the latest published version on every portal entry, including
+  // links and identity-based access. Do not congratulate from stale initialData.
+  useEffect(()=>{
+    if(data?.children?.length&&!periodNoticeReady)void refreshPeriodNotices();
+  },[Boolean(data?.children?.length),periodNoticeReady]);
+
   useEffect(()=>{
     if(tab==="period-notices"&&data)void refreshPeriodNotices();
     // Avoid retriggering on setData: only refresh on tab entry or child selection.
@@ -338,7 +345,7 @@ export default function GuardianPortal({token,studentNo,schoolCode,initialData}:
   const c=children.find(x=>x.id===childId)||children[0];
 
   return <div className="guardian-portal">
-    <PeriodNoticeCelebration mode="guardian" children={children} guardianScope={String(data.guardian?.id||((data.school_id||"school")+":"+children.map(child=>child.id).sort().join(",")))}/>
+    <PeriodNoticeCelebration mode="guardian" children={periodNoticeReady?children:[]} guardianScope={String(data.guardian?.id||((data.school_id||"school")+":"+children.map(child=>child.id).sort().join(",")))}/>
     <header className="guardian-head">
       <div className="guardian-school-brand">
         <div className="guardian-school-logos"><img src={`${import.meta.env.BASE_URL}school-logo.png`} alt="شعار المدرسة"/><img src={`${import.meta.env.BASE_URL}guidance-logo.png`} alt="شعار التوجيه الطلابي"/></div>

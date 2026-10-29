@@ -1,0 +1,45 @@
+.period-notices{direction:rtl;text-align:right;color:#234156}
+.period-notices .panel{margin:14px 0;padding:20px}
+.period-notices h2{font-size:21px;color:#174c72}
+.period-notices h3{font-size:18px;color:#174c72;margin:0 0 11px}
+.period-notices h4{font-size:16px;color:#214e6c;margin:0 0 5px}
+.period-notices input[type="file"],.period-notices select{min-height:44px;padding:10px 13px;border:1px solid #ccdae6;border-radius:9px;background:white;font:inherit;color:#234156;max-width:100%}
+.period-notices input[type="file"]{display:block;width:100%;margin:12px 0}
+.period-notices label{display:flex;flex-direction:column;gap:6px;max-width:100%;font-weight:700;font-size:13px;color:#385b74}
+.period-notices button{cursor:pointer}
+.period-notices .period-toolbar{display:flex;align-items:end;gap:14px;flex-wrap:wrap}
+.period-notices .period-toolbar label{min-width:min(420px,100%)}
+.period-hint{font-size:12px;color:#60758a;margin:12px 0 0}
+.period-import-stats{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin:14px 0}
+.period-import-stats b{display:inline-block;padding:8px 12px;border-radius:10px;background:#e9f3fa;color:#235c7f;font-size:13px}
+.period-source-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:10px;margin-bottom:16px}
+.period-source-list>div{border:1px solid #dbe6ef;border-radius:12px;padding:11px;display:flex;flex-direction:column;gap:5px;min-width:0}
+.period-source-list strong{overflow-wrap:anywhere;font-size:12px}
+.period-source-list span,.period-source-list small{font-size:11px}
+.period-danger{color:#ae3e37!important}
+.period-warning{padding:12px;background:#fff2ed;border:1px solid #e4b5a5;margin:12px 0;border-radius:9px;font-size:12px}
+.period-warning p{margin:4px 0}
+.period-import-stats .period-draft,.period-draft{background:#fff2df;color:#945a1d}
+.period-import-stats .period-published,.period-published{background:#e2f7eb;color:#166f4d}
+.period-table{width:100%;min-width:760px;border-collapse:collapse}
+.period-table th{color:#1a4967;background:#eaf2f8;font-size:12px}
+.period-table td,.period-table th{border:1px solid #dae6ed;padding:9px 10px;text-align:right;white-space:normal;vertical-align:top;overflow-wrap:anywhere}
+.period-table td{font-size:12px;color:#324e62;line-height:1.7}
+.period-table td small{display:block;font-size:11px;color:#6b7f8e}
+.period-publish{border-top:1px solid #e0eaf0;padding-top:16px;margin-top:16px}
+.period-publish p{font-size:12px;color:#70531c}
+.period-child{margin:16px 0 24px}
+.period-child h3{padding-bottom:10px;border-bottom:1px solid #dbe6f0}
+.period-notice-title{display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap}
+.period-notice-title p{color:#637d8d;font-size:12px}
+.period-notice-title span{border-radius:8px;padding:6px 10px;font-size:12px;font-weight:800}
+.period-components{display:flex;flex-wrap:wrap;gap:7px 12px;font-size:11px}
+.period-components span{padding:3px 7px;background:#f5f8fa;border-radius:6px;white-space:normal}
+.period-summary{display:flex;flex-wrap:wrap;gap:11px;margin-top:13px}
+.period-summary span{border:1px solid #dce8ef;background:#f7fafc;padding:9px 11px;border-radius:8px;font-size:12px}
+@media(max-width:600px){.period-notices .panel{padding:13px}.period-source-list{grid-template-columns:1fr}.period-import-stats b{font-size:11px}}
+@media print{.period-notice-reader .period-notice{break-inside:avoid}.period-notices button{display:none!important}}
+
+.period-student-preview{font-size:11px;color:#4a6579;margin-top:8px}
+.period-student-preview summary{cursor:pointer;color:#1c6183;font-weight:700}
+.period-student-preview p{margin:3px 0;line-height:1.6}

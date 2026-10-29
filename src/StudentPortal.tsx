@@ -6,6 +6,7 @@ import "./feature-upgrade.css";
 import "./student-account.css";
 import StudentPrograms from "./StudentPrograms";
 import StudentRedemptionPanel from "./StudentRedemptionPanel";
+import PeriodNoticeViewer from "./PeriodNoticeViewer";
 import StudentFollowupPanel from "./StudentFollowupPanel";
 import MedalsPanel,{type Medal} from "./MedalsPanel";
 import "./redemption.css";
@@ -27,7 +28,7 @@ type PortalData = {
   announcements: PortalAnnouncement[];
   followup_notes: FollowupNote[];
 };
-type StudentTab="home"|"competitions"|"rewards"|"medals"|"followup"|"checks"|"announcements"|"account";
+type StudentTab="home"|"competitions"|"rewards"|"medals"|"followup"|"checks"|"announcements"|"period-notices"|"account";
 
 function date(v?:string|null){return v?new Date(v).toLocaleDateString("ar-SA",{year:"numeric",month:"long",day:"numeric"}):"—"}
 function authError(result:any){if(result?.error)throw new Error(result.error.message||result.error.code||"تعذر تنفيذ العملية")}
@@ -151,7 +152,8 @@ export default function StudentPortal({cacheUserId=""}:{cacheUserId?:string}){
     {id:"followup",label:"ملاحظات المعلمين",icon:"✎",count:activeNotes.length},
     {id:"checks",label:"شيكات التميز",icon:"✓",count:allChecks.length},
     {id:"announcements",label:"الإعلانات",icon:"◉",count:announcements.length},
-    {id:"account",label:"حسابي",icon:"⚙"}
+         {id:"period-notices",label:"إشعارات النتائج",icon:"▤"},
+{id:"account",label:"حسابي",icon:"⚙"}
   ];
 
   return <div className="student-portal">
@@ -214,7 +216,8 @@ export default function StudentPortal({cacheUserId=""}:{cacheUserId?:string}){
           {announcements.length?<div className="announcement-list">{announcements.map(a=><div className="announcement-card" key={a.id}><span>إعلان</span><h4>{a.title_ar}</h4><p>{a.body_ar}</p><small>تاريخ الإعلان: {date(a.starts_at)}{a.ends_at?` · حتى ${date(a.ends_at)}`:""}</small></div>)}</div>:<div className="empty">لا توجد إعلانات عامة حاليًا.</div>}
         </section>}
 
-        {tab==="account"&&<section className="portal-panel student-account-panel">
+                 {tab==="period-notices"&&<PeriodNoticeViewer/>}
+{tab==="account"&&<section className="portal-panel student-account-panel">
           <div className="portal-panel-title"><div><h3>إعدادات حسابي</h3><p>الصورة الشخصية وكلمة المرور</p></div><span>⚙</span></div>
           <div className="student-account-grid">
             <div className="student-photo-settings"><div className="student-avatar large">{s.avatar?<img src={s.avatar} alt="الصورة الشخصية"/>:<span>{s.name?.trim()?.charAt(0)||"ط"}</span>}</div><div><h4>صورتي الشخصية</h4><p>اختر صورة واضحة. سيتم قصها وضغطها تلقائيًا.</p><label className={`btn primary upload-avatar-btn ${photoBusy?"disabled":""}`}>{photoBusy?"جارٍ حفظ الصورة...":"اختيار صورة"}<input type="file" accept="image/jpeg,image/png,image/webp" disabled={photoBusy} onChange={uploadPhoto}/></label>{photoMsg&&<div className="notice compact-notice">{photoMsg}</div>}</div></div>

@@ -5,20 +5,9 @@ import "./period-notices.css";
 
 type Celebration={student:string;notice:PeriodNotice;id:string};
 
-// A guardian may see the celebration again every six hours, but only during
-// the seven days following the publication of that specific period notice.
-const GUARDIAN_REPEAT_MS=6*60*60*1000;
+// Every new guardian portal visit gets a celebration while the published
+// result is within its seven-day announcement window.
 const GUARDIAN_VISIBLE_MS=7*24*60*60*1000;
-function storedTime(key:string,fallback:Record<string,number>):number{
-  try{
-    const value=Number(localStorage.getItem(key));
-    return Number.isFinite(value)&&value>0?value:(fallback[key]||0);
-  }catch{return fallback[key]||0}
-}
-function rememberTime(key:string,value:number,fallback:Record<string,number>){
-  fallback[key]=value;
-  try{localStorage.setItem(key,String(value))}catch{/* Browser privacy mode: the current tab still respects the cooldown. */}
-}
 
 const particles=Array.from({length:54},(_,i)=>({
   left:`${(i*47+13)%100}%`,
@@ -36,8 +25,8 @@ export default function PeriodNoticeCelebration({
 }:{mode:"student"|"guardian";children?:PeriodNoticeChild[];loadOwn?:boolean;guardianScope?:string}){
   const [myChildren,setMyChildren]=useState<PeriodNoticeChild[]>(children);
   const [celebration,setCelebration]=useState<Celebration|null>(null);
-  const [currentTime,setCurrentTime]=useState(()=>Date.now());
-  const localTimes=useRef<Record<string,number>>({});
+  // These refs reset when the portal is entered again, unlike sessionStorage.
+  const shownThisVisit=useRef(false);
   const shownThisSession=useRef<Set<string>>(new Set());
   useEffect(()=>{
     setMyChildren(children);
@@ -50,18 +39,6 @@ export default function PeriodNoticeCelebration({
       .catch(()=>{});
     return()=>{active=false};
   },[loadOwn]);
-  useEffect(()=>{
-    if(mode!=="guardian")return;
-    const update=()=>{if(document.visibilityState==="visible")setCurrentTime(Date.now())};
-    const interval=window.setInterval(update,60_000);
-    window.addEventListener("focus",update);
-    document.addEventListener("visibilitychange",update);
-    return()=>{
-      window.clearInterval(interval);
-      window.removeEventListener("focus",update);
-      document.removeEventListener("visibilitychange",update);
-    };
-  },[mode]);
   useEffect(()=>{
     if(celebration||document.visibilityState==="hidden")return;
     if(mode==="student"){
@@ -79,30 +56,30 @@ export default function PeriodNoticeCelebration({
       return;
     }
 
+    if(shownThisVisit.current)return;
+    const now=Date.now();
     const parentId=guardianScope||myChildren.map(c=>c.id).sort().join("-");
     if(!parentId)return;
-    const globalKey=`period-notice-grade-guardian-last-v1-${parentId}`;
-    if(currentTime-storedTime(globalKey,localTimes.current)<GUARDIAN_REPEAT_MS)return;
-
     const eligible=myChildren.flatMap(student=>(student.period_notices||[])
       .filter(n=>Number(n.grade_rank??n.school_rank)>=1&&Number(n.grade_rank??n.school_rank)<=5)
-      .map(notice=>{
-        const publishedAt=new Date(notice.published_at).getTime();
-        const id=`period-notice-grade-guardian-item-v1-${student.id}-${notice.id}`;
-        return {student:student.name,notice,id,publishedAt,
-          lastShown:storedTime(id,localTimes.current)};
-      })
-      .filter(x=>Number.isFinite(x.publishedAt)&&
-        x.publishedAt<=currentTime&&currentTime-x.publishedAt<GUARDIAN_VISIBLE_MS&&
-        currentTime-x.lastShown>=GUARDIAN_REPEAT_MS));
+      .map(notice=>({student:student.name,notice,publishedAt:new Date(notice.published_at).getTime()}))
+      .filter(x=>Number.isFinite(x.publishedAt)&&x.publishedAt<=now&&now-x.publishedAt<GUARDIAN_VISIBLE_MS))
+      .sort((a,b)=>b.publishedAt-a.publishedAt||a.student.localeCompare(b.student,"ar"));
     if(!eligible.length)return;
-    // If the guardian has multiple qualifying children, alternate celebrations.
-    eligible.sort((a,b)=>a.lastShown-b.lastShown||b.publishedAt-a.publishedAt);
-    const winner=eligible[0];
-    rememberTime(globalKey,currentTime,localTimes.current);
-    rememberTime(winner.id,currentTime,localTimes.current);
-    setCelebration({student:winner.student,notice:winner.notice,id:winner.id});
-  },[celebration,myChildren,mode,currentTime,guardianScope]);
+    // Rotate between qualifying children on subsequent portal visits; never
+    // use browser storage to suppress a visit's congratulation.
+    const cycleKey=`period-notice-guardian-cycle-v2-${parentId}`;
+    let index=0;
+    try{
+      const saved=Number(localStorage.getItem(cycleKey));
+      index=Number.isSafeInteger(saved)&&saved>=0?saved%eligible.length:0;
+      localStorage.setItem(cycleKey,String((index+1)%eligible.length));
+    }catch{/* Storage unavailable: still celebrate the current visit. */}
+    const selected=eligible[index];
+    shownThisVisit.current=true;
+    setCelebration({student:selected.student,notice:selected.notice,
+      id:`period-notice-grade-guardian-${selected.notice.id}`});
+  },[celebration,myChildren,mode,guardianScope]);
 
   useEffect(()=>{
     if(!celebration)return;

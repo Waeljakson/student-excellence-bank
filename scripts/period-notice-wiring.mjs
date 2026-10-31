@@ -120,4 +120,30 @@ update("src/App.tsx",source=>{
  return s;
 });
 
+
+// Stage 3: ensure early-support features persist through prebuild transformations.
+update("src/App.tsx",source=>{
+ let s=source;
+ if(!s.includes('import Phase3SupportCenter from "./Phase3SupportCenter";')){
+  const anchor='import Phase2MessageAdmin from "./Phase2MessageAdmin";';
+  if(!s.includes(anchor))throw Error("Phase 3 import anchor missing");
+  s=s.replace(anchor,anchor+'\nimport Phase3SupportCenter from "./Phase3SupportCenter";');
+ }
+ if(!s.includes('"phase3-support"'))s=s.replace(/type Tab = ([^;]+);/,(_,v)=>'type Tab = '+v+' | "phase3-support";');
+ const navAnchor='  nav.push(["account","حسابي","◉"]);';
+ const nav='  if(profile.roles?.some(r=>["SUPER_ADMIN","SCHOOL_ADMIN","PRINCIPAL","VICE_PRINCIPAL","GUIDANCE_COUNSELOR"].includes(r))) nav.push(["phase3-support","الدعم المبكر للطلاب","✧"]);\n';
+ if(!s.includes('nav.push(["phase3-support"')){
+  if(!s.includes(navAnchor))throw Error("Phase 3 navigation anchor missing");
+  s=s.replace(navAnchor,nav+navAnchor);
+ }
+ const viewAnchor='{tab==="account"&&<UserAccount profile={profile} onProfileChanged={refreshProfile}/>}';
+ const view='{tab==="phase3-support"&&profile.roles?.some(r=>["SUPER_ADMIN","SCHOOL_ADMIN","PRINCIPAL","VICE_PRINCIPAL","GUIDANCE_COUNSELOR"].includes(r))&&<Phase3SupportCenter/>} ';
+ if(!s.includes('tab==="phase3-support"')){
+  if(!s.includes(viewAnchor))throw Error("Phase 3 view anchor missing");
+  s=s.replace(viewAnchor,view+viewAnchor);
+ }
+ if(!s.includes('<Phase3SupportCenter/>'))throw Error("Phase 3 view is missing after build wiring");
+ return s;
+});
+
 console.log("period-notice-wiring: admin, student and guardian tabs ready");

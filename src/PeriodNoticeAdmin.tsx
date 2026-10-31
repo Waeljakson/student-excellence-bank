@@ -161,12 +161,12 @@ export default function PeriodNoticeAdmin({schoolName}:{schoolName:string}){
   }
   async function publish(){
     if(!batch||batch.published_at||busy||!batch.student_count)return;
-    if(!window.confirm("تأكيد نشر "+batch.student_count+" إشعارًا؟ سيظهر لكل طالب وولي أمر إشعار الطالب الخاص به فقط. لا يمكن تعديل الدفعة بعد النشر."))return;
+    if(!window.confirm("تأكيد نشر "+batch.student_count+" إشعارًا؟ سيحصل أصحاب المراكز الخمسة الأولى بكل صف ومن تساووا مع الخامس في النسبة على 25 نقطة تميز تلقائيًا، دون تكرار المكافأة لنفس الفترة. لا يمكن تعديل الدفعة بعد النشر."))return;
     setBusy(true);setError("");setMessage("");
     try{
       const r=await rpc<{published:boolean;student_count:number}>("api_period_notice_publish",{p_batch_id:batch.id});
       await load();
-      setMessage("تم نشر "+r.student_count+" إشعارًا بنجاح. ظهرت الآن في الحسابات المرتبطة بالطلاب.");
+      setMessage("تم نشر "+r.student_count+" إشعارًا بنجاح. جرى احتساب مكافأة التفوق (+25 نقطة) للمستحقين، بما في ذلك المتساوون مع الخامس في النسبة. لا تتكرر المكافأة لنفس الفترة عند إعادة نشر النتائج.");
     }catch(e){setError(niceError(e))}finally{setBusy(false)}
   }
   return <div className="period-notices" dir="rtl">

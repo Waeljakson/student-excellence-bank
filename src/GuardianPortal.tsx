@@ -248,11 +248,8 @@ export default function GuardianPortal({token,studentNo,schoolCode,initialData}:
       let updated:any;
       if(identityMode){
         const code=schoolCode||data?.school_code||"";
-        const lookup=code
-          ?await rpc<any>("api_guardian_lookup_school",{p_student_no:studentNo,p_school_code:code})
-          :await rpc<any>("api_guardian_lookup",{p_mobile:studentNo});
-        if(!lookup?.exists||lookup?.source!=="student_no"||!lookup?.portal)throw new Error("STUDENT_NOT_FOUND");
-        updated=lookup.portal;
+        if(!code)throw new Error("SCHOOL_REQUIRED");
+        updated=await rpc<any>("api_guardian_portal_by_student_school",{p_student_no:studentNo,p_school_code:code});
       }else if(tokenMode){
         updated=await rpc<any>("api_guardian_portal_by_token",{p_token:token});
       }else{
@@ -274,11 +271,9 @@ export default function GuardianPortal({token,studentNo,schoolCode,initialData}:
     try{
       let latest:any;
       if(identityMode){
-        const lookup=schoolCode
-          ?await rpc<any>("api_guardian_lookup_school",{p_student_no:studentNo,p_school_code:schoolCode})
-          :await rpc<any>("api_guardian_lookup",{p_mobile:studentNo});
-        if(lookup?.source!=="student_no"||!lookup?.portal)throw new Error("STUDENT_NOT_FOUND");
-        latest=lookup.portal;
+        const code=schoolCode||data?.school_code||"";
+        if(!code)throw new Error("SCHOOL_REQUIRED");
+        latest=await rpc<any>("api_guardian_portal_by_student_school",{p_student_no:studentNo,p_school_code:code});
       }else if(tokenMode){
         latest=await rpc<any>("api_guardian_portal_by_token",{p_token:token});
       }else{

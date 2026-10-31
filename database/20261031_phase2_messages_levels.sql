@@ -40,7 +40,7 @@ BEGIN
  FROM (SELECT id,title_ar,body_ar,kind,audience,class_id,student_id,status,duration_days,published_at,expires_at,created_at
  FROM public.phase2_messages WHERE school_id=v_school ORDER BY created_at DESC LIMIT 100) x),'[]'::jsonb),
  'classes',COALESCE((SELECT jsonb_agg(jsonb_build_object('id',c.id,'name',g.name_ar||' — '||c.name_ar) ORDER BY g.name_ar,c.name_ar)
- FROM public.classes c JOIN public.grades g ON g.id=c.grade_id WHERE c.school_id=v_school AND c.is_active),'[]'::jsonb),
+ FROM public.classes c JOIN public.grades g ON g.id=c.grade_id JOIN public.departments dep ON dep.id=g.department_id JOIN public.academic_years ay ON ay.id=c.academic_year_id WHERE dep.school_id=v_school AND ay.school_id=v_school AND c.is_active),'[]'::jsonb),
  'students',COALESCE((SELECT jsonb_agg(jsonb_build_object('id',s.id,'name',s.full_name_ar,'no',s.student_no) ORDER BY s.full_name_ar)
  FROM public.students s WHERE s.school_id=v_school AND s.is_active),'[]'::jsonb)
  );
@@ -82,7 +82,7 @@ BEGIN
  IF COALESCE(p_duration_days,0) NOT BETWEEN 1 AND 30 THEN RAISE EXCEPTION 'PHASE2_INVALID_DURATION';END IF;
  IF p_audience='SCHOOL' AND p_target_id IS NOT NULL THEN RAISE EXCEPTION 'PHASE2_INVALID_TARGET'; END IF;
  IF p_audience='CLASS' THEN
-  SELECT id INTO v_class FROM public.classes WHERE id=p_target_id AND school_id=v_school AND is_active;
+  SELECT c.id INTO v_class FROM public.classes c JOIN public.grades g ON g.id=c.grade_id JOIN public.departments dep ON dep.id=g.department_id JOIN public.academic_years ay ON ay.id=c.academic_year_id WHERE c.id=p_target_id AND dep.school_id=v_school AND ay.school_id=v_school AND c.is_active;
   IF v_class IS NULL THEN RAISE EXCEPTION 'PHASE2_INVALID_TARGET'; END IF;
  ELSIF p_audience='STUDENT' THEN
   SELECT id INTO v_student FROM public.students WHERE id=p_target_id AND school_id=v_school AND is_active;
@@ -113,7 +113,7 @@ BEGIN
  SELECT * INTO v_row FROM public.phase2_messages WHERE id=p_id AND school_id=v_school FOR UPDATE;
  IF NOT FOUND THEN RAISE EXCEPTION 'PHASE2_MESSAGE_NOT_FOUND'; END IF;
  IF p_action='PUBLISH' AND v_row.status='DRAFT' THEN
-  IF v_row.audience='CLASS' AND NOT EXISTS(SELECT 1 FROM public.classes WHERE id=v_row.class_id AND school_id=v_school AND is_active) THEN RAISE EXCEPTION 'PHASE2_INVALID_TARGET';END IF;
+  IF v_row.audience='CLASS' AND NOT EXISTS(SELECT 1 FROM public.classes c JOIN public.grades g ON g.id=c.grade_id JOIN public.departments dep ON dep.id=g.department_id JOIN public.academic_years ay ON ay.id=c.academic_year_id WHERE c.id=v_row.class_id AND dep.school_id=v_school AND ay.school_id=v_school AND c.is_active) THEN RAISE EXCEPTION 'PHASE2_INVALID_TARGET';END IF;
   IF v_row.audience='STUDENT' AND NOT EXISTS(SELECT 1 FROM public.students WHERE id=v_row.student_id AND school_id=v_school AND is_active) THEN RAISE EXCEPTION 'PHASE2_INVALID_TARGET'; END IF;
   UPDATE public.phase2_messages SET status='PUBLISHED',published_at=now(),expires_at=now()+make_interval(days=>v_row.duration_days),updated_at=now() WHERE id=p_id;
  ELSIF p_action='ARCHIVE' AND v_row.status IN ('DRAFT','PUBLISHED') THEN

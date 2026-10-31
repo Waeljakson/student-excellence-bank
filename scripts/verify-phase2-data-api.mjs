@@ -1,4 +1,4 @@
-// Standalone smoke test: verify that newly deployed Neon Data API RPCs
+// Repeat smoke test after Neon Data API schema reload: verify that newly deployed Neon Data API RPCs
 // are actually visible over HTTPS, not merely present in PostgreSQL.
 const base="https://ep-green-bar-b2rjvdpo.apirest.c-6.eu-central-1.aws.neon.tech/excellence_bank/rest/v1";
 const authUrl="https://ep-green-bar-b2rjvdpo.neonauth.c-6.eu-central-1.aws.neon.tech/excellence_bank/auth";

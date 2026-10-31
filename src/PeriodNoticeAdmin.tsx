@@ -13,7 +13,7 @@ type AdminBatch={id:string;title:string;published_at:string|null;created_at:stri
   unmatched_count:number;
   unmatched:Array<{student_no:string;student_name:string;source_file:string;error:string}>;
   items:Array<{id:string;student_name:string;student_no:string;grade_name:string;
-  class_name:string;subject_count:number;total:number|null;source_file:string;
+  class_name:string;subject_count:number;total:number|null;total_max:number|null;score_complete:boolean;source_file:string;
   subjects:Array<{subject:string;total:number|null;maximum:number|null}>}>};
 type AdminData={batches:AdminBatch[]};
 type StageResult={batch_id:string;saved:number;missing_count:number;
@@ -225,7 +225,7 @@ export default function PeriodNoticeAdmin({schoolName}:{schoolName:string}){
           </tr></thead><tbody>{shown.map(x=><tr key={x.id}>
             <td>{x.student_name}</td><td>{x.student_no}</td><td>{x.grade_name}</td>
             <td>{x.class_name}</td><td>{x.subject_count}</td>
-            <td>{x.total??"—"}</td><td>{x.source_file}
+            <td>{x.score_complete===false?"بيانات غير مكتملة":x.total!=null&&x.total_max!=null?x.total+" / "+x.total_max:"—"}</td><td>{x.source_file}
               <details className="period-student-preview"><summary>معاينة المواد والدرجات</summary>
                 {(x.subjects||[]).map((subject,i)=><p key={i}>{subject.subject}:
                   <b> {subject.total??"—"} / {subject.maximum??"—"}</b></p>)}

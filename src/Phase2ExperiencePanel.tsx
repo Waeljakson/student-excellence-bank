@@ -1,5 +1,6 @@
 import {useEffect,useState} from "react";
 import {niceError,rpc} from "./client";
+import {enableMobileSchoolAlerts,disableMobileSchoolAlerts,mobileSchoolAlertsEnabled,mobileSchoolAlertsSupported,notifyNewSchoolMessages} from "./mobile-school-alerts";
 import "./phase2-messaging.css";
 
 type Level={name:string;earned:number;balance:number;threshold:number;next_name:string|null;next_threshold:number|null;remaining:number;percent:number;levels:Array<{name:string;points:number}>};
@@ -13,7 +14,7 @@ function saveCache(k:string){try{localStorage.setItem(k,"1")}catch{}}
 
 export default function Phase2ExperiencePanel({mode,studentNo,schoolCode,studentId,compact=false}:Props){
  const[data,setData]=useState<Experience|null>(null),[error,setError]=useState("");
- const[loading,setLoading]=useState(true),[expanded,setExpanded]=useState(false),[tick,setTick]=useState(0),[celebration,setCelebration]=useState<Message|null>(null),[levelCelebration,setLevelCelebration]=useState(false);
+ const[loading,setLoading]=useState(true),[expanded,setExpanded]=useState(false),[tick,setTick]=useState(0),[celebration,setCelebration]=useState<Message|null>(null),[levelCelebration,setLevelCelebration]=useState(false),[alertEnabled,setAlertEnabled]=useState(false),[alertStatus,setAlertStatus]=useState("");
  useEffect(()=>{
  let live=true;setLoading(true);setData(null);setError("");setCelebration(null);setLevelCelebration(false);
  const request=mode==="guardian"
@@ -21,6 +22,8 @@ export default function Phase2ExperiencePanel({mode,studentNo,schoolCode,student
  :rpc<Experience>("api_phase2_student_experience");
  request.then(x=>{
  if(!live||!x)return;setData(x);
+ setAlertEnabled(mobileSchoolAlertsEnabled(x.school_id,x.student_id));
+ void notifyNewSchoolMessages(x.school_id,x.student_id,x.messages||[]);
  const today=Date.now();
  const party=(x.messages||[]).find(m=>m.kind==="CONGRATULATION" &&
    today-new Date(m.published_at).getTime()<=3*86400000 &&
@@ -31,11 +34,18 @@ export default function Phase2ExperiencePanel({mode,studentNo,schoolCode,student
  }).catch(e=>{if(live)setError(niceError(e))}).finally(()=>{if(live)setLoading(false)});
  return()=>{live=false};
  },[mode,studentNo,schoolCode,studentId,tick]);
- useEffect(()=>{const onFocus=()=>{if(document.visibilityState==="visible")setTick(x=>x+1)};window.addEventListener("focus",onFocus);return()=>window.removeEventListener("focus",onFocus)},[]);
+ useEffect(()=>{const onFocus=()=>{if(document.visibilityState==="visible")setTick(x=>x+1)};
+ const timer=window.setInterval(()=>{if(document.visibilityState==="visible")setTick(x=>x+1)},120000);
+ window.addEventListener("focus",onFocus);return()=>{window.clearInterval(timer);window.removeEventListener("focus",onFocus)}},[]);
  const messages=data?.messages||[];
  const level=data?.level;
  function closeCelebration(){if(celebration&&data)saveCache("bank-v2-celebration:"+data.school_id+":"+data.student_id+":"+celebration.id);setCelebration(null)}
  function closeLevelCelebration(){if(data?.level)saveCache("bank-v2-tier:"+data.school_id+":"+data.student_id+":"+data.level.threshold);setLevelCelebration(false)}
+ async function toggleAlerts(){if(!data)return;setAlertStatus("");
+ if(alertEnabled){disableMobileSchoolAlerts(data.school_id,data.student_id);setAlertEnabled(false);setAlertStatus("أوقفت تنبيهات هذا الطالب على الجهاز.");return}
+ try{const ok=await enableMobileSchoolAlerts(data.school_id,data.student_id);setAlertEnabled(ok);
+ setAlertStatus(ok?"تم تفعيل تنبيهات المدرسة أثناء تشغيل التطبيق.":"لم يسمح المتصفح بتفعيل الإشعارات؛ يمكنك مراجعة إعدادات الإشعارات في الجهاز.");
+ }catch{setAlertStatus("لا يدعم هذا المتصفح تفعيل الإشعارات الآن.")}}
  return <div className="p2-experience" dir="rtl">
  {loading&&!data&&<p className="p2-muted">جارٍ تحديث مستويات التميز والإشعارات...</p>}
  {error&&<p className="p2-error">تعذر تحديث الإشعارات والمستويات: {error}<button type="button" onClick={()=>setTick(x=>x+1)}>إعادة المحاولة</button></p>}
@@ -47,6 +57,8 @@ export default function Phase2ExperiencePanel({mode,studentNo,schoolCode,student
  <p className="p2-level-note">المستويات تُحتسب من النقاط المكتسبة بعد استبعاد العمليات المعكوسة، ولا تنخفض عند استبدال النقاط بمكافآت.</p>
  </section>}
  <section className="p2-inbox"><header><div><small>مركز إشعارات المدرسة</small><h3>رسائل المدرسة والتهاني</h3></div><div className="p2-inbox-tools"><b>{fmt(messages.length)} إشعار</b><button type="button" onClick={()=>setTick(x=>x+1)}>تحديث ↻</button></div></header>
+ {data&&mobileSchoolAlertsSupported()&&<div className="p2-alert-preference"><button type="button" onClick={()=>void toggleAlerts()}>{alertEnabled?"إيقاف إشعارات الجهاز":"تفعيل إشعارات الجهاز"}</button><small>تنبيهات اختيارية عند وصول رسائل جديدة أثناء تشغيل التطبيق فقط؛ لا تعمل بعد إغلاق التطبيق بالكامل.</small></div>}
+ {alertStatus&&<p className="p2-alert-status" role="status">{alertStatus}</p>}
  {messages.length>0?<div className="p2-inbox-list">{(expanded?messages:messages.slice(0,3)).map(m=><article key={m.id} className={"p2-inbox-item "+m.kind.toLowerCase()}>
  <small>{m.kind==="CONGRATULATION"?"تهنئة وتكريم":m.kind==="ALERT"?"تنبيه من المدرسة":"إعلان مدرسي"} · {date(m.published_at)}</small>
  <h4>{m.title_ar}</h4><p>{m.body_ar}</p></article>)}</div>:<div className="p2-empty">لا توجد إشعارات جديدة موجهة لهذا الطالب في الوقت الحالي.</div>}

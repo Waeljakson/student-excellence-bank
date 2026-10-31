@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { niceError, rpc } from "./client";
-import CompetitionJudging from "./CompetitionJudging";
 import { getCurrentSchoolName } from "./school-brand";
+import CompetitionJudging from "./CompetitionJudging";
 import "./engagement.css";
 import "./report-print.css";
 

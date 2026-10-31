@@ -1,0 +1,29 @@
+.guardian-week-pulse{font-family:Cairo,Tahoma,sans-serif;margin:18px 0;padding:20px;border-radius:20px;border:1px solid #bbdce3;background:linear-gradient(135deg,#f1fbfc 0%,#fff 75%);box-shadow:0 9px 28px rgba(9,83,104,.08);color:#284b5d}
+.guardian-week-title{display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;margin-bottom:17px}
+.guardian-week-title span{display:inline-block;color:#087a8a;font-weight:800;font-size:12px;letter-spacing:.15px}
+.guardian-week-title h3{font-size:23px;margin:3px 0 2px;color:#194c64}
+.guardian-week-title p{font-size:12px;margin:0;color:#637a84;line-height:1.9}
+.guardian-week-title button,.guardian-week-footer button,.guardian-week-grid button,.guardian-updates-list button{background:#e5f6f8;color:#0c6574;font:700 12px Cairo,Tahoma,sans-serif;border:1px solid #bee2e8;padding:8px 13px;border-radius:10px;cursor:pointer}
+.guardian-week-title button:hover,.guardian-week-footer button:hover,.guardian-week-grid button:hover,.guardian-updates-list button:hover{background:#d0f0f4}
+.guardian-week-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+.guardian-week-grid article{background:#fff;border:1px solid #dce9ed;border-radius:14px;padding:16px 12px;display:flex;flex-direction:column;gap:4px;min-width:0}
+.guardian-week-grid small{font-size:12px;color:#5b707e;min-height:2.4em}
+.guardian-week-grid strong{font-size:29px;color:#116886;line-height:1.35}
+.guardian-week-grid article:nth-child(2) strong{color:#ac7040}
+.guardian-week-grid button{align-self:flex-start;border:0;background:transparent;padding:5px 0 0;color:#0b758d}
+.guardian-week-footer{margin-top:13px;padding:12px 14px;border:1px solid #e1edf0;background:#fff;border-radius:12px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.guardian-week-footer p{margin:0;font-size:12px;line-height:1.9;color:#395e6b}
+.guardian-updates header{margin-bottom:15px}.guardian-updates header h3{margin:0 0 4px;color:#174f65}
+.guardian-updates header p{margin:0;color:#657d85;font-size:12px}
+.guardian-updates-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:12px}
+.guardian-updates-list article{border:1px solid #dce7eb;background:#fbfdfd;border-radius:14px;padding:14px}
+.guardian-updates-list article>div{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.guardian-updates-list article span{background:#e7f5f6;color:#137082;padding:4px 9px;border-radius:999px;font-size:11px;font-weight:800}
+.guardian-updates-list time{font-size:10px;color:#697f88}
+.guardian-updates-list h4{font-size:15px;color:#244e62;margin:11px 0 5px}
+.guardian-updates-list p{font-size:12px;color:#506c79;line-height:1.8;margin:0 0 10px;white-space:pre-line}
+.guardian-refresh-button{border:1px solid #c7e0e5;border-radius:10px;background:#f0fafb;color:#0a6577;font:700 12px Cairo,Tahoma,sans-serif;padding:9px 12px;cursor:pointer}
+.guardian-refresh-button:disabled{opacity:.55;cursor:wait}
+.guardian-refresh-error{background:#fff2ef;color:#9d3d27;border:1px solid #e7b8a9;padding:10px 14px;border-radius:9px}
+@media(max-width:840px){.guardian-week-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:540px){.guardian-week-pulse{padding:15px}.guardian-week-title h3{font-size:19px}.guardian-week-grid{gap:8px}.guardian-week-grid article{padding:12px 10px}.guardian-week-grid strong{font-size:25px}.guardian-updates-list{grid-template-columns:1fr}}

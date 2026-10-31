@@ -208,6 +208,11 @@ export default function PeriodNoticeAdmin({schoolName}:{schoolName:string}){
             <b className={batch.published_at?"period-published":"period-draft"}>
               {batch.published_at?"منشورة":"مسودة — غير مرئية للطلاب وأولياء الأمور"}
             </b></div>
+          {batch.items.some(item=>item.score_complete===false)&&<div className="period-warning">
+              <h4>تنبيه: توجد إشعارات بها درجات مواد غير مكتملة</h4>
+              <p>النسبة والترتيب يُحتسبان من مجموع درجات جميع المواد، وليس من المادة الأخيرة. لن يدخل أصحاب البيانات غير المكتملة في قائمة الأوائل حتى تصحيح درجاتهم.</p>
+              <p>الإشعارات غير المكتملة: {batch.items.filter(item=>item.score_complete===false).length}</p>
+            </div>}
           <label>الصف الدراسي
             <select value={previewGrade} onChange={e=>setPreviewGrade(e.target.value)}>
               <option value="ALL">كل الصفوف</option>{grades.map(x=><option value={x} key={x}>{x}</option>)}

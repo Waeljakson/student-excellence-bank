@@ -15,6 +15,9 @@ const functions=[
  {name:"api_phase2_guardian_experience",body:{p_student_no:"0000000000",p_school_code:"MISHKAT"},expected:"STUDENT_NOT_FOUND"},
  {name:"api_phase2_student_experience",body:{},expected:"AUTH_REQUIRED"},
  {name:"api_phase2_admin_data",body:{},expected:"AUTH_REQUIRED"},
+ {name:"api_phase3_review_queue",body:{p_days:30,p_grade_id:null,p_class_id:null},expected:"AUTH_REQUIRED"},
+ {name:"api_phase3_plan_history",body:{p_student_id:"00000000-0000-0000-0000-000000000000"},expected:"AUTH_REQUIRED"},
+ {name:"api_phase3_save_plan",body:{p_id:null,p_student_id:"00000000-0000-0000-0000-000000000000",p_concern_kind:"ACADEMIC",p_goal:"test goal",p_action:"test action",p_review_on:null,p_private_note:"",p_status:"OPEN"},expected:"AUTH_REQUIRED"},
 ];
 let errors=0;
 for(const test of functions){
@@ -32,4 +35,4 @@ for(const test of functions){
  }catch(e){errors++;process.stderr.write(test.name+": NETWORK_ERROR "+String(e)+"\n")}
 }
 if(errors){process.stderr.write(errors+" Neon RPC checks failed\n");process.exitCode=1}
-else process.stdout.write("Neon Phase 2 API schema cache and RPC exposure VERIFIED\n");
+else process.stdout.write("Neon Phase 2/3 API schema and unauthorized-access controls VERIFIED\n");

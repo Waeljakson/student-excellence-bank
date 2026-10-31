@@ -67,7 +67,8 @@ update("src/GuardianPortal.tsx",source=>{
   s=insertOnce(s,'\n    {allowsPeriodNotices&&<PeriodNoticeCelebration mode="guardian" children={periodNoticeReady?children:[]} guardianScope={String(data.guardian?.id||((data.school_id||"school")+":"+children.map(child=>child.id).sort().join(",")))}/>}',
     'return <div className="guardian-portal">',"after");
   const oldType='"overview"|"medals"|"followup"|"periodic"|"individual"|"competitions">';
-  if(!s.includes('"period-notices">')){
+  const guardianTabUnion=(s.match(/const\[tab,setTab\]=useState<([^>]+)>/)||[])[1]||"";
+  if(!guardianTabUnion.includes('"period-notices"')){
     if(!s.includes(oldType))throw Error("Guardian tab type missing");
     s=s.replace(oldType,'"overview"|"medals"|"followup"|"periodic"|"individual"|"competitions"|"period-notices">');
   }

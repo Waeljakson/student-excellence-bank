@@ -14,3 +14,6 @@
 .cj-notice,.cj-error,.cj-success{background:#fff8e8;border:1px solid #eedbb3;padding:10px;border-radius:9px;color:#82672b;font-size:12px}
 .cj-error{background:#fff0eb;color:#9c402e}.cj-success{background:#e6faed;color:#176a48}
 @media(max-width:810px){.cj-grid{grid-template-columns:1fr}.cj-root{padding:10px}}
+
+.cj-print-tools{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.cj-print-tools button:disabled{opacity:.45;cursor:default}

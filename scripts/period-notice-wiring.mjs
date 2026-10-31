@@ -86,16 +86,16 @@ update("src/App.tsx",source=>{
  let s=source;
  if(!s.includes('import {SmartDashboard} from "./SmartDashboard";')){
   s=s.replace('import PeriodNoticeAdmin from "./PeriodNoticeAdmin";',
-    'import PeriodNoticeAdmin from "./PeriodNoticeAdmin";\nimport {SmartDashboard} from "./SmartDashboard";\nimport OperationalHealth from "./OperationalHealth";');
+    'import PeriodNoticeAdmin from "./PeriodNoticeAdmin";\nimport {SmartDashboard} from "./SmartDashboard";\nimport OperationalHealth from "./OperationalHealth";\nimport StudentDossierPanel from "./StudentDossierPanel";');
  }
  if(!s.includes('"smart-dashboard"')){
-  s=s.replace(/type Tab = ([^;]+);/,(_,v)=>'type Tab = '+v+' | "smart-dashboard" | "operational-health";');
+  s=s.replace(/type Tab = ([^;]+);/,(_,v)=>'type Tab = '+v+' | "smart-dashboard" | "student-dossier" | "operational-health";');
  }
  const nav='  nav.push(["account","حسابي","◉"]);';
- const buttons='  if(profile.roles?.some(r=>["SUPER_ADMIN","SCHOOL_ADMIN","PRINCIPAL","VICE_PRINCIPAL","GUIDANCE_COUNSELOR"].includes(r))) nav.push(["smart-dashboard","لوحة القيادة الذكية","▥"]);\n  if(profile.roles?.some(r=>["SUPER_ADMIN","SCHOOL_ADMIN","PRINCIPAL","GUIDANCE_COUNSELOR"].includes(r))) nav.push(["operational-health","صحة النظام","⛨"]);\n';
+ const buttons='  if(profile.roles?.some(r=>["SUPER_ADMIN","SCHOOL_ADMIN","PRINCIPAL","VICE_PRINCIPAL","GUIDANCE_COUNSELOR"].includes(r))) nav.push(["smart-dashboard","لوحة القيادة الذكية","▥"],["student-dossier","الملف الشامل للطالب","◈"]);\n  if(profile.roles?.some(r=>["SUPER_ADMIN","SCHOOL_ADMIN","PRINCIPAL","GUIDANCE_COUNSELOR"].includes(r))) nav.push(["operational-health","صحة النظام","⛨"]);\n';
  if(!s.includes('nav.push(["smart-dashboard"'))s=s.replace(nav,buttons+nav);
  const view='{tab==="account"&&<UserAccount profile={profile} onProfileChanged={refreshProfile}/>}';
- const insert='{tab==="smart-dashboard"&&profile.roles?.some(r=>["SUPER_ADMIN","SCHOOL_ADMIN","PRINCIPAL","VICE_PRINCIPAL","GUIDANCE_COUNSELOR"].includes(r))&&<SmartDashboard/>} {tab==="operational-health"&&profile.roles?.some(r=>["SUPER_ADMIN","SCHOOL_ADMIN","PRINCIPAL","GUIDANCE_COUNSELOR"].includes(r))&&<OperationalHealth/>} ';
+ const insert='{tab==="smart-dashboard"&&profile.roles?.some(r=>["SUPER_ADMIN","SCHOOL_ADMIN","PRINCIPAL","VICE_PRINCIPAL","GUIDANCE_COUNSELOR"].includes(r))&&<SmartDashboard/>} {tab==="student-dossier"&&profile.roles?.some(r=>["SUPER_ADMIN","SCHOOL_ADMIN","PRINCIPAL","VICE_PRINCIPAL","GUIDANCE_COUNSELOR"].includes(r))&&<StudentDossierPanel students={students as unknown as Array<{id:string;name?:string}>}/>} {tab==="operational-health"&&profile.roles?.some(r=>["SUPER_ADMIN","SCHOOL_ADMIN","PRINCIPAL","GUIDANCE_COUNSELOR"].includes(r))&&<OperationalHealth/>} ';
  if(!s.includes('tab==="smart-dashboard"'))s=s.replace(view,insert+view);
  return s;
 });

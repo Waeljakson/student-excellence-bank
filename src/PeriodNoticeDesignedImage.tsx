@@ -181,7 +181,7 @@ function drawDocument(
   if(notice.is_top_five){
     ensure(54);
     rounded(ctx,LEFT,y,WIDTH-LEFT*2,46,12,"#fff3d8","#efd4a1");
-    txt(ctx,"تهانينا! الطالب من الخمسة الأوائل على مستوى الصف",RIGHT-17,y+30,17,"#8e611a",800);
+    txt(ctx,Number(notice.grade_rank??notice.school_rank)>5?"تهانينا! تعادلت نسبتك مع الخامس وأصبحت ضمن الأوائل (+25 نقطة)":"تهانينا! من الخمسة الأوائل على مستوى الصف (+25 نقطة تميز)",RIGHT-17,y+30,15,"#8e611a",800);
     y+=58;
   }
   const leaders=Array.isArray(notice.grade_top_five)?notice.grade_top_five:(Array.isArray(notice.school_top_five)?notice.school_top_five:[]);

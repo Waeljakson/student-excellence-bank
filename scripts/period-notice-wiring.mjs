@@ -101,4 +101,23 @@ update("src/App.tsx",source=>{
  return s;
 });
 
+
+// Reapply phase 2 navigation after all earlier app upgraders have run.
+update("src/App.tsx",source=>{
+ let s=source;
+ if(!s.includes('import Phase2MessageAdmin from "./Phase2MessageAdmin";'))
+  s=s.replace('import PeriodNoticeAdmin from "./PeriodNoticeAdmin";',
+    'import PeriodNoticeAdmin from "./PeriodNoticeAdmin";\nimport Phase2MessageAdmin from "./Phase2MessageAdmin";');
+ if(!s.includes('"phase2-messages"'))
+  s=s.replace(/type Tab = ([^;]+);/,(_,v)=>'type Tab = '+v+' | "phase2-messages";');
+ const anchor='  nav.push(["account","حسابي","◉"]);';
+ const nav='  if(profile.roles?.some(r=>["SUPER_ADMIN","SCHOOL_ADMIN","PRINCIPAL","GUIDANCE_COUNSELOR"].includes(r))) nav.push(["phase2-messages","مركز الإشعارات والتهاني","✉"]);\n';
+ if(!s.includes('nav.push(["phase2-messages"')){if(!s.includes(anchor))throw Error("Phase 2 nav anchor missing");s=s.replace(anchor,nav+anchor)}
+ const view='{tab==="account"&&<UserAccount profile={profile} onProfileChanged={refreshProfile}/>}';
+ const insert='{tab==="phase2-messages"&&profile.roles?.some(r=>["SUPER_ADMIN","SCHOOL_ADMIN","PRINCIPAL","GUIDANCE_COUNSELOR"].includes(r))&&<Phase2MessageAdmin/>} ';
+ if(!s.includes('tab==="phase2-messages"')){if(!s.includes(view))throw Error("Phase 2 view anchor missing");s=s.replace(view,insert+view)}
+ if(!s.includes('<Phase2MessageAdmin/>'))throw Error("Phase 2 admin UI missing");
+ return s;
+});
+
 console.log("period-notice-wiring: admin, student and guardian tabs ready");

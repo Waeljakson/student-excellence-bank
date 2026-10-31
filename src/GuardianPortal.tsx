@@ -4,6 +4,7 @@ import "./guardian-portal.css";
 import PeriodNoticeCelebration from "./PeriodNoticeCelebration";
 import MedalsPanel,{MedalCelebrations,type Medal} from "./MedalsPanel";
 import {GuardianWeeklyPulse,GuardianUpdatesHub} from "./GuardianFamilyInsights";
+import Phase2ExperiencePanel from "./Phase2ExperiencePanel";
 
 type Note={id:string;subject_ar?:string;note_kind?:string;category_ar?:string;note_text:string;note_date:string;teacher_name?:string};
 type Child={id:string;student_no:string;name:string;grade_name:string;class_name:string;points:number;notes:Note[];periodic_evaluations:any[];individual_evaluations:any[];behavioral_awards:any[];competitions:any[]};
@@ -384,6 +385,7 @@ export default function GuardianPortal({token,studentNo,schoolCode,initialData}:
       {c&&<>
         <section className="guardian-student-card"><div><h2>{c.name}</h2><p>{c.grade_name} — فصل {c.class_name} · رقم الطالب {c.student_no}</p></div><div><small>نقاط التميز</small><strong>{Number(c.points||0).toLocaleString("ar-SA")}</strong></div></section>
         {tab==="overview"&&<GuardianWeeklyPulse child={c} medals={medals} allowsPeriodNotices={allowsPeriodNotices} onGo={setTab}/>}
+        {tab==="overview"&&<Phase2ExperiencePanel mode="guardian" studentId={c.id} studentNo={c.student_no} schoolCode={schoolCode||data?.school_code||""}/>}
         <MedalCelebrations medals={medals} studentName={c.name}/>
         {trip&&<section className="guardian-kh-trip">
           <div className="guardian-kh-trip-icon">🏆</div>

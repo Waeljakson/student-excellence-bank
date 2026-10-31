@@ -192,3 +192,59 @@ GRANT EXECUTE ON FUNCTION public.api_phase3_review_queue(integer,uuid,uuid),
 public.api_phase3_plan_history(uuid),
 public.api_phase3_save_plan(uuid,uuid,text,text,text,date,text,text)
 TO authenticated,anonymous;
+
+-- SPLIT
+CREATE OR REPLACE FUNCTION public.api_phase3_teacher_engagement(p_days integer DEFAULT 30)
+RETURNS jsonb LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path TO public,pg_temp
+AS $fn$
+DECLARE v_school uuid;v_result jsonb;
+BEGIN
+ v_school:=public.phase3_guidance_school();
+ IF p_days IS NULL OR p_days NOT IN (14,30,60,90) THEN RAISE EXCEPTION 'INVALID_WINDOW'; END IF;
+ WITH teachers AS (
+  SELECT u.id,u.full_name_ar AS teacher_name
+  FROM public.app_users u
+  WHERE u.school_id=v_school AND u.is_active
+   AND EXISTS(SELECT 1 FROM public.user_roles r WHERE r.user_id=u.id AND r.role::text='TEACHER')
+ ), followup AS (
+  SELECT f.teacher_user_id,
+   COUNT(*)::integer total_notes,
+   COUNT(*) FILTER(WHERE f.note_kind='POSITIVE')::integer positive_notes,
+   COUNT(*) FILTER(WHERE f.note_kind='NEGATIVE')::integer followup_notes,
+   COUNT(DISTINCT f.student_id)::integer students_reached
+  FROM public.student_followup_notes f JOIN teachers t ON t.id=f.teacher_user_id
+  WHERE f.school_id=v_school AND f.note_date BETWEEN current_date-p_days AND current_date
+  GROUP BY f.teacher_user_id
+ ), checks AS (
+  SELECT c.issued_by,
+    COUNT(*)::integer issued_checks,COALESCE(SUM(c.points),0)::integer points_issued
+  FROM public.excellence_checks c JOIN teachers t ON t.id=c.issued_by
+  WHERE c.school_id=v_school AND c.issued_at>=now()-make_interval(days=>p_days)
+    AND c.reversed_at IS NULL AND c.status::text='ISSUED'
+  GROUP BY c.issued_by
+ ), evaluations AS (
+  SELECT e.teacher_user_id,COUNT(*)::integer submitted_evaluations
+  FROM public.periodic_student_evaluations e
+  JOIN teachers t ON t.id=e.teacher_user_id
+  WHERE e.school_id=v_school AND e.submitted_at>=now()-make_interval(days=>p_days)
+  GROUP BY e.teacher_user_id
+ ), rows AS (
+  SELECT t.id,t.teacher_name,
+   COALESCE(f.total_notes,0) total_notes,COALESCE(f.positive_notes,0) positive_notes,
+   COALESCE(f.followup_notes,0) followup_notes,COALESCE(f.students_reached,0) students_reached,
+   COALESCE(c.issued_checks,0) issued_checks,COALESCE(c.points_issued,0) points_issued,
+   COALESCE(e.submitted_evaluations,0) submitted_evaluations
+  FROM teachers t
+  LEFT JOIN followup f ON f.teacher_user_id=t.id
+  LEFT JOIN checks c ON c.issued_by=t.id
+  LEFT JOIN evaluations e ON e.teacher_user_id=t.id
+ )
+ SELECT jsonb_build_object('school_name',(SELECT name_ar FROM public.schools WHERE id=v_school),
+  'days',p_days,'teachers',COALESCE(jsonb_agg(to_jsonb(rows) ORDER BY teacher_name),'[]'::jsonb))
+ INTO v_result FROM rows;
+ RETURN v_result;
+END
+$fn$;
+
+-- SPLIT
+GRANT EXECUTE ON FUNCTION public.api_phase3_teacher_engagement(integer) TO authenticated,anonymous;

@@ -80,4 +80,24 @@ update("src/GuardianPortal.tsx",source=>{
   if(!s.includes('tab==="period-notices"')||!s.includes('children={[c]}'))throw Error("Guardian portal notice tab wiring incomplete");
   return s;
 });
+
+// Smart analytics tabs share this prebuild hook so compiled releases retain them.
+update("src/App.tsx",source=>{
+ let s=source;
+ if(!s.includes('import {SmartDashboard} from "./SmartDashboard";')){
+  s=s.replace('import PeriodNoticeAdmin from "./PeriodNoticeAdmin";',
+    'import PeriodNoticeAdmin from "./PeriodNoticeAdmin";\nimport {SmartDashboard} from "./SmartDashboard";\nimport OperationalHealth from "./OperationalHealth";');
+ }
+ if(!s.includes('"smart-dashboard"')){
+  s=s.replace(/type Tab = ([^;]+);/,(_,v)=>'type Tab = '+v+' | "smart-dashboard" | "operational-health";');
+ }
+ const nav='  nav.push(["account","حسابي","◉"]);';
+ const buttons='  if(profile.roles?.some(r=>["SUPER_ADMIN","SCHOOL_ADMIN","PRINCIPAL","VICE_PRINCIPAL","GUIDANCE_COUNSELOR"].includes(r))) nav.push(["smart-dashboard","لوحة القيادة الذكية","▥"]);\n  if(profile.roles?.some(r=>["SUPER_ADMIN","SCHOOL_ADMIN","PRINCIPAL","GUIDANCE_COUNSELOR"].includes(r))) nav.push(["operational-health","صحة النظام","⛨"]);\n';
+ if(!s.includes('nav.push(["smart-dashboard"'))s=s.replace(nav,buttons+nav);
+ const view='{tab==="account"&&<UserAccount profile={profile} onProfileChanged={refreshProfile}/>}';
+ const insert='{tab==="smart-dashboard"&&profile.roles?.some(r=>["SUPER_ADMIN","SCHOOL_ADMIN","PRINCIPAL","VICE_PRINCIPAL","GUIDANCE_COUNSELOR"].includes(r))&&<SmartDashboard/>} {tab==="operational-health"&&profile.roles?.some(r=>["SUPER_ADMIN","SCHOOL_ADMIN","PRINCIPAL","GUIDANCE_COUNSELOR"].includes(r))&&<OperationalHealth/>} ';
+ if(!s.includes('tab==="smart-dashboard"'))s=s.replace(view,insert+view);
+ return s;
+});
+
 console.log("period-notice-wiring: admin, student and guardian tabs ready");

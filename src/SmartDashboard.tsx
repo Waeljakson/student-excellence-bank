@@ -30,6 +30,14 @@ export function SmartDashboard(){
  {data&&<><p>{data.school_name} · {data.filters?.from} إلى {data.filters?.to}</p><div className="sa-metrics">{metrics.map(([label,value,mode])=>mode?
  <button className="sa-metric" type="button" key={label} onClick={()=>{setSelected(mode as "WITH_CHECKS"|"WITHOUT_CHECKS");setPage(0)}}><span>{label}</span><strong>{num(value)}</strong><small>عرض الطلاب</small></button>:
  <article className="sa-metric" key={label}><span>{label}</span><strong>{num(value)}</strong></article>)}</div>
+ <section className="sa-panel"><h2>تطور النقاط يوميًا</h2>
+ <div className="sa-chart"><svg viewBox="0 0 700 185" role="img" aria-label="تطور نقاط التميز الممنوحة يوميًا">
+ <polyline fill="none" stroke="#0a8da6" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"
+ points={(data.trend||[]).map((x:any,i:number,arr:any[])=>{
+ const top=Math.max(1,...arr.map((v:any)=>Number(v.points||0)));
+ return (20+i*660/Math.max(1,arr.length-1))+","+(165-Number(x.points||0)*140/top);
+ }).join(" ")}/>
+ </svg><div className="sa-chart-labels"><span>{data.trend?.[0]?.date?.slice(0,10)||""}</span><b>النقاط اليومية خلال الفترة المحددة</b><span>{data.trend?.[data.trend.length-1]?.date?.slice(0,10)||""}</span></div></div></section>
  <section className="sa-panel"><h2>مشاركة الصفوف</h2><div className="sa-bars">{(data.grades||[]).map((x:any)=><div className="sa-bar-item" key={x.id}><div><b>{x.name}</b><span>{num(x.active)} من {num(x.students)}</span></div><div className="sa-track"><i style={{width:(x.students?Math.round(100*x.active/x.students):0)+"%"}}/></div></div>)}</div></section>
  <section className="sa-panel"><h2>الفصول</h2><div className="sa-table-wrap"><table><thead><tr><th>الصف</th><th>الفصل</th><th>الطلاب</th><th>المحفزون</th><th>الشيكات</th><th>النقاط</th></tr></thead><tbody>{(data.classes||[]).map((x:any)=><tr key={x.id}><td>{x.grade_name}</td><td>{x.name}</td><td>{num(x.students)}</td><td>{num(x.active)}</td><td>{num(x.checks)}</td><td>{num(x.points)}</td></tr>)}</tbody></table></div></section>
  <section className="sa-panel"><h2>مشاركة المعلمين</h2><div className="sa-table-wrap"><table><thead><tr><th>المعلم</th><th>الشيكات</th><th>الطلاب</th><th>النقاط</th></tr></thead><tbody>{(data.teachers||[]).map((x:any)=><tr key={x.id}><td>{x.name}</td><td>{num(x.checks)}</td><td>{num(x.students)}</td><td>{num(x.points)}</td></tr>)}</tbody></table></div></section></>}

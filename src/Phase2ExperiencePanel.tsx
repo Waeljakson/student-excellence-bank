@@ -13,9 +13,9 @@ function saveCache(k:string){try{localStorage.setItem(k,"1")}catch{}}
 
 export default function Phase2ExperiencePanel({mode,studentNo,schoolCode,studentId,compact=false}:Props){
  const[data,setData]=useState<Experience|null>(null),[error,setError]=useState("");
- const[loading,setLoading]=useState(true),[expanded,setExpanded]=useState(false),[tick,setTick]=useState(0),[celebration,setCelebration]=useState<Message|null>(null);
+ const[loading,setLoading]=useState(true),[expanded,setExpanded]=useState(false),[tick,setTick]=useState(0),[celebration,setCelebration]=useState<Message|null>(null),[levelCelebration,setLevelCelebration]=useState(false);
  useEffect(()=>{
- let live=true;setLoading(true);setData(null);setError("");setCelebration(null);
+ let live=true;setLoading(true);setData(null);setError("");setCelebration(null);setLevelCelebration(false);
  const request=mode==="guardian"
  ?(studentNo&&schoolCode?rpc<Experience>("api_phase2_guardian_experience",{p_student_no:studentNo,p_school_code:schoolCode}):Promise.resolve(null))
  :rpc<Experience>("api_phase2_student_experience");
@@ -27,6 +27,7 @@ export default function Phase2ExperiencePanel({mode,studentNo,schoolCode,student
    today>=new Date(m.published_at).getTime() &&
    !safeCache("bank-v2-celebration:"+x.school_id+":"+x.student_id+":"+m.id));
  if(party)setCelebration(party);
+ else if(x.level && Number(x.level.threshold)>0 && !safeCache("bank-v2-tier:"+x.school_id+":"+x.student_id+":"+x.level.threshold))setLevelCelebration(true);
  }).catch(e=>{if(live)setError(niceError(e))}).finally(()=>{if(live)setLoading(false)});
  return()=>{live=false};
  },[mode,studentNo,schoolCode,studentId,tick]);
@@ -34,6 +35,7 @@ export default function Phase2ExperiencePanel({mode,studentNo,schoolCode,student
  const messages=data?.messages||[];
  const level=data?.level;
  function closeCelebration(){if(celebration&&data)saveCache("bank-v2-celebration:"+data.school_id+":"+data.student_id+":"+celebration.id);setCelebration(null)}
+ function closeLevelCelebration(){if(data?.level)saveCache("bank-v2-tier:"+data.school_id+":"+data.student_id+":"+data.level.threshold);setLevelCelebration(false)}
  return <div className="p2-experience" dir="rtl">
  {loading&&!data&&<p className="p2-muted">جارٍ تحديث مستويات التميز والإشعارات...</p>}
  {error&&<p className="p2-error">تعذر تحديث الإشعارات والمستويات: {error}<button type="button" onClick={()=>setTick(x=>x+1)}>إعادة المحاولة</button></p>}
@@ -50,6 +52,12 @@ export default function Phase2ExperiencePanel({mode,studentNo,schoolCode,student
  <h4>{m.title_ar}</h4><p>{m.body_ar}</p></article>)}</div>:<div className="p2-empty">لا توجد إشعارات جديدة موجهة لهذا الطالب في الوقت الحالي.</div>}
  {messages.length>3&&<button type="button" className="p2-more" onClick={()=>setExpanded(x=>!x)}>{expanded?"عرض أحدث 3":"عرض كل الإشعارات ("+messages.length+")"}</button>}
  </section>
+ {levelCelebration&&level&&<div className="p2-celebrate-overlay" onMouseDown={e=>{if(e.target===e.currentTarget)closeLevelCelebration()}}>
+ <div className="p2-celebrate" role="dialog" aria-modal="true" aria-label="الترقي لمستوى جديد">
+ <div className="p2-confetti" aria-hidden="true">✦ ★ ✦ ★ ✦</div><span className="p2-celebrate-icon">★</span><small>ترقية في بنك التميز</small>
+ <h2>أحسنت! وصلت إلى المستوى {level.name}</h2>
+ <p>حققت {fmt(level.earned)} نقطة تميز مكتسبة. استمر في طريق الإنجاز!</p>
+ <button type="button" onClick={closeLevelCelebration}>مواصلة التميز</button></div></div>}
  {celebration&&<div className="p2-celebrate-overlay" onMouseDown={e=>{if(e.target===e.currentTarget)closeCelebration()}}>
  <div className="p2-celebrate" role="dialog" aria-modal="true" aria-label="تهنئة من المدرسة">
  <div className="p2-confetti" aria-hidden="true">✦ ★ ✦ ★ ✦</div><span className="p2-celebrate-icon">★</span><small>بنك التميز الطلابي</small><h2>{celebration.title_ar}</h2><p>{celebration.body_ar}</p><button type="button" onClick={closeCelebration}>شكرًا على التهنئة</button>

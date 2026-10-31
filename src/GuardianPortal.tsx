@@ -3,6 +3,7 @@ import {forceSignOut,neon,niceError,rpc} from "./client";
 import "./guardian-portal.css";
 import PeriodNoticeCelebration from "./PeriodNoticeCelebration";
 import MedalsPanel,{MedalCelebrations,type Medal} from "./MedalsPanel";
+import {GuardianWeeklyPulse,GuardianUpdatesHub} from "./GuardianFamilyInsights";
 
 type Note={id:string;subject_ar?:string;note_kind?:string;category_ar?:string;note_text:string;note_date:string;teacher_name?:string};
 type Child={id:string;student_no:string;name:string;grade_name:string;class_name:string;points:number;notes:Note[];periodic_evaluations:any[];individual_evaluations:any[];behavioral_awards:any[];competitions:any[]};
@@ -217,10 +218,12 @@ export default function GuardianPortal({token,studentNo,schoolCode,initialData}:
   const[medals,setMedals]=useState<Medal[]>([]);
   const[tripBusy,setTripBusy]=useState(false);
   const[tripMessage,setTripMessage]=useState("");
-  const[tab,setTab]=useState<"overview"|"medals"|"followup"|"periodic"|"individual"|"competitions"|"period-notices">("overview");
+  const[tab,setTab]=useState<"overview"|"medals"|"followup"|"periodic"|"individual"|"competitions"|"period-notices"|"updates">("overview");
   const[periodNoticeLoading,setPeriodNoticeLoading]=useState(false);
   const[periodNoticeError,setPeriodNoticeError]=useState("");
   const[periodNoticeReady,setPeriodNoticeReady]=useState(false);
+  const[guardianRefreshing,setGuardianRefreshing]=useState(false);
+  const[guardianRefreshError,setGuardianRefreshError]=useState("");
   const tokenMode=!!token;
   const identityMode=!!studentNo;
   const allowsPeriodNotices=data?.school_code==="MISHKAT";
@@ -237,6 +240,30 @@ export default function GuardianPortal({token,studentNo,schoolCode,initialData}:
         :rpc<any>("api_guardian_portal");
     request.then(d=>{setData(d);setChildId(d.children?.[0]?.id||"")}).catch(e=>setError(niceError(e)));
   },[token,studentNo,tokenMode,identityMode,initialData]);
+
+  async function refreshGuardianData(){
+    if(guardianRefreshing)return;
+    setGuardianRefreshing(true);setGuardianRefreshError("");
+    try{
+      let updated:any;
+      if(identityMode){
+        const code=schoolCode||data?.school_code||"";
+        const lookup=code
+          ?await rpc<any>("api_guardian_lookup_school",{p_student_no:studentNo,p_school_code:code})
+          :await rpc<any>("api_guardian_lookup",{p_mobile:studentNo});
+        if(!lookup?.exists||lookup?.source!=="student_no"||!lookup?.portal)throw new Error("STUDENT_NOT_FOUND");
+        updated=lookup.portal;
+      }else if(tokenMode){
+        updated=await rpc<any>("api_guardian_portal_by_token",{p_token:token});
+      }else{
+        updated=await rpc<any>("api_guardian_portal");
+      }
+      if(!Array.isArray(updated?.children))throw new Error("تعذر تحديث بيانات الطالب.");
+      setData(updated);
+      if(!updated.children.some((item:any)=>item.id===childId))setChildId(updated.children[0]?.id||"");
+    }catch(e){setGuardianRefreshError(niceError(e))}
+    finally{setGuardianRefreshing(false)}
+  }
 
   // The guardian portal may be kept open across an administrator's publication.
   // Fetch the published notice list afresh on tab entry instead of relying on the
@@ -353,13 +380,15 @@ export default function GuardianPortal({token,studentNo,schoolCode,initialData}:
         <div className="guardian-school-logos"><img src={`${import.meta.env.BASE_URL}school-logo.png`} alt="شعار المدرسة"/><img src={`${import.meta.env.BASE_URL}guidance-logo.png`} alt="شعار التوجيه الطلابي"/></div>
         <div><span>{data?.school_name||"مدارس المشكاة الأهلية"}</span><h1>بوابة ولي الأمر</h1><p>{c?.name||data.guardian?.name}</p>{identityMode&&<small>دخول برقم هوية / رقم الطالب بدون كلمة مرور</small>}</div>
       </div>
-      <button className="btn ghost" onClick={leave}>{identityMode||tokenMode?"تغيير الطالب":"تسجيل الخروج"}</button>
+      <div style={{display:"flex",gap:"8px",alignItems:"center",flexWrap:"wrap"}}><button type="button" className="guardian-refresh-button" disabled={guardianRefreshing} onClick={()=>void refreshGuardianData()}>{guardianRefreshing?"جارٍ التحديث...":"تحديث بيانات ابني ↻"}</button><button className="btn ghost" onClick={leave}>{identityMode||tokenMode?"تغيير الطالب":"تسجيل الخروج"}</button></div>
     </header>
     <main className="guardian-content">
       {children.length>1&&<select value={c?.id||""} onChange={e=>setChildId(e.target.value)}>{children.map(x=><option key={x.id} value={x.id}>{x.name}</option>)}</select>}
+      {guardianRefreshError&&<p className="guardian-refresh-error" role="alert">{guardianRefreshError}</p>}
       {!children.length&&<section className="portal-panel"><div className="empty">لا يوجد طالب مرتبط بهذه البيانات حاليًا.</div></section>}
       {c&&<>
         <section className="guardian-student-card"><div><h2>{c.name}</h2><p>{c.grade_name} — فصل {c.class_name} · رقم الطالب {c.student_no}</p></div><div><small>نقاط التميز</small><strong>{Number(c.points||0).toLocaleString("ar-SA")}</strong></div></section>
+        {tab==="overview"&&<GuardianWeeklyPulse child={c} medals={medals} allowsPeriodNotices={allowsPeriodNotices} onGo={setTab}/>}
         <MedalCelebrations medals={medals} studentName={c.name}/>
         {trip&&<section className="guardian-kh-trip">
           <div className="guardian-kh-trip-icon">🏆</div>
@@ -376,12 +405,14 @@ export default function GuardianPortal({token,studentNo,schoolCode,initialData}:
         <DailyFollowup child={c}/>
         <nav className="guardian-tabs">
           <button className={tab==="overview"?"active":""} onClick={()=>setTab("overview")}>الرئيسية</button>
+          <button className={tab==="updates"?"active":""} onClick={()=>setTab("updates")}>مستجدات ابني</button>
           <button className={tab==="medals"?"active":""} onClick={()=>setTab("medals")}>الميداليات</button>
           <button className={tab==="followup"?"active":""} onClick={()=>setTab("followup")}>دفتر المتابعة</button>
           <button className={tab==="periodic"?"active":""} onClick={()=>setTab("periodic")}>التقييمات الدورية</button>
           <button className={tab==="individual"?"active":""} onClick={()=>setTab("individual")}>تقارير التقييم</button>
           <button className={tab==="competitions"?"active":""} onClick={()=>setTab("competitions")}>المسابقات</button>
         </nav>
+        {tab==="updates"&&<GuardianUpdatesHub child={c} medals={medals} allowsPeriodNotices={allowsPeriodNotices} onGo={setTab}/>}
         {tab==="overview"&&<section className="portal-panel"><h3>ملخص الطالب</h3><div className="guardian-summary"><article><span>نقاط التميز</span><b>{c.points}</b></article><article><span>الميداليات</span><b>{medals.length}</b></article><article><span>ملاحظات المتابعة</span><b>{c.notes.length}</b></article><article><span>المسابقات</span><b>{(c.competitions?.length||0)+competitionHistory.length}</b></article></div></section>}
         {tab==="medals"&&<MedalsPanel medals={medals} title="ميداليات الطالب"/>}
         {tab==="followup"&&<section className="portal-panel"><div className="guardian-followup-title"><div><h3>دفتر متابعة الطالب</h3><p>الملاحظات مرتبة يوميًا لسهولة المتابعة المستمرة.</p></div></div><FollowupTimeline notes={c.notes||[]}/></section>}

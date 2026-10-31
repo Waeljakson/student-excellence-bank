@@ -212,6 +212,16 @@ export default function PeriodNoticeAdmin({schoolName}:{schoolName:string}){
               <h4>تنبيه: توجد إشعارات بها درجات مواد غير مكتملة</h4>
               <p>النسبة والترتيب يُحتسبان من مجموع درجات جميع المواد، وليس من المادة الأخيرة. لن يدخل أصحاب البيانات غير المكتملة في قائمة الأوائل حتى تصحيح درجاتهم.</p>
               <p>الإشعارات غير المكتملة: {batch.items.filter(item=>item.score_complete===false).length}</p>
+              <details className="period-student-preview">
+                <summary>عرض أسماء الطلاب والمواد التي تنقص درجاتها</summary>
+                {batch.items.filter(item=>item.score_complete===false).map(item=>
+                  <p key={item.id}>
+                    <strong>{item.student_name} — {item.grade_name} — الفصل {item.class_name}:</strong>
+                    {" "}{item.subjects.filter(subject=>subject.total==null||subject.maximum==null)
+                    .map(subject=>subject.subject).join("، ")||"يحتاج مراجعة بيانات الدرجات"}
+                  </p>
+                )}
+              </details>
             </div>}
           <label>الصف الدراسي
             <select value={previewGrade} onChange={e=>setPreviewGrade(e.target.value)}>

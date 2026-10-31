@@ -17,6 +17,8 @@ const functions=[
  {name:"api_phase2_admin_data",body:{},expected:"AUTH_REQUIRED"},
  {name:"api_phase3_review_queue",body:{p_days:30,p_grade_id:null,p_class_id:null},expected:"AUTH_REQUIRED"},
  {name:"api_phase3_teacher_engagement",body:{p_days:30},expected:"AUTH_REQUIRED"},
+ {name:"api_admin_competition_judging",body:{p_competition_id:"00000000-0000-0000-0000-000000000000"},expected:"AUTH_REQUIRED"},
+ {name:"api_admin_score_competition",body:{p_competition_id:"00000000-0000-0000-0000-000000000000",p_student_id:"00000000-0000-0000-0000-000000000000",p_idea:20,p_quality:20,p_creativity:20,p_presentation:20,p_note:"test"},expected:"AUTH_REQUIRED"},
  {name:"api_phase3_plan_history",body:{p_student_id:"00000000-0000-0000-0000-000000000000"},expected:"AUTH_REQUIRED"},
  {name:"api_phase3_save_plan",body:{p_id:null,p_student_id:"00000000-0000-0000-0000-000000000000",p_concern_kind:"ACADEMIC",p_goal:"test goal",p_action:"test action",p_review_on:null,p_private_note:"",p_status:"OPEN"},expected:"AUTH_REQUIRED"},
 ];

@@ -7,6 +7,7 @@ import "./student-account.css";
 import StudentPrograms from "./StudentPrograms";
 import StudentRedemptionPanel from "./StudentRedemptionPanel";
 import PeriodNoticeCelebration from "./PeriodNoticeCelebration";
+import Phase2ExperiencePanel from "./Phase2ExperiencePanel";
 import PeriodNoticeViewer from "./PeriodNoticeViewer";
 import StudentFollowupPanel from "./StudentFollowupPanel";
 import MedalsPanel,{type Medal} from "./MedalsPanel";
@@ -184,6 +185,7 @@ export default function StudentPortal({cacheUserId=""}:{cacheUserId?:string}){
 
       <div className="student-tab-content">
         {tab==="home"&&<>
+          <Phase2ExperiencePanel mode="student" studentId={s.id}/>
           <section className="student-home-stats">
             <button onClick={()=>setTab("checks")}><span>رصيد التميز</span><strong>{Number(s.points).toLocaleString("ar-SA")}</strong><small>نقطة</small></button>
             <button onClick={()=>setTab("checks")}><span>شيكات التميز</span><strong>{allChecks.length}</strong><small>عملية</small></button>

@@ -9,7 +9,7 @@ export type PeriodNotice={
   grade:string;class_name:string;published_at:string;
   grade_rank?:number;grade_count?:number;grade_top_five?:SchoolLeader[];
   school_rank?:number;class_rank?:number;school_count?:number;class_count?:number;
-  score_percent?:number|null;is_top_five?:boolean;school_top_five?:SchoolLeader[];
+  score_percent?:number|null;score_complete?:boolean;is_top_five?:boolean;school_top_five?:SchoolLeader[];
   subjects?:Array<{subject:string;maximum:number|null;total:number|null;assessments?:Record<string,number|null>;note?:string}>;
   sum_total?:number|null;sum_max?:number|null;
   attendance?:number|null;behavior_excellence?:number|null;behavior_positive?:number|null;

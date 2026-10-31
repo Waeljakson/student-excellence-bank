@@ -163,6 +163,12 @@ function drawDocument(
   const blockWidth=(WIDTH-LEFT*2-20)/3;
   blocks.forEach((b,i)=>smallTag(b.label,b.value,LEFT+i*(blockWidth+10),y,blockWidth));
   y+=92;
+  if(notice.score_complete===false){
+    ensure(54);
+    rounded(ctx,LEFT,y,WIDTH-LEFT*2,48,12,"#fff4e7","#ecd1aa");
+    txt(ctx,"تنبيه: بعض درجات المواد ناقصة؛ النسبة والترتيب غير معتمدين",RIGHT-15,y+30,14,"#80572a",700);
+    y+=61;
+  }
 
   section("ترتيب الطالب");
   ensure(95);

@@ -1,5 +1,6 @@
 import {useEffect,useMemo,useState} from "react";
 import {niceError,rpc} from "./client";
+import Phase3TeacherEngagement from "./Phase3TeacherEngagement";
 import "./phase3-support.css";
 
 type Student={student_id:string;student_name:string;student_no:string;class_id:string;class_name:string;
@@ -96,7 +97,7 @@ export default function Phase3SupportCenter(){
  <td><button type="button" className="p3-btn" onClick={()=>select(s)}>فتح المتابعة</button></td>
  </tr>)}</tbody></table></div>
  {!results.length&&<p className="p3-empty">لا توجد نتائج توافق عوامل التصفية الحالية.</p>}
- </section></>}
+ </section><Phase3TeacherEngagement days={days}/></>}
  {student&&<div className="p3-overlay" onMouseDown={e=>{if(e.target===e.currentTarget)setStudent(null)}}>
  <section className="p3-dialog" role="dialog" aria-modal="true" aria-labelledby="p3-title">
  <div className="p3-dialog-head"><div><h2 id="p3-title">متابعة {student.student_name}</h2>

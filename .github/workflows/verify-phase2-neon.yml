@@ -1,0 +1,23 @@
+name: Verify Phase 2 Neon Data API
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/verify-phase2-neon.yml'
+      - 'scripts/verify-phase2-data-api.mjs'
+  workflow_dispatch:
+
+jobs:
+  verify-api:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify RPCs are visible through Neon HTTPS Data API
+        run: node scripts/verify-phase2-data-api.mjs

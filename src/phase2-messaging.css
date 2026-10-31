@@ -53,3 +53,7 @@
 .p2-celebrate button{font:700 16px Cairo,Tahoma,sans-serif;color:white;background:#a77a28;padding:10px 25px;border:0;border-radius:12px;cursor:pointer}
 @keyframes p2show{from{opacity:0;transform:translateY(25px) scale(.97)}to{opacity:1;transform:translateY(0) scale(1)}}
 @media(max-width:700px){.phase2-admin{padding:12px}.p2-form-grid{grid-template-columns:1fr}.p2-head{align-items:flex-start;flex-direction:column}.p2-card,.p2-level-card,.p2-inbox{padding:14px}.p2-level-roadmap{gap:5px}.p2-level-roadmap span{padding:6px 8px}.p2-inbox>header{align-items:flex-start}.p2-celebrate{padding:22px 14px}}
+
+.p2-alert-preference{border:1px solid #d4e8e9;background:#f5fbfc;padding:10px 12px;border-radius:11px;display:flex;align-items:center;flex-wrap:wrap;gap:10px;margin:8px 0}
+.p2-alert-preference small{font-size:11px;line-height:1.7;color:#597681;flex:1 1 200px}
+.p2-alert-status{font-size:12px;color:#196e55;margin:6px 0 13px}

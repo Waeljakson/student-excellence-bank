@@ -19,6 +19,16 @@ export default function CompetitionJudging({id,closed,participants,onApproved}:{
  const total=form.idea+form.quality+form.creativity+form.presentation;
  function choose(id:string){setSelected(id);setMessage("");setError("");
  const x=scoresById.get(id);setForm(x?{idea:x.idea_score,quality:x.quality_score,creativity:x.creativity_score,presentation:x.presentation_score,note:x.reviewer_note}:blank())}
+ function printResults(){
+ if(!scores.length){setError("لا توجد درجات تحكيم لطباعتها.");return}
+ const w=window.open("","_blank","width=980,height=820");
+ if(!w){setError("السماح بالنوافذ المنبثقة مطلوب لطباعة التقرير.");return}
+ const esc=(x:unknown)=>String(x??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]||c));
+ const rows=scores.map(x=>"<tr><td>"+x.position+"</td><td>"+esc(x.student_name)+"</td><td>"+x.idea_score+"</td><td>"+x.quality_score+"</td><td>"+x.creativity_score+"</td><td>"+x.presentation_score+"</td><td><b>"+x.total_score+"/100</b></td><td>"+esc(participants.find(p=>p.student_id===x.student_id)?.status==="WINNER"?"فائز معتمد":"قيد المراجعة")+"</td></tr>").join("");
+ w.document.open();
+ w.document.write('<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><title>تقرير لجنة التحكيم</title><style>@page{size:A4 landscape;margin:12mm}body{font-family:Cairo,Tahoma,Arial,sans-serif;color:#28434e;padding:22px}h1{text-align:center;color:#166c68}table{border-collapse:collapse;width:100%}th,td{border:1px solid #bdd6d6;padding:9px;text-align:right}th{background:#e7f5f2}p{color:#617986;font-size:12px}.tools{text-align:center;margin:22px}@media print{body{padding:0}.tools{display:none}}</style></head><body><h1>تقرير لجنة تحكيم المسابقة</h1><p>تاريخ التقرير: '+esc(new Date().toLocaleString("ar-SA"))+' — المجموع من 100 درجة — ترتيب المتعادلين مشترك.</p><table><thead><tr><th>الترتيب</th><th>الطالب</th><th>الفكرة</th><th>التنفيذ</th><th>الإبداع</th><th>العرض</th><th>الإجمالي</th><th>الاعتماد</th></tr></thead><tbody>'+rows+'</tbody></table><p>النتائج لا تعتمد تلقائيًا؛ يجب أن يعتمد المسؤول الفائزين من منصة بنك التميز.</p><div class="tools"><button onclick="window.print()">طباعة / حفظ PDF</button></div></body></html>');
+ w.document.close();w.focus();
+ }
  async function save(){if(!chosen||!closed||busy||chosen.status==="WINNER"||chosen.status==="EXCLUDED")return;
  setBusy(true);setError("");setMessage("");try{
  await rpc("api_admin_score_competition",{p_competition_id:id,p_student_id:selected,
@@ -34,7 +44,7 @@ export default function CompetitionJudging({id,closed,participants,onApproved}:{
  catch(e){setError(niceError(e))}finally{setBusy(false)}}
  return <section className="cj-root" dir="rtl">
  <header className="cj-head"><div><h4>لجنة التحكيم — تقييم المشاركات</h4><p>معايير موحدة: 25 درجة لكل معيار، والمجموع 100 درجة. الاعتماد النهائي يتم يدويًا بعد المراجعة.</p></div>
- <button type="button" className="mini-btn" onClick={()=>setReload(x=>x+1)}>تحديث الدرجات</button></header>
+ <div className="cj-print-tools"><button type="button" className="mini-btn" onClick={()=>setReload(x=>x+1)}>تحديث الدرجات</button><button type="button" className="mini-btn" disabled={!scores.length} onClick={printResults}>تقرير التحكيم PDF</button></div></header>
  {!closed&&<p className="cj-notice">أغلق المسابقة أولًا قبل بدء التحكيم حتى لا تتغير المشاركات أثناء التقييم.</p>}
  {error&&<p className="cj-error" role="alert">{error}</p>}{message&&<p className="cj-success" role="status">{message}</p>}
  <div className="cj-grid"><div className="cj-form">

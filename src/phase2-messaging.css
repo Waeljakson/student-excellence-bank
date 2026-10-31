@@ -1,0 +1,55 @@
+.phase2-admin,.p2-experience{font-family:Cairo,Tahoma,Arial,sans-serif;direction:rtl;color:#244653}
+.phase2-admin{padding:20px;max-width:1460px;margin:auto}
+.p2-head{display:flex;align-items:center;justify-content:space-between;gap:20px;margin-bottom:20px}
+.p2-head small{color:#0e7890;font-weight:700}.p2-head h1{font-size:27px;margin:4px 0;color:#115975}.p2-head p{margin:0;color:#5a7482}
+.p2-card,.p2-level-card,.p2-inbox{border:1px solid #d8e6eb;background:white;padding:20px;border-radius:17px;margin:16px 0;box-shadow:0 5px 22px #1a6b7d0a}
+.p2-title{display:flex;justify-content:space-between;align-items:center;gap:14px}.p2-card h2{margin:0 0 14px;font-size:20px;color:#135d78}
+.p2-form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.p2-card label{font-size:13px;font-weight:700;display:grid;gap:6px;margin:10px 0;color:#315f71}
+.p2-card input,.p2-card select,.p2-card textarea{width:100%;box-sizing:border-box;font:inherit;border:1px solid #bfd4de;border-radius:10px;padding:10px 12px;background:#fcfefe}
+.p2-card textarea{resize:vertical;min-height:105px}
+.p2-actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:12px}
+.p2-btn{font:700 13px Cairo,Tahoma,sans-serif;border:1px solid #147c96;border-radius:10px;background:#167893;color:white;padding:9px 16px;cursor:pointer}
+.p2-btn.secondary{background:#eff8fa;color:#18647c}.p2-btn.danger{color:#a14134;background:#fff2ef;border-color:#edc1b5}.p2-btn:disabled{opacity:.6;cursor:wait}
+.p2-preview,.p2-message{border:1px solid #d8e6eb;background:#f7fbfc;border-radius:12px;padding:16px;margin:12px 0}
+.p2-preview.congratulation{background:#fffaf0;border-color:#f0d797}.p2-preview.alert{background:#fff6f3;border-color:#ecc7bd}
+.p2-preview h3,.p2-message h3{margin:7px 0;font-size:17px;color:#1c5469}
+.p2-preview p,.p2-message p{margin:7px 0;line-height:1.9;white-space:pre-wrap}
+.p2-preview small,.p2-message small,.p2-muted{font-size:12px;color:#5f7b89}
+.p2-message-top{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.p2-status{font-size:11px;padding:5px 10px;border-radius:99px;background:#edf3f6;color:#34627b}
+.p2-status.published{background:#e0f5eb;color:#13704d}.p2-status.archived{background:#f1f1f1;color:#787878}
+.p2-error,.p2-success{padding:12px 16px;border-radius:10px;background:#fff0ed;color:#99422d}.p2-success{background:#e8f8f0;color:#16714e}
+.p2-level-card{background:linear-gradient(125deg,#fffef9,#f0f8fb);border-color:#c7e5ec;position:relative}
+.p2-level-top{display:flex;justify-content:space-between;gap:12px;align-items:center}
+.p2-level-top small{font-size:12px;color:#38768e;font-weight:700}.p2-level-top h3{font-size:23px;color:#165c79;margin:3px 0}
+.p2-level-top p{font-size:13px;color:#5f7281;margin:5px 0}
+.p2-level-seal{height:64px;width:64px;flex:0 0 auto;border-radius:50%;display:grid;place-items:center;font-size:31px;color:#d8a42d;background:#fff8df;border:2px solid #f0d28b}
+.p2-progress{height:13px;background:#e3eef2;overflow:hidden;border-radius:100px;margin:15px 0 7px}
+.p2-progress i{height:100%;display:block;background:linear-gradient(90deg,#1585a1,#22b5a1);transition:width .35s}
+.p2-progress-label{display:flex;justify-content:space-between;gap:10px;color:#426d7f;font-size:12px}
+.p2-level-roadmap{display:flex;flex-wrap:wrap;gap:9px;margin-top:16px}
+.p2-level-roadmap span{display:grid;gap:1px;padding:6px 12px;background:#edf2f5;border:1px solid #d9e5eb;border-radius:10px;font-size:11px;color:#677e8a}
+.p2-level-roadmap span.achieved{background:#e2f6ee;color:#116a50;border-color:#c4e9d9}
+.p2-level-roadmap small{opacity:.8}
+.p2-level-note{font-size:11px;color:#667c84;line-height:1.8;margin:14px 0 0}
+.p2-inbox>header{display:flex;justify-content:space-between;gap:12px;align-items:center;margin-bottom:14px}
+.p2-inbox header small{color:#13819b;font-weight:700;font-size:11px}
+.p2-inbox h3{font-size:18px;color:#165b78;margin:3px 0}
+.p2-inbox-tools{display:flex;align-items:center;gap:8px}.p2-inbox-tools b{font-size:12px;color:#597887}
+.p2-inbox button{font:700 12px Cairo,Tahoma,sans-serif;padding:7px 12px;border-radius:9px;border:1px solid #d1e1e8;background:#f2f9fa;color:#136e86;cursor:pointer}
+.p2-inbox-list{display:grid;gap:10px}.p2-inbox-item{background:#fafcfd;border:1px solid #e0e8ee;border-radius:13px;padding:13px 15px}
+.p2-inbox-item.congratulation{background:#fffaf0;border-color:#f0ddad}
+.p2-inbox-item.alert{background:#fff6f4;border-color:#f2d1c7}
+.p2-inbox-item small{font-size:11px;color:#517888}.p2-inbox-item h4{margin:5px 0;color:#1c5669;font-size:15px}
+.p2-inbox-item p{line-height:1.9;margin:0;white-space:pre-wrap;font-size:13px;color:#365363}
+.p2-empty{padding:20px;text-align:center;color:#738691;font-size:13px}
+.p2-more{margin-top:10px}
+.p2-celebrate-overlay{position:fixed;inset:0;background:#052439b8;display:grid;place-items:center;z-index:20000;padding:14px}
+.p2-celebrate{font-family:Cairo,Tahoma,Arial,sans-serif;direction:rtl;text-align:center;max-width:540px;width:100%;background:linear-gradient(145deg,#fffdfa,#fff3d9);border:3px solid #f7d18a;border-radius:25px;box-shadow:0 30px 60px #08182755;padding:28px 24px;animation:p2show .34s ease-out}
+.p2-confetti{font-size:24px;letter-spacing:12px;color:#ce9b2b}
+.p2-celebrate-icon{display:grid;place-items:center;margin:14px auto;width:88px;height:88px;border-radius:50%;border:3px solid #e4bd68;background:#ffedb2;color:#bb8f1d;font-size:44px}
+.p2-celebrate small{color:#9d7e32}.p2-celebrate h2{font-size:27px;color:#6c5119}.p2-celebrate p{font-size:16px;line-height:2;color:#5a4b2a;white-space:pre-wrap}
+.p2-celebrate button{font:700 16px Cairo,Tahoma,sans-serif;color:white;background:#a77a28;padding:10px 25px;border:0;border-radius:12px;cursor:pointer}
+@keyframes p2show{from{opacity:0;transform:translateY(25px) scale(.97)}to{opacity:1;transform:translateY(0) scale(1)}}
+@media(max-width:700px){.phase2-admin{padding:12px}.p2-form-grid{grid-template-columns:1fr}.p2-head{align-items:flex-start;flex-direction:column}.p2-card,.p2-level-card,.p2-inbox{padding:14px}.p2-level-roadmap{gap:5px}.p2-level-roadmap span{padding:6px 8px}.p2-inbox>header{align-items:flex-start}.p2-celebrate{padding:22px 14px}}

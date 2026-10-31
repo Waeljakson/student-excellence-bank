@@ -44,7 +44,7 @@ export default function PeriodNoticeCelebration({
     if(mode==="student"){
       for(const student of myChildren){
         const notice=(student.period_notices||[]).find(n=>
-          Number(n.grade_rank??n.school_rank)>=1&&Number(n.grade_rank??n.school_rank)<=5);
+          (n.is_top_five===true||(Number(n.grade_rank??n.school_rank)>=1&&Number(n.grade_rank??n.school_rank)<=5)));
         if(!notice)continue;
         const key=`period-notice-grade-congrats-student-${student.id}-${notice.id}`;
         if(shownThisSession.current.has(key))continue;
@@ -61,7 +61,7 @@ export default function PeriodNoticeCelebration({
     const parentId=guardianScope||myChildren.map(c=>c.id).sort().join("-");
     if(!parentId)return;
     const eligible=myChildren.flatMap(student=>(student.period_notices||[])
-      .filter(n=>Number(n.grade_rank??n.school_rank)>=1&&Number(n.grade_rank??n.school_rank)<=5)
+      .filter(n=>n.is_top_five===true||(Number(n.grade_rank??n.school_rank)>=1&&Number(n.grade_rank??n.school_rank)<=5))
       .map(notice=>({student:student.name,notice,publishedAt:new Date(notice.published_at).getTime()}))
       .filter(x=>Number.isFinite(x.publishedAt)&&x.publishedAt<=now&&now-x.publishedAt<GUARDIAN_VISIBLE_MS))
       .sort((a,b)=>b.publishedAt-a.publishedAt||a.student.localeCompare(b.student,"ar"));
@@ -88,7 +88,7 @@ export default function PeriodNoticeCelebration({
     return()=>window.removeEventListener("keydown",onKey);
   },[celebration]);
   if(!celebration)return null;
-  const n=celebration.notice;const rank=Number(n.grade_rank??n.school_rank);
+  const n=celebration.notice;const rank=Number(n.grade_rank??n.school_rank);const isTiedAfterFifth=rank>5&&n.is_top_five===true;
   return <div className="period-celebration-overlay" role="presentation" onMouseDown={e=>{if(e.target===e.currentTarget)setCelebration(null)}}>
     <div className="period-confetti" aria-hidden="true">{particles.map((particle,i)=>
       <i key={i} style={{
@@ -103,13 +103,13 @@ export default function PeriodNoticeCelebration({
       <h3>{celebration.student}</h3>
       <div className="period-celebration-grade">{n.grade||"الصف الدراسي"}</div>
       <p>{mode==="guardian"
-        ?"يسعدنا أن نشارككم فرحة هذا الإنجاز المتميز. لقد حصل ابنكم على أحد المراكز الخمسة الأولى في صفه الدراسي."
-        :"تعبك واجتهادك أثمرا تميزًا تستحق أن تفخر به. أنت من الخمسة الأوائل على مستوى صفك الدراسي!"}</p>
+        ?isTiedAfterFifth?"يسعدنا أن نشارككم تفوق ابنكم! حصل على نفس نسبة الطالب صاحب المركز الخامس؛ لذا يُحتسب ضمن الأوائل ويستحق مكافأة التفوق.":"يسعدنا أن نشارككم فرحة هذا الإنجاز المتميز. لقد حصل ابنكم على أحد المراكز الخمسة الأولى في صفه الدراسي."
+         :isTiedAfterFifth?"أحسنت! تعادلت في النسبة مع صاحب المركز الخامس، وأصبحت ضمن الأوائل المستحقين للتكريم.":"تعبك واجتهادك أثمرا تميزًا تستحق أن تفخر به. أنت من الخمسة الأوائل على مستوى صفك الدراسي!"}</p>
       <div className="period-celebration-ranking">
-        <div><span>ترتيب الصف الدراسي</span><strong>{labels[rank]||fmt(rank)}</strong></div>
+        <div><span>ترتيب الصف الدراسي</span><strong>{labels[rank]||fmt(rank)}</strong>{isTiedAfterFifth&&<small>متساوٍ في النسبة مع الخامس</small>}</div>
         <div><span>ترتيب الفصل</span><strong>{fmt(n.class_rank)}</strong></div>
       </div>
-      <div className="period-celebration-wish">
+      <div className="period-celebration-wish"><strong>تمت إضافة 25 نقطة تميز لرصيد الطالب تقديرًا لتفوقه.</strong><br/>
         {mode==="guardian"?"نسأل الله أن يبارك لكم فيه، وأن يديم عليه التفوق والنجاح.":"واصل طريق التميز، والقادم أجمل بإذن الله."}
       </div>
       <button type="button" className="period-celebration-cta" onClick={()=>setCelebration(null)}>شكرًا، مشاهدة إشعار النتائج</button>

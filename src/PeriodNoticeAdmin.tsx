@@ -197,7 +197,7 @@ export default function PeriodNoticeAdmin({schoolName}:{schoolName:string}){
             <b>{b.title}</b> — {b.student_count} إشعار — مؤرشفة
             <small> (تاريخ النشر السابق: {new Date(b.published_at).toLocaleDateString("ar-SA")})</small>
           </li>)}</ul>
-        </details>
+        </details>}
       </section>
       <section className="panel"><h3>2. رفع ملفات Excel للمراجعة</h3>
         <input type="file" accept=".xlsx" multiple disabled={busy||Boolean(batch?.published_at)}

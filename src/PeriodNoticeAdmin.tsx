@@ -242,6 +242,19 @@ export default function PeriodNoticeAdmin({schoolName}:{schoolName:string}){
           onChange={e=>{void chooseFiles(e.currentTarget.files);e.currentTarget.value=""}}/>
         {fileDrafts.length>0&&<><div className="period-import-stats"><b>{fileDrafts.length} ملف</b><b>{draftTotal} إشعار</b>
           {duplicateCount>0&&<b className="period-danger">{duplicateCount} رقم طالب مكرر؛ آخر نسخة ستُعتمد</b>}</div>
+          {subjectCoverage.excluded.length>0&&<div className="period-warning">
+            <h4>مواد بلا درجات لدى جميع الطلاب — ستُستبعد من مجموع الفترة</h4>
+            <p>هذه المواد محفوظة في إشعار الطالب، لكن لا تدخل في النهاية العظمى أو النسبة أو الترتيب خلال الفترة الحالية:</p>
+            <p>{subjectCoverage.excluded.map(x=>x.subject).join("، ")}</p>
+          </div>}
+          {subjectCoverage.pending.length>0&&<div className="period-warning">
+            <h4>تنبيه رصد: مواد رُصدت لبعض الطلاب ولم تُرصد لآخرين</h4>
+            <p>تظل هذه المواد ضمن المجموع المتوقع، ولن تُحسب نسبة نهائية للطلاب الذين تنقصهم درجاتها.</p>
+            {subjectCoverage.pending.map(x=><details key={x.grade+"|"+x.subject}>
+              <summary>{x.grade} — {x.subject}: مرصودة {x.recorded} من {x.students}، وينقصها {x.students-x.recorded}</summary>
+              <p>الطلاب المطلوب مراجعة رصدهم: {x.missing.join("، ")}</p>
+            </details>)}
+          </div>}
           <div className="period-source-list">{fileDrafts.map(f=><div key={f.name}>
             <strong>{f.name}</strong><span>{f.entries.length} طالب</span>
             {f.warnings.map((w,i)=><small key={i} className="period-danger">{w}</small>)}
@@ -269,7 +282,7 @@ export default function PeriodNoticeAdmin({schoolName}:{schoolName:string}){
                 {batch.items.filter(item=>item.score_complete===false).map(item=>
                   <p key={item.id}>
                     <strong>{item.student_name} — {item.grade_name} — الفصل {item.class_name}:</strong>
-                    {" "}{item.subjects.filter(subject=>subject.total==null||subject.maximum==null)
+                    {" "}{item.subjects.filter(subject=>subject.excluded_from_total!==true&&(subject.total==null||subject.maximum==null))
                     .map(subject=>subject.subject).join("، ")||"يحتاج مراجعة بيانات الدرجات"}
                   </p>
                 )}
@@ -295,11 +308,11 @@ export default function PeriodNoticeAdmin({schoolName}:{schoolName:string}){
             <td>{x.score_complete===false?"بيانات غير مكتملة":x.total!=null&&x.total_max!=null?x.total+" / "+x.total_max:"—"}</td><td>{x.source_file}
               <details className="period-student-preview"><summary>معاينة المواد والدرجات</summary>
                 {(x.subjects||[]).map((subject,i)=><p key={i}>{subject.subject}:
-                  <b> {subject.total??"—"} / {subject.maximum??"—"}</b></p>)}
+                  <b> {subject.excluded_from_total?"غير مرصودة لجميع الطلاب — خارج مجموع الفترة":(subject.total??"—")+" / "+(subject.maximum??"—")}</b></p>)}
               </details></td>
           </tr>)}</tbody></table></div>
           {!batch.published_at&&<div className="period-publish">
-            <p>لن يصل أي إشعار إلى حساب طالب أو ولي أمر قبل الضغط على الزر التالي وتأكيد النشر.</p>
+            <p>لن يصل أي إشعار قبل تأكيد النشر؛ يتم نشر نتائج هذا القسم وحده دون إلغاء إشعارات القسم الدراسي الآخر.</p>
             {!!batch.unmatched_count&&<p className="period-danger">تحذير: يوجد {batch.unmatched_count} طلاب لم تُطابق إشعاراتهم؛ النشر سيشمل الطلاب المطابقين فقط.</p>}
             <button type="button" className="btn primary" disabled={busy||!batch.student_count}
               onClick={()=>void publish()}>{busy?"جارٍ النشر...":"انشر الإشعارات"}</button>

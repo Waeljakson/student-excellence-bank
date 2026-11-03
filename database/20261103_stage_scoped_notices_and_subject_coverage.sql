@@ -50,7 +50,7 @@ BEGIN
  IF v_department IS NULL THEN RETURN jsonb_build_object('excluded_subjects','[]'::jsonb,'updated',0);END IF;
  WITH source AS (
  SELECT i.id, g.id grade_id,
-    trim(regexp_replace(regexp_replace(lower(COALESCE(x.subj->>'subject','')),'^\\*+','','g'),'\\s+',' ','g')) normalized,
+    trim(regexp_replace(replace(lower(COALESCE(x.subj->>'subject','')),'*',''),'[[:space:]]+',' ','g')) normalized,
     x.subj, x.ord,
     (NULLIF(x.subj->>'total','') IS NOT NULL) AS recorded
  FROM public.period_notice_items i

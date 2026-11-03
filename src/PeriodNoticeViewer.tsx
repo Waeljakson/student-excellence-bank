@@ -10,7 +10,7 @@ export type PeriodNotice={
   grade_rank?:number;grade_count?:number;grade_top_five?:SchoolLeader[];
   school_rank?:number;class_rank?:number;school_count?:number;class_count?:number;
   score_percent?:number|null;score_complete?:boolean;is_top_five?:boolean;school_top_five?:SchoolLeader[];
-  subjects?:Array<{subject:string;maximum:number|null;total:number|null;assessments?:Record<string,number|null>;note?:string}>;
+  subjects?:Array<{subject:string;maximum:number|null;total:number|null;excluded_from_total?:boolean;assessments?:Record<string,number|null>;note?:string}>;
   sum_total?:number|null;sum_max?:number|null;
   attendance?:number|null;behavior_excellence?:number|null;behavior_positive?:number|null;
 };
@@ -29,6 +29,8 @@ function OriginalNoticeCard({notice,studentName,schoolName}:{
       </div>
       <span className="period-original-published">منشور</span>
     </div>
+    {(notice.subjects||[]).some(subject=>subject.excluded_from_total)&&
+      <p className="period-period-scope-note">ملاحظة حسابية: بعض المواد لم تُرصد لأي طالب في الصف خلال هذه الفترة، لذلك استُبعدت من النهاية العظمى والنسبة والترتيب الحالي. تبقى المواد في أصل ملف Excel كما وردت من المدرسة دون تعديل.</p>}
     <PeriodNoticeDesignedImage notice={notice} studentName={studentName} schoolName={schoolName}/>
   </article>;
 }

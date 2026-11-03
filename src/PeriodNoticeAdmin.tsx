@@ -9,13 +9,13 @@ type Incoming={student_no:string;student_name:string;grade_name:string;class_nam
   sum_max:number|null;sum_total:number|null;attendance:number|null;
   behavior_excellence:number|null;behavior_positive:number|null};
 type FileDraft={name:string;entries:Incoming[];originals:OriginalNoticeUpload[];warnings:string[]};
-type AdminBatch={id:string;title:string;published_at:string|null;created_at:string;student_count:number;
+type AdminBatch={id:string;title:string;department_name:string|null;published_at:string|null;created_at:string;student_count:number;
   unmatched_count:number;
   unmatched:Array<{student_no:string;student_name:string;source_file:string;error:string}>;
   items:Array<{id:string;student_name:string;student_no:string;grade_name:string;
   class_name:string;subject_count:number;total:number|null;total_max:number|null;score_complete:boolean;source_file:string;
-  subjects:Array<{subject:string;total:number|null;maximum:number|null}>}>};
-type ArchivedBatch={id:string;title:string;published_at:string;superseded_at:string;student_count:number};
+  subjects:Array<{subject:string;total:number|null;maximum:number|null;excluded_from_total?:boolean}>;excluded_subjects?:string[]}>};
+type ArchivedBatch={id:string;title:string;department_name:string|null;published_at:string;superseded_at:string;student_count:number};
 type AdminData={batches:AdminBatch[];archived_batches?:ArchivedBatch[]};
 type StageResult={batch_id:string;saved:number;missing_count:number;
   missing:Array<{student_no:string;student_name:string;error:string}>;published:boolean};
@@ -27,6 +27,24 @@ const asNumber=(v:unknown):number|null=>{
   return Number.isFinite(n)?n:null;
 };
 const cell=(sheet:unknown[][],r:number,c:number)=>sheet[r-1]?.[c-1];
+const labelAt=(sheet:unknown[][],r:number)=>{
+  for(const col of [21,19,20,22,18]){
+    const text=asString(cell(sheet,r,col));
+    if(/[\u0600-\u06FF]/.test(text))return text.replace(/^\*+/,"").replace(/\s+/g," ").trim();
+  }
+  return "";
+};
+const rowFor=(sheet:unknown[][],keyword:string,from=23,to=52)=>{
+  for(let r=from;r<=to;r++)if(labelAt(sheet,r).includes(keyword))return r;
+  return -1;
+};
+const followingValue=(sheet:unknown[][],label:string,start:number)=>{
+  for(let r=start;r<=55;r++){
+    const marker=asString(cell(sheet,r,3));
+    if(marker.includes(label))return asNumber(cell(sheet,r,2));
+  }
+  return null;
+};
 const assessmentCols:[string,number][]=[
   ["تقييم مستمر",7],["تقويمات متنوعة",12],["المهام الأدائية والمشاركة",14],
   ["اختبارات قصيرة تحريرية",15],["اختبارات شفهية وتحريرية",17],
@@ -54,8 +72,10 @@ async function parseExcelFiles(files:File[]):Promise<FileDraft[]>{
         continue;
       }
       const subjects:Subject[]=[];
-      for(let r=24;r<=34;r++){
-        const subject=asString(cell(sheet,r,21)).replace(/^\*+/,"").replace(/\s+/g," ").trim();
+      const totalRow=rowFor(sheet,"المجموع",24,51);
+      if(totalRow<25){warnings.push(sheetName+": لم يُعثر على صف المجموع؛ راجع تنسيق ملف الإشعار.");continue;}
+      for(let r=24;r<totalRow;r++){
+        const subject=labelAt(sheet,r);
         if(!subject||subject==="المجموع")continue;
         const assessments:Record<string,number|null>={};
         for(const [key,col] of assessmentCols)assessments[key]=asNumber(cell(sheet,r,col));
@@ -69,10 +89,10 @@ async function parseExcelFiles(files:File[]):Promise<FileDraft[]>{
         academic_year:asString(cell(sheet,2,1)),semester:asString(cell(sheet,4,1)),
         grade_name:asString(cell(sheet,6,1)),class_name:asString(cell(sheet,13,1)),
         period_title:asString(cell(sheet,14,13))||"إشعار الفترة الأولى",
-        subjects,sum_max:asNumber(cell(sheet,35,3)),sum_total:asNumber(cell(sheet,35,6)),
-        attendance:asNumber(cell(sheet,39,2)),
-        behavior_excellence:asNumber(cell(sheet,40,2)),
-        behavior_positive:asNumber(cell(sheet,41,2))});
+        subjects,sum_max:asNumber(cell(sheet,totalRow,3)),sum_total:asNumber(cell(sheet,totalRow,6)),
+        attendance:followingValue(sheet,"المواظبة",totalRow+1),
+        behavior_excellence:followingValue(sheet,"السلوك المتميز",totalRow+1),
+        behavior_positive:followingValue(sheet,"السلوك الإيجابي",totalRow+1)});
     }
     if(!entries.length)warnings.push("الملف لا يحتوي على إشعارات طلاب قابلة للاستيراد.");
     const originals=await splitOriginalExcelNotices(buffer,originalRequests);

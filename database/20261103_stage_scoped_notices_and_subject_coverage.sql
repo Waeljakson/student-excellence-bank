@@ -215,7 +215,7 @@ AS $function$
    RETURN jsonb_build_object('batch_id',v_batch,'saved',v_count,
      'missing_count',jsonb_array_length(v_missing),'missing',v_missing,
      'published',false,'message','تم حفظ المسودة فقط، ولم يتم نشر أي إشعار');
- END;$function$
+ END;$function$;
 
 
 CREATE OR REPLACE FUNCTION public.api_period_notice_publish(p_batch_id uuid)
@@ -268,7 +268,7 @@ AS $function$
      WHERE id=p_batch_id AND school_id=v_school
      RETURNING published_at INTO v_date;
    RETURN jsonb_build_object('published',true,'published_at',v_date,'student_count',v_count,'archived_count',v_archived,'department_id',v_department);
- END;$function$
+ END;$function$;
 
 
 CREATE OR REPLACE FUNCTION public.api_period_notice_admin_data()
@@ -331,4 +331,4 @@ AS $function$
      FROM public.period_notice_batches h
      WHERE h.school_id=v_school AND h.published_at IS NOT NULL AND h.superseded_at IS NOT NULL
    ),'[]'::jsonb));
- END;$function$
+ END;$function$;

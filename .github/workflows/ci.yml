@@ -27,6 +27,8 @@ jobs:
         run: node scripts/smoke-print-a4.mjs
       - name: Verify grade-scoped secondary notices and subject coverage
         run: node scripts/assert-secondary-notices.mjs
+      - name: Verify WhatsApp guardian referral safety
+        run: node scripts/assert-referral-whatsapp.mjs
       - name: Type-check and build SPA
         run: npm run build
 

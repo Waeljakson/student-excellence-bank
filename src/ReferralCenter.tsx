@@ -1,5 +1,6 @@
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { niceError, rpc } from "./client";
+import ReferralWhatsAppShare from "./ReferralWhatsAppShare";
 import "./referrals.css";
 
 type Student={id:string;student_no:string;name:string;grade_name:string;class_name:string;points:number};
@@ -83,6 +84,7 @@ export default function ReferralCenter({roles,students,profileName}:Props){
 
 function ReferralCard({r,canHandle,deductDraft,setDeductDraft,noteDraft,setNoteDraft,completeDraft,setCompleteDraft,actionBusy,deduct,complete}:{r:Referral;canHandle:boolean;deductDraft:Record<string,string>;setDeductDraft:any;noteDraft:Record<string,string>;setNoteDraft:any;completeDraft:Record<string,string>;setCompleteDraft:any;actionBusy:string;deduct:(r:Referral)=>void;complete:(r:Referral)=>void}){
   const actions=[[r.teacher_action_1,r.teacher_action_date_1],[r.teacher_action_2,r.teacher_action_date_2],[r.teacher_action_3,r.teacher_action_date_3]].filter(x=>x[0]);
+  const[shareOpen,setShareOpen]=useState(false);
   return <article className="panel referral-card"><div className="referral-card-head"><div><span className="referral-no">{r.referral_no}</span><h3>{r.student_name}</h3><p>{r.grade_name} — فصل {r.class_name} · رقم الطالب {r.student_no}</p></div><div className="referral-badges"><span>{r.target_label}</span><span>{r.violation_category_label}</span><span>{r.occurrence_label}</span></div></div>
     <div className="referral-meta"><div><small>المعلم المحوِّل</small><b>{r.teacher_name}</b></div><div><small>المادة</small><b>{r.subject_ar}</b></div><div><small>تاريخ الواقعة</small><b>{fmt(r.incident_date)}</b></div><div><small>الرصيد الحالي</small><b>{Number(r.wallet_points).toLocaleString("ar-SA")} نقطة</b></div></div>
     <div className="referral-details"><div><small>نوع المخالفة</small><p>{r.violation_text}</p></div><div><small>تفسير المخالفة</small><p>{r.violation_explanation}</p></div></div>
@@ -92,5 +94,10 @@ function ReferralCard({r,canHandle,deductDraft,setDeductDraft,noteDraft,setNoteD
       {r.deducted_points===0&&<div className="deduction-box"><div><b>خصم نقاط من الطالب</b><span>الصلاحية متاحة بسبب هذا التحويل فقط، ولا يمكن الخصم أكثر من مرة لنفس التحويل.</span></div><input type="number" min="1" max={Math.max(1,r.wallet_points)} placeholder="عدد النقاط" value={deductDraft[r.id]||""} onChange={e=>setDeductDraft((v:any)=>({...v,[r.id]:e.target.value}))}/><input placeholder="سبب الخصم — اختياري" value={noteDraft[r.id]||""} onChange={e=>setNoteDraft((v:any)=>({...v,[r.id]:e.target.value}))}/><button className="btn danger" disabled={actionBusy===r.id+"d"||r.wallet_points<=0} onClick={()=>deduct(r)}>{actionBusy===r.id+"d"?"جارٍ الخصم...":"خصم النقاط"}</button></div>}
       <div className="complete-box"><div><b>إنهاء التحويل</b><span>بعد الإنهاء ينتقل التحويل مباشرة إلى تقرير التحويلات المنتهية.</span></div><input placeholder="الإجراء الذي تم — اختياري (الافتراضي: تم اللازم)" value={completeDraft[r.id]||""} onChange={e=>setCompleteDraft((v:any)=>({...v,[r.id]:e.target.value}))}/><button className="btn primary" disabled={actionBusy===r.id+"c"} onClick={()=>complete(r)}>{actionBusy===r.id+"c"?"جارٍ الإنهاء...":"تم الإجراء ونقل للأرشيف"}</button></div>
     </div>}
+    <div className="referral-share-row no-print">
+      <button type="button" className="btn ghost"
+        onClick={()=>setShareOpen(true)}>إرسال التحويل لولي الأمر عبر واتساب</button>
+    </div>
+    {shareOpen&&<ReferralWhatsAppShare referral={r} onClose={()=>setShareOpen(false)}/>}
   </article>;
 }

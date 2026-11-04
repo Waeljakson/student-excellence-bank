@@ -29,6 +29,8 @@ jobs:
         run: node scripts/assert-secondary-notices.mjs
       - name: Verify WhatsApp guardian referral safety
         run: node scripts/assert-referral-whatsapp.mjs
+      - name: Smoke-test real Cairo referral PDF attachment
+        run: node scripts/smoke-referral-pdf.mjs
       - name: Type-check and build SPA
         run: npm run build
 

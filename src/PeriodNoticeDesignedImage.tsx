@@ -65,7 +65,11 @@ function drawDocument(
   schoolName:string,
   logos:[HTMLImageElement|null,HTMLImageElement|null]
 ):number{
-  const subjects:Array<Subject>=Array.isArray(notice.subjects)?notice.subjects:[];
+  // Only assessed subjects belong on the official current-period notice.
+  // Keep excluded subjects in the stored source data for auditing, but never
+  // paint them into the canvas. PDF and PNG both export this same canvas.
+  const subjects:Array<Subject>=Array.isArray(notice.subjects)
+    ?notice.subjects.filter(subject=>subject.excluded_from_total!==true):[];
   let page=0,y=0;
   function pageStart(continued=false){
     const top=page*PAGE_HEIGHT;
@@ -133,12 +137,11 @@ function drawDocument(
   }
   for(let i=0;i<subjects.length;i++){
     const s=subjects[i];
-    const excluded=Boolean(s.excluded_from_total);
     const detail=Object.entries(s.assessments||{})
       .filter(([,v])=>valid(v))
       .map(([k,v])=>k+": "+format(v)).join("  •  ");
     const detailLines=split(ctx,detail,WIDTH-LEFT*2-47,12,600);
-    const noteLines=split(ctx,excluded?"غير مرصودة لدى أي طالب في الصف — مستبعدة من مجموع ونسبة هذه الفترة":s.note?("ملاحظة: "+s.note):"",WIDTH-LEFT*2-47,12,600);
+    const noteLines=split(ctx,s.note?("ملاحظة: "+s.note):"",WIDTH-LEFT*2-47,12,600);
     const rowHeight=67+detailLines.length*19+noteLines.length*19;
     ensure(rowHeight+9);
     rounded(ctx,LEFT,y,WIDTH-LEFT*2,rowHeight,13,i%2===0?"#ffffff":"#f4f9fb","#dfeaf0");
@@ -146,8 +149,8 @@ function drawDocument(
     const subjectLines=split(ctx,s.subject||"مادة دراسية",545,17,800);
     txt(ctx,subjectLines[0]||"مادة دراسية",RIGHT-25,y+29,17,navy,800);
     if(subjectLines.length>1)txt(ctx,subjectLines.slice(1).join(" "),RIGHT-25,y+47,12,navy,600);
-    txt(ctx,excluded?"خارج المجموع":format(s.total)+" / "+format(s.maximum),LEFT+149,y+29,excluded?15:20,excluded?"#a47625":"#176c7d",800);
-    txt(ctx,excluded?"لم تُرصد هذه الفترة":"الدرجة / النهاية العظمى",LEFT+155,y+49,11,muted,600);
+    txt(ctx,format(s.total)+" / "+format(s.maximum),LEFT+149,y+29,20,"#176c7d",800);
+    txt(ctx,"الدرجة / النهاية العظمى",LEFT+155,y+49,11,muted,600);
     let lineY=y+61;
     for(const l of detailLines){txt(ctx,l,RIGHT-25,lineY,12,muted,600);lineY+=19}
     for(const l of noteLines){txt(ctx,l,RIGHT-25,lineY,12,"#976a26",600);lineY+=19}
@@ -157,7 +160,7 @@ function drawDocument(
   ensure(97);
   const blocks=[
     {label:"الدرجات المكتسبة",value:format(notice.sum_total)},
-    {label:"النهاية العظمى للمواد المرصودة",value:format(notice.sum_max)},
+    {label:"النهاية العظمى",value:format(notice.sum_max)},
     {label:"نسبة التحصيل",value:valid(notice.score_percent)?format(notice.score_percent)+"٪":
       (valid(notice.sum_total)&&Number(notice.sum_max)>0?format(100*Number(notice.sum_total)/Number(notice.sum_max))+"٪":"—")}
   ];

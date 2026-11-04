@@ -25,6 +25,8 @@ jobs:
         run: node scripts/assert-print-safety.mjs
       - name: Smoke-test A4 report printing in a real browser
         run: node scripts/smoke-print-a4.mjs
+      - name: Verify grade-scoped secondary notices and subject coverage
+        run: node scripts/assert-secondary-notices.mjs
       - name: Type-check and build SPA
         run: npm run build
 

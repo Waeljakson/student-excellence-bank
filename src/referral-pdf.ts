@@ -97,7 +97,7 @@ export async function createReferralPdf(referral:ReferralPdfData,schoolName:stri
   await document.fonts.ready;
   const logos=await Promise.all([image("school-logo.png"),image("guidance-logo.png")]);
   const canvases:HTMLCanvasElement[]=[];
-  let ctx:CanvasRenderingContext2D;let y=0;
+  let ctx!:CanvasRenderingContext2D;let y=0;
   const newPage=()=>{
     const canvas=document.createElement("canvas");
     canvas.width=Math.round(WIDTH*RATIO);canvas.height=Math.round(HEIGHT*RATIO);

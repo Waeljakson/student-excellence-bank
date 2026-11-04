@@ -14,10 +14,10 @@ if(!chrome){console.log("Browser smoke test SKIPPED: Chromium/Chrome unavailable
 const dir=mkdtempSync(join(tmpdir(),"bank-print-smoke-"));
 try{
  const html=join(dir,"report.html"),pdf=join(dir,"report.pdf");
- writeFileSync(html,\`<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><title>Print Regression 2026</title><style>\${css}</style></head><body>
+ writeFileSync(html,`<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><title>Print Regression 2026</title><style>${css}</style></head><body>
  <div class="report-page"><header class="report-head"><div></div><div class="title"><h1>Print Regression 2026</h1></div><div></div></header>
  <div class="report-meta">Report rows: 3</div><div class="table-shell"><table><thead><tr><th>Student</th><th>Grade</th></tr></thead>
- <tbody><tr><td>STUDENT_001</td><td>98</td></tr><tr><td>STUDENT_002</td><td>92</td></tr><tr><td>STUDENT_003</td><td>90</td></tr></tbody></table></div></div></body></html>\`);
+ <tbody><tr><td>STUDENT_001</td><td>98</td></tr><tr><td>STUDENT_002</td><td>92</td></tr><tr><td>STUDENT_003</td><td>90</td></tr></tbody></table></div></div></body></html>`);
  const cmd=spawnSync(chrome,["--headless=new","--disable-gpu","--no-sandbox","--no-first-run",
   "--disable-dev-shm-usage","--no-pdf-header-footer","--print-to-pdf="+pdf,pathToFileURL(html).href],
   {encoding:"utf8",timeout:50000});

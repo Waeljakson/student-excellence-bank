@@ -10,13 +10,13 @@ type Incoming={student_no:string;student_name:string;grade_name:string;class_nam
   sum_max:number|null;sum_total:number|null;attendance:number|null;
   behavior_excellence:number|null;behavior_positive:number|null};
 type FileDraft={name:string;entries:Incoming[];originals:OriginalNoticeUpload[];warnings:string[]};
-type AdminBatch={id:string;title:string;department_name:string|null;published_at:string|null;created_at:string;student_count:number;
+type AdminBatch={id:string;title:string;department_name:string|null;grade_name:string|null;missing_originals:number;published_at:string|null;created_at:string;student_count:number;
   unmatched_count:number;
   unmatched:Array<{student_no:string;student_name:string;source_file:string;error:string}>;
   items:Array<{id:string;student_name:string;student_no:string;grade_name:string;
   class_name:string;subject_count:number;total:number|null;total_max:number|null;score_complete:boolean;source_file:string;
   subjects:Array<{subject:string;total:number|null;maximum:number|null;excluded_from_total?:boolean}>;excluded_subjects?:string[]}>};
-type ArchivedBatch={id:string;title:string;department_name:string|null;published_at:string;superseded_at:string;student_count:number};
+type ArchivedBatch={id:string;title:string;department_name:string|null;grade_name:string|null;published_at:string;superseded_at:string;student_count:number};
 type AdminData={batches:AdminBatch[];archived_batches?:ArchivedBatch[]};
 type StageResult={batch_id:string;saved:number;missing_count:number;
   missing:Array<{student_no:string;student_name:string;error:string}>;published:boolean};
@@ -218,13 +218,19 @@ export default function PeriodNoticeAdmin({schoolName}:{schoolName:string}){
   async function publish(){
     if(!batch||batch.published_at||busy||!batch.student_count)return;
     const incomplete=batch.items.filter(x=>x.score_complete===false).length;
+    if(Number(batch.missing_originals||0)>0){
+      setError("لا يمكن نشر الدفعة قبل رفع الملفات الأصلية لكل طالب. الملفات الناقصة: "+batch.missing_originals);return;
+    }
+    if(Number(batch.unmatched_count||0)>0){
+      setError("توجد "+batch.unmatched_count+" إشعارات لأرقام طلاب غير مسجلة. راجع قائمة الطلاب غير المطابقين قبل اعتماد النشر.");return;
+    }
     const warning=incomplete?"\n\nتنبيه: يوجد "+incomplete+" طالبًا لديهم مواد مرصودة لآخرين ولم تُرصد لهم؛ لن تُحسب نسبة أو ترتيب نهائي لهؤلاء حتى اكتمال الرصد.":"";
-    if(!window.confirm("تأكيد نشر "+batch.student_count+" إشعارًا لقسم "+(batch.department_name||"المدرسة")+"؟ ستُؤرشف الدفعة السابقة للقسم نفسه فقط، وتبقى نتائج القسم الآخر منشورة كما هي. تُستبعد من مجموع الفترة المواد التي لا توجد لها درجات لدى أي طالب في الصف."+warning+"\n\nهل تريد اعتماد نشر هذه الدفعة؟"))return;
+    if(!window.confirm("تأكيد نشر "+batch.student_count+" إشعارًا للصف "+(batch.grade_name||"الدراسي")+"؟ ستُؤرشف الدفعة السابقة للصف نفسه فقط، وتبقى إشعارات جميع الصفوف الأخرى منشورة. تُستبعد من مجموع الفترة المواد التي لا توجد لها درجات لدى أي طالب في الصف."+warning+"\n\nهل تريد اعتماد نشر هذه الدفعة؟"))return;
     setBusy(true);setError("");setMessage("");
     try{
-      const r=await rpc<{published:boolean;student_count:number;archived_count:number}>("api_period_notice_publish",{p_batch_id:batch.id});
+      const r=await rpc<{published:boolean;student_count:number;archived_count:number;grade_id:string}>("api_period_notice_publish",{p_batch_id:batch.id});
       await load();
-      setMessage("تم نشر "+r.student_count+" إشعارًا للقسم الدراسي المحدد. أُرشفت "+Number(r.archived_count||0)+" دفعة سابقة من القسم نفسه فقط؛ تظل إشعارات القسم الآخر منشورة. تُحتسب مكافآت التفوق وفق ضوابط الفترة دون تكرار.");
+      setMessage("تم نشر "+r.student_count+" إشعارًا للقسم الدراسي المحدد. أُرشفت "+Number(r.archived_count||0)+" دفعة سابقة من الصف نفسه فقط؛ تظل إشعارات الأول والثاني الثانوي والمرحلة المتوسطة منشورة. تُحتسب مكافآت التفوق وفق ضوابط الفترة دون تكرار.");
     }catch(e){setError(niceError(e))}finally{setBusy(false)}
   }
   return <div className="period-notices" dir="rtl">
@@ -238,15 +244,15 @@ export default function PeriodNoticeAdmin({schoolName}:{schoolName:string}){
           <select value={chosenBatch} onChange={e=>{setChosenBatch(e.target.value);setPreviewGrade("ALL")}}>
             <option value="">إنشاء دفعة جديدة عند الحفظ</option>
             {batches.map(b=><option key={b.id} value={b.id}>
-              {b.title} — {b.department_name||"قسم غير محدد"} — {b.student_count} طالب — {b.published_at?"منشورة لهذا القسم":"مسودة"}
+              {b.title} — {b.grade_name||b.department_name||"صف غير محدد"} — {b.student_count} طالب — {b.published_at?"منشورة لهذا الصف":"مسودة"}
             </option>)}
           </select></label><button type="button" className="mini-btn" onClick={()=>void load()} disabled={busy}>تحديث</button></div>
-        <p className="period-hint">المرحلتان المتوسطة والثانوية مستقلتان في النشر: نشر إشعارات الثانوي لا يُؤرشف إشعارات المتوسط، والعكس. عند إعادة نشر قسم واحد تُؤرشف دفعات ذلك القسم فقط. اختر «إنشاء دفعة جديدة عند الحفظ» لرفع ملف الثانوي، ولا تدمج طلاب المرحلتين في دفعة واحدة.</p>
+        <p className="period-hint">نشر الإشعارات أصبح مستقلًا لكل صف: رفع ونشر الثاني الثانوي لا يؤرشف إشعارات الأول الثانوي ولا المتوسط. تُؤرشف الدفعة القديمة للصف نفسه عند نشر تصحيح جديد فقط. احتفظ بكل صف في دفعة منفصلة.</p>
         {archivedBatches.length>0&&<details className="period-archive">
           <summary>سجل الدفعات السابقة المؤرشفة ({archivedBatches.length}) — غير منشورة حاليًا</summary>
           <p>هذه دفعات قديمة محفوظة للتدقيق فقط؛ لا تظهر في اختيار الدفعة الحالية، ولا يمكن للطلاب أو أولياء الأمور فتح إشعاراتها.</p>
           <ul>{archivedBatches.map(b=><li key={b.id}>
-            <b>{b.title}</b> — {b.department_name||"القسم السابق"} — {b.student_count} إشعار — مؤرشفة
+            <b>{b.title}</b> — {b.grade_name||b.department_name||"القسم السابق"} — {b.student_count} إشعار — مؤرشفة
             <small> (تاريخ النشر السابق: {new Date(b.published_at).toLocaleDateString("ar-SA")})</small>
           </li>)}</ul>
         </details>}
@@ -290,9 +296,13 @@ export default function PeriodNoticeAdmin({schoolName}:{schoolName:string}){
         {!batch?<p>اختر دفعة من القائمة أو احفظ الملفات كمسودة لتظهر النتائج هنا.</p>:<>
           <div className="period-import-stats"><b>{batch.student_count} طالب</b>
             <b className={batch.published_at?"period-published":"period-draft"}>
-              {batch.published_at?"منشورة لقسم "+(batch.department_name||"المدرسة")+" — تبقى دفعات الأقسام الأخرى منشورة":"مسودة — غير مرئية للطلاب وأولياء الأمور"}
+              {batch.published_at?"منشورة لصف "+(batch.grade_name||"القسم الدراسي")+" — بقية الصفوف لا تتأثر":"مسودة — غير مرئية للطلاب وأولياء الأمور"}
             </b></div>
-          {batch.items.some(item=>item.score_complete===false)&&<div className="period-warning">
+          {Number(batch.missing_originals||0)>0&&<div className="period-warning">
+              <h4>ملفات الإشعارات الأصلية غير مكتملة</h4>
+              <p>عدد إشعارات الطلاب التي لا تحتوي على ملف Excel أصلي منفصل: {batch.missing_originals}. أعد رفع الملف الأصلي وحفظه في المسودة نفسها قبل النشر. لن يسمح النظام بالنشر دون الملفات الأصلية.</p>
+            </div>}
+           {batch.items.some(item=>item.score_complete===false)&&<div className="period-warning">
               <h4>تنبيه: توجد إشعارات بها درجات مواد غير مكتملة</h4>
               <p>النسبة والترتيب يُحتسبان من مجموع درجات جميع المواد، وليس من المادة الأخيرة. لن يدخل أصحاب البيانات غير المكتملة في قائمة الأوائل حتى تصحيح درجاتهم.</p>
               <p>الإشعارات غير المكتملة: {batch.items.filter(item=>item.score_complete===false).length}</p>
@@ -331,7 +341,7 @@ export default function PeriodNoticeAdmin({schoolName}:{schoolName:string}){
               </details></td>
           </tr>)}</tbody></table></div>
           {!batch.published_at&&<div className="period-publish">
-            <p>لن يصل أي إشعار قبل تأكيد النشر؛ يتم نشر نتائج هذا القسم وحده دون إلغاء إشعارات القسم الدراسي الآخر.</p>
+            <p>لن يصل أي إشعار قبل تأكيد النشر؛ يتم نشر نتائج الصف المحدد وحده دون إلغاء إشعارات الصفوف الأخرى.</p>
             {!!batch.unmatched_count&&<p className="period-danger">تحذير: يوجد {batch.unmatched_count} طلاب لم تُطابق إشعاراتهم؛ النشر سيشمل الطلاب المطابقين فقط.</p>}
             <button type="button" className="btn primary" disabled={busy||!batch.student_count}
               onClick={()=>void publish()}>{busy?"جارٍ النشر...":"انشر الإشعارات"}</button>

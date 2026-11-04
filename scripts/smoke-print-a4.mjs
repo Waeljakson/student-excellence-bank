@@ -6,7 +6,7 @@ import {pathToFileURL} from "node:url";
 const source=readFileSync(new URL("../src/report-print.ts",import.meta.url),"utf8");
 const match=source.match(/<style>\s*([\s\S]*?)\s*<\/style><\/head><body>/);
 if(!match)throw new Error("No self-contained print CSS in report-print.ts");
-const css=match[1].replace(/\$\{options\.orientation\|\|"landscape"\}/g,"landscape");
+const css=match[1].replace(/\$\{options\.orientation\|\|"landscape"\}/g,"landscape").replaceAll("${fontFaces}","");
 if(css.includes("${"))throw new Error("Unexpected unresolved template interpolation in print CSS");
 const chrome=["google-chrome","google-chrome-stable","chromium","chromium-browser"].find(command=>
  spawnSync("sh",["-c","command -v "+command],{encoding:"utf8"}).status===0);

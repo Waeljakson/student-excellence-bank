@@ -1,4 +1,6 @@
-import { getCurrentSchoolName } from "./school-brand";
+import {useState} from "react";
+import {getCurrentSchoolName} from "./school-brand";
+import ReferralWhatsAppShare from "./ReferralWhatsAppShare";
 type Referral={
   id:string;
   referral_no:string;
@@ -34,6 +36,7 @@ const fmt=(v?:string|null)=>v?new Date(v).toLocaleDateString("ar-SA",{year:"nume
 const esc=(v:unknown)=>String(v??"—").replace(/[&<>"']/g,(ch)=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#039;"}[ch]||ch));
 
 export default function CompletedReferralsReport({completed}:{completed:Referral[]}){
+  const[shareReferral,setShareReferral]=useState<Referral|null>(null);
   function printReport(){
     const win=window.open("","_blank","width=1250,height=850");
     if(!win){window.alert("تعذر فتح نافذة الطباعة. اسمح بالنوافذ المنبثقة لهذا الموقع ثم أعد المحاولة.");return}
@@ -127,8 +130,15 @@ export default function CompletedReferralsReport({completed}:{completed:Referral
     win.document.close();
   }
 
-  return <section className="panel referral-archive">
+  return <><section className="panel referral-archive">
     <div className="panel-title"><div><h3>تقرير التحويلات المنتهية</h3><p>أرشيف رقمي للإجراءات التي تم إنهاؤها. يمكنك فتح وطباعة كل تحويل كاملًا كما كتبه المعلم.</p></div><button className="btn ghost no-print" onClick={printReport}>طباعة التقرير</button></div>
-    {completed.length?<div className="table-wrap"><table><thead><tr><th>رقم التحويل</th><th>الطالب</th><th>الفصل</th><th>المعلم</th><th>الجهة</th><th>المخالفة</th><th>الخصم</th><th>الإجراء النهائي</th><th>تاريخ الإنهاء</th><th>التحويل</th></tr></thead><tbody>{completed.map(r=><tr key={r.id}><td><b>{r.referral_no}</b></td><td>{r.student_name}<small className="table-sub">{r.student_no}</small></td><td>{r.grade_name} / {r.class_name}</td><td>{r.teacher_name}</td><td>{r.target_label}</td><td>{r.violation_category_label} — {r.occurrence_label}</td><td>{r.deducted_points?`${r.deducted_points} نقطة`:"بدون خصم"}</td><td>{r.completion_note||"تم اللازم"}<small className="table-sub">{r.completed_by_name||"—"}</small></td><td>{fmt(r.completed_at)}</td><td><button type="button" className="btn ghost no-print" onClick={()=>printReferral(r)}>عرض / طباعة</button></td></tr>)}</tbody></table></div>:<div className="empty">لا توجد تحويلات منتهية حتى الآن.</div>}
-  </section>;
+    {completed.length?<div className="table-wrap"><table><thead><tr><th>رقم التحويل</th><th>الطالب</th><th>الفصل</th><th>المعلم</th><th>الجهة</th><th>المخالفة</th><th>الخصم</th><th>الإجراء النهائي</th><th>تاريخ الإنهاء</th><th>التحويل</th><th className="no-print">واتساب ولي الأمر</th></tr></thead><tbody>{completed.map(r=><tr key={r.id}><td><b>{r.referral_no}</b></td><td>{r.student_name}<small className="table-sub">{r.student_no}</small></td><td>{r.grade_name} / {r.class_name}</td><td>{r.teacher_name}</td><td>{r.target_label}</td><td>{r.violation_category_label} — {r.occurrence_label}</td><td>{r.deducted_points?`${r.deducted_points} نقطة`:"بدون خصم"}</td><td>{r.completion_note||"تم اللازم"}<small className="table-sub">{r.completed_by_name||"—"}</small></td><td>{fmt(r.completed_at)}</td><td><button type="button" className="btn ghost no-print" onClick={()=>printReferral(r)}>عرض / طباعة</button></td><td className="no-print"><button type="button" className="btn ghost" onClick={()=>setShareReferral(r)}>إرسال عبر واتساب</button></td></tr>)}</tbody></table></div>:<div className="empty">لا توجد تحويلات منتهية حتى الآن.</div>}
+  </section>
+    {shareReferral&&<ReferralWhatsAppShare
+      referral={{...shareReferral,status:"COMPLETED",
+        subject_ar:shareReferral.subject_ar||"",
+        incident_date:shareReferral.incident_date||"",
+        violation_text:shareReferral.violation_text||""}}
+      onClose={()=>setShareReferral(null)}/>}
+  </>;
 }

@@ -29,8 +29,6 @@ function OriginalNoticeCard({notice,studentName,schoolName}:{
       </div>
       <span className="period-original-published">منشور</span>
     </div>
-    {(notice.subjects||[]).some(subject=>subject.excluded_from_total)&&
-      <p className="period-period-scope-note">ملاحظة حسابية: بعض المواد لم تُرصد لأي طالب في الصف خلال هذه الفترة، لذلك استُبعدت من النهاية العظمى والنسبة والترتيب الحالي. تبقى المواد في أصل ملف Excel كما وردت من المدرسة دون تعديل.</p>}
     <PeriodNoticeDesignedImage notice={notice} studentName={studentName} schoolName={schoolName}/>
   </article>;
 }

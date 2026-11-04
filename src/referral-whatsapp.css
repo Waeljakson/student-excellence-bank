@@ -17,3 +17,10 @@
 .referral-share-row{display:flex;justify-content:flex-start;gap:9px;padding-top:13px;border-top:1px dashed #d7e6e9;margin-top:12px}
 .referral-share-row .btn{font:700 12px Cairo,Tahoma,Arial,sans-serif}
 @media(max-width:640px){.ref-wa-dialog{padding:13px}.ref-wa-head h2{font-size:19px}.ref-wa-actions .btn,.ref-wa-send{flex:1 1 180px}.ref-wa-templates{display:grid;grid-template-columns:1fr}}
+
+.ref-wa-attachment{background:#f6fbfa;border:1px solid #cde7e1;border-radius:11px;padding:13px 15px;margin:14px 0;color:#1b5f62}
+.ref-wa-attachment strong{display:block;color:#155d63;font-size:14px}
+.ref-wa-attachment p{font-size:12px;line-height:1.85;margin:6px 0}
+.ref-wa-attachment span{display:block;font-size:12px}
+.ref-wa-attachment .ref-wa-file-ready{color:#176b4e;font-weight:800;overflow-wrap:anywhere}
+.ref-wa-attachment .ref-wa-error{color:#983e2e}

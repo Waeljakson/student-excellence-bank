@@ -24,13 +24,19 @@ try{
  if(cmd.status!==0||!existsSync(pdf))throw new Error("Headless print failed: "+(cmd.stderr||"").slice(-900));
  const bytes=statSync(pdf).size;
  if(bytes<6000)throw new Error("PDF file is suspiciously empty ("+bytes+" bytes)");
- const extractor=spawnSync("sh",["-c","command -v pdftotext"],{encoding:"utf8"});
- if(extractor.status===0){
-  const text=spawnSync("pdftotext",[pdf,"-"],{encoding:"utf8",timeout:15000});
-  if(text.status!==0||!text.stdout.includes("STUDENT_001")||
-     !text.stdout.includes("STUDENT_002")||
-     !text.stdout.includes("Print Regression 2026"))
-   throw new Error("Print regression: PDF does not contain expected table content (blank output).");
-  console.log("PASS : Headless Chromium PDF contains title and all student report rows ("+bytes+" bytes).");
- }else console.log("PASS : Browser generated a nonempty A4 PDF ("+bytes+" bytes; text extraction not installed).");
+ // pdfjs-dist is a production dependency, so this CI test verifies the actual
+ // text inside the browser-generated PDF without relying on OS-installed tools.
+ const {getDocument}=await import("pdfjs-dist/legacy/build/pdf.mjs");
+ const doc=await getDocument({data:new Uint8Array(readFileSync(pdf)),useSystemFonts:true}).promise;
+ let extracted="";
+ for(let pageNumber=1;pageNumber<=doc.numPages;pageNumber++){
+   const content=await (await doc.getPage(pageNumber)).getTextContent();
+   extracted+=" "+content.items.map(x=>("str" in x?x.str:"")).join(" ");
+ }
+ await doc.destroy();
+ for(const expected of ["Print Regression 2026","STUDENT_001","STUDENT_002","STUDENT_003"]){
+   if(!extracted.includes(expected))
+     throw new Error("Print regression: missing "+expected+" in browser PDF text (blank or hidden printout).");
+ }
+ console.log("PASS : Headless Chromium PDF contains title and all student report rows ("+bytes+" bytes).");
 }finally{rmSync(dir,{recursive:true,force:true})}

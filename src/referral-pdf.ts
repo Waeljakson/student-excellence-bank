@@ -80,7 +80,7 @@ async function imagesToPdf(canvases:HTMLCanvasElement[]):Promise<Blob>{
     object(page,"<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595.28 841.89] /Resources << /XObject << /Im0 "+photo+" 0 R >> >> /Contents "+stream+" 0 R >>");
     const commands="q 595.28 0 0 841.89 0 0 cm /Im0 Do Q\n";
     object(stream,commands,"<< /Length "+enc.encode(commands).length+" >>\nstream\n","\nendstream");
-    object(photo,jpeg,"<< /Type /XObject /Subtype /Image /Width "+binary[i].length*0+(WIDTH*RATIO)+" /Height "+(HEIGHT*RATIO)+" /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length "+jpeg.byteLength+" >>\nstream\n","\nendstream");
+    object(photo,jpeg,"<< /Type /XObject /Subtype /Image /Width "+Math.round(WIDTH*RATIO)+" /Height "+Math.round(HEIGHT*RATIO)+" /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length "+jpeg.byteLength+" >>\nstream\n","\nendstream");
   }
   const startxref=length,count=binary.length*3+2;
   add("xref\n0 "+(count+1)+"\n0000000000 65535 f \n");

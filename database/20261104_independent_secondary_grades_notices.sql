@@ -169,6 +169,11 @@ AS $function$
    SELECT count(*) INTO v_count FROM public.period_notice_items
      WHERE batch_id=p_batch_id AND school_id=v_school;
    IF v_count=0 THEN RAISE EXCEPTION 'PERIOD_NOTICE_EMPTY_BATCH';END IF;
+   IF EXISTS(
+      SELECT 1 FROM public.period_notice_import_issues issue
+      WHERE issue.batch_id=p_batch_id AND issue.school_id=v_school
+        AND issue.resolved_at IS NULL
+   ) THEN RAISE EXCEPTION 'PERIOD_NOTICE_UNMATCHED_STUDENTS'; END IF;
    IF EXISTS(SELECT 1 FROM public.period_notice_items i
      LEFT JOIN public.period_notice_original_files o ON o.notice_item_id=i.id
      WHERE i.batch_id=p_batch_id AND i.school_id=v_school AND o.notice_item_id IS NULL)

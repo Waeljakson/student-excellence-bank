@@ -1,5 +1,6 @@
-import {useEffect,useMemo,useState} from "react";
+import {useEffect,useMemo,useRef,useState} from "react";
 import {niceError,rpc} from "./client";
+import {printTableReport} from "./report-print";
 import {splitOriginalExcelNotices,type OriginalNoticeUpload} from "./PeriodNoticeOriginalExcel";
 import "./period-notices.css";
 
@@ -103,6 +104,7 @@ async function parseExcelFiles(files:File[]):Promise<FileDraft[]>{
 
 export default function PeriodNoticeAdmin({schoolName}:{schoolName:string}){
   const [batches,setBatches]=useState<AdminBatch[]>([]);
+  const previewTableRef=useRef<HTMLTableElement>(null);
   const [archivedBatches,setArchivedBatches]=useState<ArchivedBatch[]>([]);
   const [chosenBatch,setChosenBatch]=useState("");
   const [fileDrafts,setFileDrafts]=useState<FileDraft[]>([]);
@@ -201,6 +203,18 @@ export default function PeriodNoticeAdmin({schoolName}:{schoolName:string}){
       setError("توقف حفظ المسودات بعد "+saved+" سجلًا وحُفظت "+originalsSaved+" نسخة أصلية. لم يُنشر أي سجل جديد. راجع الدفعة ثم أعد المحاولة: "+niceError(e));
     }finally{setBusy(false)}
   }
+  function printNoticeReport(){
+    if(!batch||!shown.length||!previewTableRef.current){
+      setError("لا توجد إشعارات في التصفية الحالية لإنشاء تقرير الطباعة.");
+      return;
+    }
+    printTableReport(previewTableRef.current,{
+      title:"تقرير إشعارات نتائج الطلاب — "+(batch.department_name||"المدرسة"),
+      subtitle:batch.title+" | "+(previewGrade==="ALL"?"جميع الصفوف":previewGrade)+
+        " | "+(batch.published_at?"الدفعة المنشورة":"مسودة لم تُنشر"),
+      orientation:"landscape"
+    });
+  }
   async function publish(){
     if(!batch||batch.published_at||busy||!batch.student_count)return;
     const incomplete=batch.items.filter(x=>x.score_complete===false).length;
@@ -267,7 +281,12 @@ export default function PeriodNoticeAdmin({schoolName}:{schoolName:string}){
           {missing.map((x,i)=><p key={i}>{x.student_name} — {x.student_no}: {x.error}</p>)}
         </div>}
       </section>
-      <section className="panel"><h3>3. مراجعة الإشعارات المحفوظة</h3>
+      <section className="panel no-auto-report-print">
+        <div className="period-report-heading">
+          <h3>3. مراجعة الإشعارات المحفوظة</h3>
+          <button className="btn ghost" type="button" onClick={printNoticeReport}
+            disabled={!batch||shown.length===0||busy}>معاينة / طباعة تقرير الإشعارات PDF</button>
+        </div>
         {!batch?<p>اختر دفعة من القائمة أو احفظ الملفات كمسودة لتظهر النتائج هنا.</p>:<>
           <div className="period-import-stats"><b>{batch.student_count} طالب</b>
             <b className={batch.published_at?"period-published":"period-draft"}>
@@ -299,7 +318,7 @@ export default function PeriodNoticeAdmin({schoolName}:{schoolName:string}){
               {x.student_name} — {x.student_no} — {x.source_file}
             </p>)}
           </div>}
-          <div className="table-wrap"><table className="period-table"><thead><tr>
+          <div className="table-wrap"><table ref={previewTableRef} className="period-table"><thead><tr>
             <th>اسم الطالب</th><th>رقم الطالب</th><th>الصف</th><th>الفصل</th>
             <th>المواد</th><th>المجموع</th><th>المصدر</th>
           </tr></thead><tbody>{shown.map(x=><tr key={x.id}>

@@ -3,6 +3,8 @@ const read=(name)=>readFileSync(new URL("../"+name,import.meta.url),"utf8");
 const migration=read("database/20261104_independent_secondary_grades_notices.sql");
 const staging=read("database/20261103_stage_scoped_notices_and_subject_coverage.sql");
 const admin=read("src/PeriodNoticeAdmin.tsx");
+const noticeImage=read("src/PeriodNoticeDesignedImage.tsx");
+const noticeViewer=read("src/PeriodNoticeViewer.tsx");
 const scenarios=[
  ["Each secondary grade has an independent published batch",
   migration.includes("one_current_notice_batch_per_grade")&&
@@ -28,7 +30,15 @@ const scenarios=[
   admin.includes('rowFor(sheet,"المجموع",24,51)')&&
   admin.includes('for(let r=24;r<totalRow;r++)')],
  ["Admin prominently warns before publishing or archiving any other grade",
-  admin.includes('batch.grade_name')&&admin.includes("الصف نفسه فقط")]
+  admin.includes('batch.grade_name')&&admin.includes("الصف نفسه فقط")],
+ ["Student/guardian notice hides subjects outside the current-period sum",
+  noticeImage.includes("notice.subjects.filter(subject=>subject.excluded_from_total!==true)")&&
+  !noticeImage.includes('txt(ctx,excluded?"خارج المجموع"')&&
+  !noticeViewer.includes("period-period-scope-note")],
+ ["PDF and PNG export use the same filtered notice image",
+  noticeImage.includes("drawDocument(painter,notice,studentName,schoolName,logos)")&&
+  noticeImage.includes("const pdf=await makePdf(canvas,pages.current)")&&
+  noticeImage.includes('canvas.toBlob(b=>b?resolve(b)')]
 ];
 let failures=0;
 for(const [title,pass] of scenarios){

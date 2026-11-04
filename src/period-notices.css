@@ -137,3 +137,9 @@
   .period-picture-canvas{max-width:100%;page-break-inside:avoid}
 }
 .period-period-scope-note{font-family:Cairo,Tahoma,Arial,sans-serif;line-height:1.9;color:#765721;background:#fff8e9;border:1px solid #f0daad;border-radius:11px;padding:11px 14px;margin:12px 0;font-size:12px}
+
+/* The notice report print button uses an isolated A4 popup; never print a hidden SPA section. */
+.period-report-heading{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:12px}
+.period-report-heading h3{margin:0}
+.period-report-heading button{font-family:Cairo,Tahoma,Arial,sans-serif;white-space:normal}
+@media(max-width:640px){.period-report-heading{align-items:stretch;flex-direction:column}.period-report-heading button{width:100%}}

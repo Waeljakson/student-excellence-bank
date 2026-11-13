@@ -4,9 +4,9 @@ import "./assessments.css";
 
 type DraftQ={
   prompt:string;section:string;axis:string;type:"LIKERT"|"SINGLE"|"TEXT";
-  optionsText:string;required:boolean;scored:boolean;
+  optionsText:string;required:boolean;scored:boolean;reverse:boolean;
 };
-const emptyQ=():DraftQ=>({prompt:"",section:"الأسئلة",axis:"",type:"LIKERT",optionsText:"",required:true,scored:true});
+const emptyQ=():DraftQ=>({prompt:"",section:"الأسئلة",axis:"",type:"LIKERT",optionsText:"",required:true,scored:true,reverse:false});
 const likert=[
  {code:"NEVER",label:"أبدًا",score:0},
  {code:"RARELY",label:"نادرًا",score:1},
@@ -26,6 +26,7 @@ export default function AssessmentScaleBuilder({onClose,onCreated}:{onClose:()=>
   setError("");
   if(!title.trim()){setError("اكتب اسم المقياس.");return}
   if(!questions.length||questions.some(q=>!q.prompt.trim())){setError("أكمل نص جميع الأسئلة.");return}
+  for(let i=0;i<questions.length;i++){const q=questions[i];if(q.type==="SINGLE"&&q.optionsText.split("\n").map(x=>x.trim()).filter(Boolean).length<2){setError("السؤال رقم "+(i+1)+" يحتاج خيارين على الأقل.");return}}
   const axisMap=new Map<string,string>();
   const payload=questions.map((q,i)=>{
    const section=q.section.trim()||"الأسئلة",step=sections.get(section)||1;
@@ -33,11 +34,10 @@ export default function AssessmentScaleBuilder({onClose,onCreated}:{onClose:()=>
    if(q.scored&&!axis)axis=section;
    if(axis&&!axisMap.has(axis))axisMap.set(axis,"axis_"+(axisMap.size+1));
    let options:any[]=[];
-   if(q.type==="LIKERT")options=likert;
+   if(q.type==="LIKERT")options=q.reverse?likert.map((o,n)=>({...o,score:4-n})):likert;
    else if(q.type==="SINGLE"){
     const lines=q.optionsText.split("\n").map(x=>x.trim()).filter(Boolean);
-    if(lines.length<2)throw new Error("السؤال رقم "+(i+1)+" يحتاج خيارين على الأقل.");
-    options=lines.map((label,n)=>q.scored?{code:"OPT_"+(n+1),label,score:n}:{code:"OPT_"+(n+1),label});
+    options=lines.map((label,n)=>q.scored?{code:"OPT_"+(n+1),label,score:q.reverse?lines.length-1-n:n}:{code:"OPT_"+(n+1),label});
    }
    return{
     step_order:step,section_key:"section_"+step,section_title_ar:section,
@@ -86,7 +86,7 @@ export default function AssessmentScaleBuilder({onClose,onCreated}:{onClose:()=>
        <label><span>نوع السؤال</span><select value={q.type} onChange={e=>patch(i,{type:e.target.value as DraftQ["type"],scored:e.target.value==="TEXT"?false:q.scored})}><option value="LIKERT">مقياس خماسي</option><option value="SINGLE">اختيار واحد</option><option value="TEXT">إجابة نصية</option></select></label>
        {q.type==="SINGLE"&&<label className="wide"><span>الخيارات — كل خيار في سطر</span><textarea rows={4} value={q.optionsText} onChange={e=>patch(i,{optionsText:e.target.value})} placeholder={"نعم\nأحيانًا\nلا"}/></label>}
        <label className="check"><input type="checkbox" checked={q.required} onChange={e=>patch(i,{required:e.target.checked})}/><span>سؤال مطلوب</span></label>
-       {q.type!=="TEXT"&&<label className="check"><input type="checkbox" checked={q.scored} onChange={e=>patch(i,{scored:e.target.checked})}/><span>يدخل في النتيجة</span></label>}
+       {q.type!=="TEXT"&&<label className="check"><input type="checkbox" checked={q.scored} onChange={e=>patch(i,{scored:e.target.checked})}/><span>يدخل في النتيجة</span></label>}{q.type!=="TEXT"&&q.scored&&<label className="check"><input type="checkbox" checked={q.reverse} onChange={e=>patch(i,{reverse:e.target.checked})}/><span>تصحيح عكسي</span></label>}
       </div>
      </article>)}
     </section>

@@ -1,4 +1,4 @@
-const CACHE_NAME = "mishkat-bank-shell-v20";
+const CACHE_NAME = "mishkat-bank-shell-v21";
 const BASE = "/student-excellence-bank/";
 const APP_SHELL = [
   BASE,

@@ -528,7 +528,7 @@ function AppShell({ profile, children, tab, setTab }: { profile: Profile; childr
   if(profile.roles?.some(r=>["SUPER_ADMIN","SCHOOL_ADMIN","PRINCIPAL","GUIDANCE_COUNSELOR"].includes(r))) nav.push(["operational-health","صحة النظام","⛨"]);
   if(profile.roles?.some(r=>["SUPER_ADMIN","SCHOOL_ADMIN","PRINCIPAL","GUIDANCE_COUNSELOR"].includes(r))) nav.push(["phase2-messages","مركز الإشعارات والتهاني","✉"]);
   if(profile.roles?.some(r=>["SUPER_ADMIN","SCHOOL_ADMIN","PRINCIPAL","VICE_PRINCIPAL","GUIDANCE_COUNSELOR"].includes(r))) nav.push(["phase3-support","الدعم المبكر للطلاب","✧"]);
-  if(profile.roles?.some(r=>["SUPER_ADMIN","SCHOOL_ADMIN","PRINCIPAL","GUIDANCE_COUNSELOR"].includes(r))) nav.push(["assessments-admin","المقاييس والنتائج","◫"]);
+  if(profile.roles?.some(r=>["SUPER_ADMIN","SCHOOL_ADMIN","PRINCIPAL","GUIDANCE_COUNSELOR"].includes(r))) nav.splice(Math.min(2,nav.length),0,["assessments-admin","المقاييس والنتائج","◫"]);
   nav.push(["account","حسابي","◉"]);
   if(isAdmin) nav.push(["admin","الهيئة والصلاحيات","⚙"]);
   if(profile.roles?.some(r=>["SUPER_ADMIN","SCHOOL_ADMIN"].includes(r))) nav.push(["system","إعدادات النظام","◆"]);

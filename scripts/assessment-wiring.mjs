@@ -4,7 +4,7 @@ edit("src/App.tsx",s=>{
  if(!s.includes('import AssessmentAdmin from "./AssessmentAdmin";'))s=s.replace('import PeriodNoticeAdmin from "./PeriodNoticeAdmin";','import PeriodNoticeAdmin from "./PeriodNoticeAdmin";\nimport AssessmentAdmin from "./AssessmentAdmin";');
  if(!s.includes('"assessments-admin"'))s=s.replace(/type Tab = ([^;]+);/,(_,u)=>'type Tab = '+u+' | "assessments-admin";');
  const nav='  nav.push(["account","حسابي","◉"]);';
- if(!s.includes('nav.push(["assessments-admin"'))s=s.replace(nav,'  if(profile.roles?.some(r=>["SUPER_ADMIN","SCHOOL_ADMIN","PRINCIPAL","GUIDANCE_COUNSELOR"].includes(r))) nav.push(["assessments-admin","المقاييس والنتائج","◫"]);\n'+nav);
+ if(!s.includes('nav.push(["assessments-admin"'))s=s.replace(nav,'  if(profile.roles?.some(r=>["SUPER_ADMIN","SCHOOL_ADMIN","PRINCIPAL","GUIDANCE_COUNSELOR"].includes(r))) nav.splice(Math.min(2,nav.length),0,["assessments-admin","المقاييس والنتائج","◫"]);\n'+nav);
  const view='{tab==="account"&&<UserAccount profile={profile} onProfileChanged={refreshProfile}/>}';
  if(!s.includes('tab==="assessments-admin"'))s=s.replace(view,'{tab==="assessments-admin"&&profile.roles?.some(r=>["SUPER_ADMIN","SCHOOL_ADMIN","PRINCIPAL","GUIDANCE_COUNSELOR"].includes(r))&&<AssessmentAdmin schoolName={schoolName}/>} '+view);
  return s;

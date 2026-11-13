@@ -1,5 +1,6 @@
 import {useEffect,useMemo,useState} from "react";
 import {niceError,rpc} from "./client";
+import AssessmentAdminPreview from "./AssessmentAdminPreview";
 import "./assessments.css";
 
 const riskClass=(x?:string|null)=>x==="VERY_HIGH"?"danger":x==="HIGH"?"warn":x==="WATCH"?"watch":"good";
@@ -10,7 +11,7 @@ const fmt=(v?:string|null)=>v?new Date(v).toLocaleString("ar-SA",{dateStyle:"med
 
 export default function AssessmentAdmin({schoolName}:{schoolName:string}){
  const[data,setData]=useState<any>(null),[scaleId,setScaleId]=useState(""),[busy,setBusy]=useState(false),[error,setError]=useState(""),[message,setMessage]=useState(""),[risk,setRisk]=useState("ALL"),[grade,setGrade]=useState("ALL"),[query,setQuery]=useState("");
- const[opensAt,setOpensAt]=useState(""),[closesAt,setClosesAt]=useState("");
+ const[opensAt,setOpensAt]=useState(""),[closesAt,setClosesAt]=useState(""),[preview,setPreview]=useState(false);
  async function load(id=scaleId){setBusy(true);try{const d=await rpc<any>("api_assessment_admin_data",id?{p_scale_id:id}:{});setData(d);if(!id&&d.selected_scale?.id)setScaleId(d.selected_scale.id);setError("")}catch(e){setError(niceError(e))}finally{setBusy(false)}}
  useEffect(()=>{void load("")},[]);
  const sc=data?.selected_scale,s=data?.summary;
@@ -54,7 +55,7 @@ export default function AssessmentAdmin({schoolName}:{schoolName:string}){
   <header className="assessment-title admin"><div><span>بنك التميز</span><h1>المقاييس والنتائج</h1><p>{schoolName} — إعداد المقاييس وجدولتها ومتابعة النتائج.</p></div><label>المقياس<select value={scaleId} onChange={e=>{setScaleId(e.target.value);void load(e.target.value)}}>{(data?.scales||[]).map((x:any)=><option key={x.id} value={x.id}>{x.short_title_ar}</option>)}</select></label></header>
   {error&&<div className="notice error">{error}</div>}{message&&<div className="notice">{message}</div>}
   {sc&&<>
-   <section className="panel admin-head"><div><h2>🎮 {sc.short_title_ar}</h2><p>الحالة: <b>{stateLabel}</b> · النتائج: <b>{sc.results_published_at?"منشورة":"غير منشورة"}</b></p>{sc.opens_at&&<small>النشر: {fmt(sc.opens_at)} · الإغلاق: {fmt(sc.closes_at)}</small>}</div><div>{scheduled&&<button className="btn ghost" disabled={busy} onClick={()=>void action("DRAFT")}>إلغاء الجدولة</button>}{active&&<button className="btn secondary" disabled={busy} onClick={()=>void action("CLOSE")}>إغلاق الآن</button>}{elapsed&&<button className="btn secondary" disabled={busy} onClick={()=>void action("CLOSE")}>اعتماد انتهاء المدة</button>}{sc.status==="CLOSED"&&!sc.results_published_at&&<button className="btn primary" disabled={busy||!s?.submitted_count} onClick={()=>void action("PUBLISH_RESULTS")}>اعتماد ونشر النتائج</button>}{sc.results_published_at&&<button className="btn ghost" disabled={busy} onClick={()=>void action("UNPUBLISH_RESULTS")}>إخفاء النتائج</button>}</div></section>
+   <section className="panel admin-head"><div><h2>🎮 {sc.short_title_ar}</h2><p>الحالة: <b>{stateLabel}</b> · النتائج: <b>{sc.results_published_at?"منشورة":"غير منشورة"}</b></p>{sc.opens_at&&<small>النشر: {fmt(sc.opens_at)} · الإغلاق: {fmt(sc.closes_at)}</small>}</div><div><button className="btn preview-btn" onClick={()=>setPreview(true)}>👁 معاينة المقياس</button>{scheduled&&<button className="btn ghost" disabled={busy} onClick={()=>void action("DRAFT")}>إلغاء الجدولة</button>}{active&&<button className="btn secondary" disabled={busy} onClick={()=>void action("CLOSE")}>إغلاق الآن</button>}{elapsed&&<button className="btn secondary" disabled={busy} onClick={()=>void action("CLOSE")}>اعتماد انتهاء المدة</button>}{sc.status==="CLOSED"&&!sc.results_published_at&&<button className="btn primary" disabled={busy||!s?.submitted_count} onClick={()=>void action("PUBLISH_RESULTS")}>اعتماد ونشر النتائج</button>}{sc.results_published_at&&<button className="btn ghost" disabled={busy} onClick={()=>void action("UNPUBLISH_RESULTS")}>إخفاء النتائج</button>}</div></section>
 
    {canSchedule&&<section className="panel assessment-schedule">
     <div className="schedule-copy"><span>التحكم في النشر</span><h3>{sc.status==="DRAFT"?"المقياس جاهز كمسودة — أنت تحدد موعد ظهوره":"تعديل موعد النشر والإغلاق"}</h3><p>لن يظهر المقياس لأي طالب قبل وقت النشر المحدد. ويتوقف استقبال الإجابات تلقائيًا عند وقت الإغلاق.</p></div>
@@ -73,6 +74,7 @@ export default function AssessmentAdmin({schoolName}:{schoolName:string}){
 
    <section className="panel"><div className="panel-row"><div><h3>نتائج الطلاب</h3><p>للاستخدام الإداري وتحديد من يحتاج دعمًا.</p></div><button className="btn ghost" onClick={csv}>تصدير CSV</button></div><div className="assessment-filters"><input placeholder="بحث بالاسم أو الرقم..." value={query} onChange={e=>setQuery(e.target.value)}/><select value={risk} onChange={e=>setRisk(e.target.value)}><option value="ALL">كل المستويات</option>{Object.keys(labels).map(x=><option value={x} key={x}>{labels[x]}</option>)}</select><select value={grade} onChange={e=>setGrade(e.target.value)}><option value="ALL">كل الصفوف</option>{grades.map(x=><option key={x}>{x}</option>)}</select></div><div className="table-wrap"><table className="assessment-table"><thead><tr><th>الطالب</th><th>الصف / الفصل</th><th>النسبة</th><th>المستوى</th><th>طلب دعم</th></tr></thead><tbody>{rows.map((x:any)=><tr key={x.student_id}><td><b>{x.student_name}</b><small>{x.student_no}</small></td><td>{x.grade_name}<small>{x.class_name}</small></td><td>{n(x.score_pct)}%</td><td><span className={"risk-pill "+riskClass(x.risk_code)}>{x.risk_label_ar}</span></td><td>{["YES","MAYBE"].includes(String(x.answers?.["43"]||""))?"نعم":"—"}</td></tr>)}</tbody></table></div></section>
   </>}
+  {preview&&sc&&<AssessmentAdminPreview scale={sc} schoolName={schoolName} onClose={()=>setPreview(false)}/>} 
  </div>
 }
 

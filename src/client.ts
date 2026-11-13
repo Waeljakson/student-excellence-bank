@@ -386,7 +386,16 @@ export function niceError(error: unknown) {
   if (message.includes("VICE_ROLE_SOURCE_INVALID")) return "يمكن منح أو سحب صلاحية الوكيل للمعلم أو الوكيل فقط.";
   if (message.includes("VICE_TITLE_UPDATE_FAILED")) return "تعذر تحديث المسمى الوظيفي للمعلم. لم يتم تغيير صلاحياته.";
   if (message.includes("VICE_SCOPE_UPDATE_FAILED")) return "تم التراجع عن تغيير المسمى لأن تحديث صلاحية الوكيل لم يكتمل. أعد المحاولة بعد تحديث الصفحة.";
-  if (message.includes("ASSESSMENT_ALREADY_SUBMITTED")) return "تم إرسال هذا المقياس نهائيًا من قبل، ولا يمكن إعادة الإجابة عليه.";\n  if (message.includes("ASSESSMENT_NOT_OPEN")) return "المقياس غير متاح للإجابة حاليًا.";\n  if (message.includes("ASSESSMENT_TITLE_REQUIRED")) return "اكتب اسم المقياس قبل الإنشاء.";\n  if (message.includes("ASSESSMENT_QUESTIONS_REQUIRED")) return "أضف سؤالًا واحدًا على الأقل للمقياس.";\n  if (message.includes("ASSESSMENT_QUESTION_TEXT_REQUIRED")) return "أكمل نص جميع أسئلة المقياس.";\n  if (message.includes("ASSESSMENT_OPTIONS_REQUIRED")) return "أسئلة الاختيار تحتاج خيارين على الأقل.";\n  if (message.includes("ASSESSMENT_SCORES_REQUIRED")) return "السؤال الذي يدخل في النتيجة يحتاج درجات صحيحة للخيارات.";\n  if (message.includes("ASSESSMENT_ADMIN_REQUIRED")) return "إدارة المقاييس متاحة فقط للحسابات الإدارية المصرح لها.";\n  if (message.includes("ASSESSMENT_SCALE_NOT_FOUND")) return "المقياس غير موجود أو لا يتبع مدرستك.";\n  if (message.includes("COMPETITION_PARTICIPANT_NOT_FOUND")) return "الطالب غير موجود ضمن المنضمين لهذه المسابقة.";
+  if (message.includes("ASSESSMENT_ALREADY_SUBMITTED")) return "تم إرسال هذا المقياس نهائيًا من قبل، ولا يمكن إعادة الإجابة عليه.";
+  if (message.includes("ASSESSMENT_NOT_OPEN")) return "المقياس غير متاح للإجابة حاليًا.";
+  if (message.includes("ASSESSMENT_TITLE_REQUIRED")) return "اكتب اسم المقياس قبل الإنشاء.";
+  if (message.includes("ASSESSMENT_QUESTIONS_REQUIRED")) return "أضف سؤالًا واحدًا على الأقل للمقياس.";
+  if (message.includes("ASSESSMENT_QUESTION_TEXT_REQUIRED")) return "أكمل نص جميع أسئلة المقياس.";
+  if (message.includes("ASSESSMENT_OPTIONS_REQUIRED")) return "أسئلة الاختيار تحتاج خيارين على الأقل.";
+  if (message.includes("ASSESSMENT_SCORES_REQUIRED")) return "السؤال الذي يدخل في النتيجة يحتاج درجات صحيحة للخيارات.";
+  if (message.includes("ASSESSMENT_ADMIN_REQUIRED")) return "إدارة المقاييس متاحة فقط للحسابات الإدارية المصرح لها.";
+  if (message.includes("ASSESSMENT_SCALE_NOT_FOUND")) return "المقياس غير موجود أو لا يتبع مدرستك.";
+  if (message.includes("COMPETITION_PARTICIPANT_NOT_FOUND")) return "الطالب غير موجود ضمن المنضمين لهذه المسابقة.";
   if (message.includes("COMPETITION_PARTICIPANT_EXCLUDED")) return "هذا الطالب مستبعد من المسابقة ولا يمكن اعتماده فائزًا.";
   if (message.includes("COMPETITION_PARTICIPANT_ACTION_INVALID")) return "إجراء الطالب في المسابقة غير صحيح.";
   if (message.includes("COMPETITION_NOT_STARTED")) return "لم يبدأ وقت الانضمام للمسابقة بعد.";

@@ -229,6 +229,7 @@ export default function GuardianPortal({token,studentNo,schoolCode,initialData}:
   const tokenMode=!!token;
   const identityMode=!!studentNo;
   const allowsPeriodNotices=data?.school_code==="MISHKAT";
+  const isMishkatShoula=(schoolCode||data?.school_code)==="MISHKAT"||String(data?.school_name||"").includes("الشعلة");
 
   useEffect(()=>{
     if(initialData){setData(initialData);setChildId(initialData.children?.[0]?.id||"");return}
@@ -386,7 +387,7 @@ export default function GuardianPortal({token,studentNo,schoolCode,initialData}:
       {c&&<>
         <section className="guardian-student-card"><div><h2>{c.name}</h2><p>{c.grade_name} — فصل {c.class_name} · رقم الطالب {c.student_no}</p></div><div><small>نقاط التميز</small><strong>{Number(c.points||0).toLocaleString("ar-SA")}</strong></div></section>
         {tab==="overview"&&<GuardianWeeklyPulse child={c} medals={medals} allowsPeriodNotices={allowsPeriodNotices} onGo={setTab}/>}
-        {tab==="overview"&&data?.school_code==="MISHKAT"&&<AssessmentAnnouncementBanner/>}
+        {tab==="overview"&&isMishkatShoula&&<AssessmentAnnouncementBanner/>}
         {tab==="overview"&&<Phase2ExperiencePanel mode="guardian" studentId={c.id} studentNo={c.student_no} schoolCode={schoolCode||data?.school_code||""}/>}
         <MedalCelebrations medals={medals} studentName={c.name}/>
         {trip&&<section className="guardian-kh-trip">

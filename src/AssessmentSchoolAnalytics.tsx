@@ -53,7 +53,7 @@ export default function AssessmentSchoolAnalytics({data}:{data:any}){
    <article><span>أولوية مرتفعة</span><b>{submitted?Math.round(high*100/submitted):0}%</b><small>{high} من {submitted} طالبًا في مستوى مرتفع أو مرتفع جدًا</small></article>
    <article><span>أكثر محور تأثرًا</span><b>{topAxis?pct(topAxis.avg)+"%":"—"}</b><small>{topAxis?.title||"لا توجد بيانات"}</small></article>
    <article><span>أكثر فصل يحتاج متابعة</span><b>{topClass?pct(topClass.avg)+"%":"—"}</b><small>{topClass?topClass.grade+" — "+topClass.className:"لا توجد بيانات"}</small></article>
-   <article><span>طلبوا مساعدة</span><b>{help}</b><small>طلاب اختاروا نعم أو ربما في سؤال طلب الدعم</small></article>
+   {sc?.code==="GAMING_USE_V1"&&<article><span>طلبوا مساعدة</span><b>{help}</b><small>طلاب اختاروا نعم أو ربما في سؤال طلب الدعم</small></article>}
   </div>
 
   <div className="insights-grid">

@@ -5,7 +5,7 @@ import "./assessment-announcement.css";
 export default function AssessmentAnnouncementBanner(){
   const[open,setOpen]=useState(false);
   const now=Date.now();
-  const ends=new Date("2026-11-18T23:59:59+03:00").getTime();
+  const ends=new Date("2026-11-19T00:00:00+03:00").getTime();
   if(now>ends)return null;
   return <>
     <section className="assessment-announcement-card" aria-label="إعلان مقياس الاستخدام المفرط للألعاب الإلكترونية">

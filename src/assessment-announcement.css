@@ -1,0 +1,12 @@
+.assessment-announcement-card{margin:0 0 16px;background:#fff;border:1px solid #dbe8f4;border-radius:20px;padding:12px;box-shadow:0 10px 28px rgba(23,57,77,.08);font-family:Cairo,Tahoma,sans-serif;direction:rtl}
+.assessment-announcement-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:3px 3px 10px}
+.assessment-announcement-head span{display:inline-block;font-size:10px;font-weight:800;color:#b62b25;background:#fff0ee;border-radius:999px;padding:5px 9px}
+.assessment-announcement-head h3{margin:5px 0 0;color:#173b68;font-size:15px;line-height:1.6}
+.assessment-announcement-head button{font:inherit;border:0;border-radius:10px;padding:8px 12px;background:#164f91;color:#fff;font-weight:800;cursor:pointer;white-space:nowrap}
+.assessment-announcement-image-btn{display:block;width:100%;border:0;padding:0;background:transparent;cursor:zoom-in;border-radius:14px;overflow:hidden}
+.assessment-announcement-image-btn img{display:block;width:100%;height:auto;max-height:760px;object-fit:contain;background:#eef6ff}
+.assessment-announcement-overlay{position:fixed;inset:0;z-index:100100;background:rgba(4,18,35,.88);display:grid;place-items:center;padding:18px;overflow:auto;backdrop-filter:blur(5px)}
+.assessment-announcement-modal{position:relative;width:min(1500px,98vw);max-height:96vh;display:grid;place-items:center}
+.assessment-announcement-modal img{display:block;max-width:100%;max-height:94vh;width:auto;height:auto;border-radius:16px;box-shadow:0 25px 80px rgba(0,0,0,.45)}
+.assessment-announcement-close{position:fixed;top:18px;left:18px;z-index:2;width:44px;height:44px;border:0;border-radius:50%;background:#fff;color:#17324d;font:700 28px/1 Cairo,Tahoma,sans-serif;cursor:pointer;box-shadow:0 6px 18px rgba(0,0,0,.25)}
+@media(max-width:650px){.assessment-announcement-card{padding:8px;border-radius:14px}.assessment-announcement-head{align-items:flex-start}.assessment-announcement-head h3{font-size:12px}.assessment-announcement-head button{font-size:10px;padding:7px 9px}.assessment-announcement-overlay{padding:8px}.assessment-announcement-modal img{border-radius:10px}.assessment-announcement-close{top:10px;left:10px}}

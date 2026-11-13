@@ -68,7 +68,7 @@ export default function AssessmentAdmin({schoolName}:{schoolName:string}){
     </div>
    </section>}
 
-   <section className="assessment-kpis"><K icon="👥" v={s?.eligible_students} t="الطلاب المستهدفون"/><K icon="✅" v={s?.submitted_count} t="أتموا المقياس"/><K icon="⏳" v={s?.pending_count} t="لم يرسلوا بعد"/><K icon="📊" v={n(s?.completion_pct)+"%"} t="نسبة المشاركة"/><K icon="🎯" v={n(s?.average_score_pct)+"%"} t="متوسط المؤشر"/><K icon="⚠️" v={s?.high_attention_count} t="بحاجة لاهتمام أعلى"/><K icon="🙋" v={s?.help_requested_count} t="طلبوا مساعدة"/></section>
+   <section className="assessment-kpis"><K icon="👥" v={s?.eligible_students} t="الطلاب المستهدفون"/><K icon="✅" v={s?.submitted_count} t="أتموا المقياس"/><K icon="⏳" v={s?.pending_count} t="لم يرسلوا بعد"/><K icon="📊" v={n(s?.completion_pct)+"%"} t="نسبة المشاركة"/><K icon="🎯" v={n(s?.average_score_pct)+"%"} t="متوسط المؤشر"/><K icon="⚠️" v={s?.high_attention_count} t="بحاجة لاهتمام أعلى"/>{sc.code==="GAMING_USE_V1"&&<K icon="🙋" v={s?.help_requested_count} t="طلبوا مساعدة"/>}</section>
 
    <AssessmentSchoolAnalytics data={data}/>
 

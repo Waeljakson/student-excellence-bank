@@ -12,7 +12,7 @@ export function AssessmentResultsInline({children,emptyMessage=true}:{children:A
     const axes=(Object.values(r.axis_scores||{}) as any[]).sort((a,b)=>Number(b.pct)-Number(a.pct));
     const top=axes.slice(0,3);
     return <article className="panel guardian-result detailed" key={r.scale_id}>
-      <header><div><h3>🎮 {r.short_title_ar}</h3><p>{r.title_ar}</p></div><span className={"risk-pill "+riskClass(r.risk_code)}>{r.risk_label_ar}</span></header>
+      <header><div><h3>{r.icon||"📋"} {r.short_title_ar}</h3><p>{r.title_ar}</p></div><span className={"risk-pill "+riskClass(r.risk_code)}>{r.risk_label_ar}</span></header>
 
       <div className="guardian-score-row">
        <div className={"guardian-score "+riskClass(r.risk_code)}><b>{Math.round(r.score_pct)}%</b><small>المؤشر العام</small></div>

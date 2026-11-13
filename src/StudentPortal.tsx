@@ -31,7 +31,7 @@ type PortalData = {
   announcements: PortalAnnouncement[];
   followup_notes: FollowupNote[];
 };
-type StudentTab="home"|"competitions"|"rewards"|"medals"|"followup"|"checks"|"announcements"|"period-notices"|"assessments"|"account";
+type StudentTab="home"|"competitions"|"rewards"|"medals"|"followup"|"checks"|"announcements"|"period-notices"|"assessments"|"period-notices"|"account";
 
 function date(v?:string|null){return v?new Date(v).toLocaleDateString("ar-SA",{year:"numeric",month:"long",day:"numeric"}):"—"}
 function authError(result:any){if(result?.error)throw new Error(result.error.message||result.error.code||"تعذر تنفيذ العملية")}

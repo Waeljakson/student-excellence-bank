@@ -33,7 +33,7 @@ export default function AssessmentAdmin({schoolName}:{schoolName:string}){
   if(closeDate<=openDate){setError("وقت الإغلاق يجب أن يكون بعد وقت النشر.");return}
   setBusy(true);
   try{
-   await rpc("api_assessment_schedule",{p_scale_id:sc.id,p_opens_at:openDate.toISOString(),p_closes_at:closeDate.toISOString()});
+   await rpc("api_assessment_set_state",{p_scale_id:sc.id,p_action:`SCHEDULE|${openDate.toISOString()}|${closeDate.toISOString()}`});
    await load(sc.id);
    setMessage("تم حفظ الجدولة. سيظهر المقياس للطلاب تلقائيًا عند وقت النشر ويوقف استقبال الإجابات تلقائيًا عند وقت الإغلاق.");
   }catch(e){const m=niceError(e);setError(m.includes("ASSESSMENT_SCHEDULE")?"تعذر حفظ الجدولة. راجع وقت النشر والإغلاق.":m)}finally{setBusy(false)}

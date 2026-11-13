@@ -34,7 +34,7 @@ export default function AssessmentAdminPreview({scale,schoolName,onClose}:{scale
         <section className="assessment-preview-badge">وضع المعاينة — المقياس غير منشور للطلاب</section>
 
         <section className="assessment-hero">
-          <div>🎮</div>
+          <div>{scale.ui_meta?.icon||"📋"}</div>
           <article>
             <span>{scale.ui_meta?.department||"قسم التوجيه الطلابي"}</span>
             <h2>{scale.title_ar}</h2>

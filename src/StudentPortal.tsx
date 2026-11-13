@@ -10,6 +10,7 @@ import PeriodNoticeCelebration from "./PeriodNoticeCelebration";
 import Phase2ExperiencePanel from "./Phase2ExperiencePanel";
 import PeriodNoticeViewer from "./PeriodNoticeViewer";
 import AssessmentStudentPanel from "./AssessmentStudentPanel";
+import AssessmentAnnouncementBanner from "./AssessmentAnnouncementBanner";
 import StudentFollowupPanel from "./StudentFollowupPanel";
 import MedalsPanel,{type Medal} from "./MedalsPanel";
 import "./redemption.css";
@@ -187,6 +188,7 @@ export default function StudentPortal({cacheUserId=""}:{cacheUserId?:string}){
 
       <div className="student-tab-content">
         {tab==="home"&&<>
+          {data.school_code==="MISHKAT"&&<AssessmentAnnouncementBanner/>}
           <Phase2ExperiencePanel mode="student" studentId={s.id}/>
           <section className="student-home-stats">
             <button onClick={()=>setTab("checks")}><span>رصيد التميز</span><strong>{Number(s.points).toLocaleString("ar-SA")}</strong><small>نقطة</small></button>

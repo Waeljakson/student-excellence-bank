@@ -17,11 +17,33 @@ const likert=[
 
 export default function AssessmentScaleBuilder({onClose,onCreated}:{onClose:()=>void;onCreated:(id:string)=>void}){
  const[title,setTitle]=useState(""),[shortTitle,setShortTitle]=useState(""),[description,setDescription]=useState(""),[instructions,setInstructions]=useState(""),[minutes,setMinutes]=useState("7–10 دقائق");
- const[questions,setQuestions]=useState<DraftQ[]>([emptyQ()]),[busy,setBusy]=useState(false),[error,setError]=useState("");
+ const[questions,setQuestions]=useState<DraftQ[]>([emptyQ()]),[busy,setBusy]=useState(false),[error,setError]=useState(""),[bulkOpen,setBulkOpen]=useState(false),[bulkText,setBulkText]=useState("");
  const sections=useMemo(()=>{const m=new Map<string,number>();questions.forEach(q=>{const s=q.section.trim()||"الأسئلة";if(!m.has(s))m.set(s,m.size+1)});return m},[questions]);
  function patch(i:number,p:Partial<DraftQ>){setQuestions(q=>q.map((x,n)=>n===i?{...x,...p}:x))}
  function remove(i:number){setQuestions(q=>q.length===1?q:q.filter((_,n)=>n!==i))}
  function add(){setQuestions(q=>[...q,emptyQ()])}
+ function importBulk(){
+  setError("");
+  const lines=bulkText.split("\n").map(x=>x.trim()).filter(Boolean);
+  if(!lines.length){setError("ألصق بيانات الأسئلة أولًا.");return}
+  const parsed:DraftQ[]=[];
+  for(const [idx,line] of lines.entries()){
+   const parts=line.split("|").map(x=>x.trim());
+   let type:"LIKERT"|"SINGLE"|"TEXT"="LIKERT",section="الأسئلة",axis="",prompt="",opts="";
+   if(["LIKERT","SINGLE","TEXT"].includes((parts[0]||"").toUpperCase())){
+    type=(parts[0]||"LIKERT").toUpperCase() as DraftQ["type"];
+    section=parts[1]||"الأسئلة";axis=parts[2]||"";prompt=parts[3]||"";opts=parts.slice(4).join("|");
+   }else if(parts.length>=3){
+    section=parts[0]||"الأسئلة";axis=parts[1]||"";prompt=parts.slice(2).join("|");
+   }else{
+    prompt=line;
+   }
+   if(!prompt){setError("تعذر قراءة السطر رقم "+(idx+1)+". استخدم الصيغة الموضحة أسفل مربع الاستيراد.");return}
+   parsed.push({prompt,section,axis,type,optionsText:type==="SINGLE"?opts.split(";").map(x=>x.trim()).filter(Boolean).join("\n"):"",required:true,scored:type!=="TEXT",reverse:false});
+  }
+  setQuestions(q=>q.length===1&&!q[0].prompt.trim()?parsed:[...q,...parsed]);
+  setBulkText("");setBulkOpen(false);
+ }
  async function save(){
   setError("");
   if(!title.trim()){setError("اكتب اسم المقياس.");return}
@@ -76,7 +98,8 @@ export default function AssessmentScaleBuilder({onClose,onCreated}:{onClose:()=>
     </section>
 
     <section className="panel builder-questions">
-     <div className="panel-row"><div><h3>الأسئلة</h3><p>رتّب الأسئلة، وحدد القسم والمحور ونوع الإجابة.</p></div><button className="btn primary" onClick={add}>+ إضافة سؤال</button></div>
+     <div className="panel-row"><div><h3>الأسئلة</h3><p>رتّب الأسئلة، وحدد القسم والمحور ونوع الإجابة.</p></div><div className="builder-head-actions"><button className="btn ghost" onClick={()=>setBulkOpen(v=>!v)}>⇩ استيراد سريع</button><button className="btn primary" onClick={add}>+ إضافة سؤال</button></div></div>
+     {bulkOpen&&<div className="bulk-import-box"><h4>لصق بيانات المقياس دفعة واحدة</h4><textarea rows={8} value={bulkText} onChange={e=>setBulkText(e.target.value)} placeholder={"مثال بسيط:\nالنوم والصحة | النوم والصحة | أتأخر في النوم بسبب استخدامي للأجهزة\n\nأو صيغة متقدمة:\nLIKERT | الدراسة | التأثير الدراسي | يؤثر الاستخدام على واجباتي\nTEXT | رأي الطالب | | ما الذي يساعدك على التوازن؟\nSINGLE | العادات | | هل لديك وقت محدد؟ | نعم;أحيانًا;لا"}/><small>الصيغة: النوع | القسم | المحور | السؤال | الخيارات عند الحاجة. ويمكن حذف «النوع» ليُنشأ السؤال تلقائيًا كمقياس خماسي.</small><button className="btn primary" onClick={importBulk}>تحويل النص إلى أسئلة</button></div>}
      {questions.map((q,i)=><article className="builder-question" key={i}>
       <header><b>السؤال {i+1}</b><button type="button" onClick={()=>remove(i)} disabled={questions.length===1}>حذف</button></header>
       <div className="builder-grid">

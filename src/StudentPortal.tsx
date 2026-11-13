@@ -157,7 +157,7 @@ export default function StudentPortal({cacheUserId=""}:{cacheUserId?:string}){
     {id:"checks",label:"شيكات التميز",icon:"✓",count:allChecks.length},
     {id:"announcements",label:"الإعلانات",icon:"◉",count:announcements.length},
          ...(allowsPeriodNotices?[{id:"period-notices" as const,label:"إشعارات النتائج",icon:"▤"}]:[]),
-    ...(data.school_code==="MISHKAT"?[{id:"assessments" as const,label:"المقاييس",icon:"◫"}]:[]),
+    {id:"assessments" as const,label:"المقاييس",icon:"◫"},
 {id:"account",label:"حسابي",icon:"⚙"}
   ];
 
@@ -224,7 +224,7 @@ export default function StudentPortal({cacheUserId=""}:{cacheUserId?:string}){
         </section>}
 
                  {allowsPeriodNotices&&tab==="period-notices"&&<PeriodNoticeViewer schoolName={data.school_name}/>}
-{data.school_code==="MISHKAT"&&tab==="assessments"&&<AssessmentStudentPanel/>}
+{tab==="assessments"&&<AssessmentStudentPanel/>}
 {tab==="account"&&<section className="portal-panel student-account-panel">
           <div className="portal-panel-title"><div><h3>إعدادات حسابي</h3><p>الصورة الشخصية وكلمة المرور</p></div><span>⚙</span></div>
           <div className="student-account-grid">

@@ -1,0 +1,48 @@
+import {useEffect,useMemo,useState} from "react";
+import {niceError,rpc} from "./client";
+import "./assessments.css";
+
+type Question={id:string;question_no:number;step_order:number;section_key:string;section_title_ar:string;prompt_ar:string;question_type:"SINGLE"|"LIKERT"|"TEXT";options:Array<{code:string;label:string;score?:number}>;is_required:boolean;ui_meta?:Record<string,unknown>};
+type Scale={id:string;title_ar:string;short_title_ar:string;description_ar?:string;estimated_minutes?:string;status:string;opens_at?:string|null;closes_at?:string|null;results_published_at?:string|null;ui_meta?:Record<string,string>;questions:Question[];response?:any};
+type Data={school_name:string;student:{id:string;student_no:string;name:string;grade_name:string;class_name:string};scales:Scale[]};
+
+const icons:Record<string,string>={habits:"🎮",control:"🎯",preoccupation:"🧠",emotional:"💭",persistence:"🔁",academic:"📚",sleep_health:"🌙",family_social:"👨‍👩‍👦",emotion_behavior:"🙂",self_regulation:"🧭",student_message:"✍️"};
+const riskClass=(x?:string)=>x==="VERY_HIGH"?"danger":x==="HIGH"?"warn":x==="WATCH"?"watch":"good";
+const fmt=(v?:string|null)=>v?new Date(v).toLocaleString("ar-SA",{dateStyle:"medium",timeStyle:"short"}):"—";
+
+export default function AssessmentStudentPanel(){
+ const[data,setData]=useState<Data|null>(null),[active,setActive]=useState<Scale|null>(null);
+ const[step,setStep]=useState(0),[answers,setAnswers]=useState<Record<string,string|number>>({}),[age,setAge]=useState<number|"">("");
+ const[busy,setBusy]=useState(false),[error,setError]=useState(""),[message,setMessage]=useState("");
+ async function load(){setBusy(true);try{const d=await rpc<Data>("api_assessment_student_data");setData(d);if(active){const x=d.scales.find(s=>s.id===active.id);if(x)setActive(x)}setError("")}catch(e){setError(niceError(e))}finally{setBusy(false)}}
+ useEffect(()=>{void load()},[]);
+ const steps=useMemo(()=>{if(!active)return[];const m=new Map<number,{order:number,title:string,key:string,questions:Question[]}>();for(const q of active.questions||[]){const x=m.get(q.step_order)||{order:q.step_order,title:q.section_title_ar,key:q.section_key,questions:[]};x.questions.push(q);m.set(q.step_order,x)}return[...m.values()].sort((a,b)=>a.order-b.order)},[active]);
+ const current=steps[step],required=active?.questions.filter(q=>q.is_required)||[],done=required.filter(q=>String(answers[String(q.question_no)]??"").trim()!=="").length;
+ const pct=required.length?Math.round(done*100/required.length):0;
+ function open(s:Scale){setActive(s);setAnswers(s.response?.answers||{});setAge(s.response?.age_years||"");setStep(0);setError("");setMessage("")}
+ function answer(q:Question,v:string|number){setAnswers(a=>({...a,[String(q.question_no)]:v}))}
+ function complete(){return !current||current.questions.every(q=>!q.is_required||String(answers[String(q.question_no)]??"").trim()!=="")}
+ async function save(silent=false){if(!active)return false;if(!age||age<9||age>22){if(!silent)setError("أدخل العمر الصحيح أولًا.");return false}setBusy(true);try{await rpc("api_assessment_save",{p_scale_id:active.id,p_age_years:Number(age),p_answers:answers,p_submit:false});if(!silent)setMessage("تم حفظ إجاباتك ويمكنك الإكمال لاحقًا.");setError("");return true}catch(e){if(!silent)setError(niceError(e));return false}finally{setBusy(false)}}
+ async function next(){if(!complete()){setError("أجب عن جميع الأسئلة المطلوبة في هذه الخطوة.");return}setError("");await save(true);setStep(x=>Math.min(x+1,steps.length-1))}
+ async function submit(){if(!active||done<required.length){setError("لا تزال هناك أسئلة مطلوبة لم تتم الإجابة عنها.");return}if(!age){setError("أدخل العمر.");return}setBusy(true);try{await rpc("api_assessment_save",{p_scale_id:active.id,p_age_years:Number(age),p_answers:answers,p_submit:true});setMessage("تم إرسال الاستبانة بنجاح.");await load()}catch(e){setError(niceError(e))}finally{setBusy(false)}}
+ if(!data)return <div className="assessment-shell" dir="rtl">{error?<div className="notice error">{error}</div>:<p>جارٍ تحميل المقاييس...</p>}</div>;
+ if(active){
+  const r=active.response;
+  if(r?.status==="SUBMITTED")return <div className="assessment-shell" dir="rtl"><button className="assessment-back" onClick={()=>setActive(null)}>← العودة إلى المقاييس</button><Hero scale={active}/>{r.result_visible&&r.result?<Result result={r.result}/>:<section className="panel assessment-thanks"><div className="big-check">✓</div><h3>تمت مشاركتك بنجاح</h3><p>سيتم إعلان النتيجة بعد انتهاء المقياس واعتمادها من المدرسة.</p></section>}</div>;
+  const now=Date.now(),opens=active.opens_at?new Date(active.opens_at).getTime():0,closes=active.closes_at?new Date(active.closes_at).getTime():Infinity;
+  if((opens&&now<opens)||now>closes)return <div className="assessment-shell" dir="rtl"><button className="assessment-back" onClick={()=>setActive(null)}>← العودة</button><section className="panel assessment-state-card"><div className="state-icon">⏳</div><h2>{active.short_title_ar}</h2><p>{now<opens?"لم يبدأ المقياس بعد.":"انتهت فترة استقبال الإجابات."}</p><small>{fmt(active.opens_at)} — {fmt(active.closes_at)}</small></section></div>;
+  return <div className="assessment-shell" dir="rtl">
+   <button className="assessment-back" onClick={()=>setActive(null)}>← العودة إلى المقاييس</button><Hero scale={active}/>
+   <section className="assessment-student-card"><div><small>الطالب</small><b>{data.student.name}</b></div><div><small>الصف</small><b>{data.student.grade_name}</b></div><div><small>الفصل</small><b>{data.student.class_name}</b></div><label><small>العمر</small><input type="number" min={9} max={22} value={age} onChange={e=>setAge(e.target.value?Number(e.target.value):"")} placeholder="مثال: 15"/></label></section>
+   <section className="assessment-progress"><div><b>{pct}% مكتمل</b><span>الخطوة {step+1} من {steps.length}</span></div><i><b style={{width:String(Math.max(pct,3))+"%"}}/></i></section>
+   {error&&<div className="notice error">{error}</div>}{message&&<div className="notice">{message}</div>}
+   {current&&<section className="assessment-question-panel"><header><span>{icons[current.key]||"◉"}</span><div><small>المحور الحالي</small><h3>{current.title}</h3></div></header>{current.questions.map(q=><QuestionCard key={q.id} q={q} value={answers[String(q.question_no)]} onChange={v=>answer(q,v)}/>)}</section>}
+   <div className="assessment-actions"><button className="btn secondary" disabled={!step||busy} onClick={()=>setStep(x=>Math.max(0,x-1))}>السابق</button><button className="btn ghost" disabled={busy} onClick={()=>void save(false)}>حفظ وإكمال لاحقًا</button>{step<steps.length-1?<button className="btn primary" disabled={busy} onClick={()=>void next()}>التالي</button>:<button className="btn primary" disabled={busy||done<required.length} onClick={()=>void submit()}>إرسال الاستبانة</button>}</div>
+   <p className="assessment-footnote">لا توجد إجابات صحيحة أو خاطئة. اختر الإجابة الأقرب لتجربتك خلال الأشهر الثلاثة الماضية.</p>
+  </div>
+ }
+ return <div className="assessment-shell" dir="rtl"><header className="assessment-title"><span>بنك التميز</span><h1>المقاييس</h1><p>مقاييس تربوية تساعد المدرسة والأسرة على فهم احتياجات الطالب وتقديم الدعم المناسب.</p></header>{error&&<div className="notice error">{error}</div>}<div className="assessment-scale-grid">{data.scales.map(s=><article className="assessment-scale-card" key={s.id}><div className="scale-card-top"><div>🎮</div><span>{s.response?.status==="SUBMITTED"?"تمت المشاركة":"متاح"}</span></div><h3>{s.short_title_ar}</h3><p>{s.description_ar}</p><div className="scale-meta"><span>⏱ {s.estimated_minutes}</span><span>🧩 {s.questions.length} سؤالًا</span></div><small>{fmt(s.opens_at)} — {fmt(s.closes_at)}</small><button className="btn primary" onClick={()=>open(s)}>{s.response?.status==="SUBMITTED"?(s.results_published_at?"عرض النتيجة":"عرض حالة المشاركة"):s.response?.status==="DRAFT"?"متابعة الاستبانة":"فتح المقياس"}</button></article>)}</div></div>
+}
+function Hero({scale}:{scale:Scale}){return <section className="assessment-hero"><div>🎮</div><article><span>{scale.ui_meta?.department||"قسم التوجيه الطلابي"}</span><h2>{scale.title_ar}</h2><p>{scale.description_ar}</p><small>⏱ {scale.estimated_minutes||"7–10 دقائق"} · 🔐 إجاباتك سرية</small></article></section>}
+function QuestionCard({q,value,onChange}:{q:Question;value:string|number|undefined;onChange:(v:string|number)=>void}){return <div className="assessment-question"><div className="q-title"><b>{q.question_no}</b><p>{q.prompt_ar}</p></div>{q.question_type==="TEXT"?<textarea value={value??""} onChange={e=>onChange(e.target.value)} placeholder="اكتب إجابتك هنا..."/>:<div className={"answer-options "+(q.question_type==="LIKERT"?"likert":"")}>{q.options.map(o=>{const v=q.question_type==="LIKERT"?Number(o.score||0):o.code;return <button type="button" key={o.code} className={String(value??"")===String(v)?"selected":""} onClick={()=>onChange(v)}><i/><b>{o.label}</b></button>})}</div>}</div>}
+function Result({result}:{result:any}){const axes=Object.values(result.axis_scores||{}) as any[];return <section className="assessment-result panel"><div className="result-head"><div className={"score "+riskClass(result.risk_code)}><b>{Math.round(result.score_pct)}%</b><small>المؤشر العام</small></div><div><span className={"risk-pill "+riskClass(result.risk_code)}>{result.risk_label_ar}</span><h3>نتيجة المقياس</h3><p>مؤشر تربوي لفهم نمط الاستخدام وتأثيره.</p></div></div><div className="axis-list">{axes.sort((a,b)=>b.pct-a.pct).map(a=><div key={a.title}><p><b>{a.title}</b><span>{Math.round(a.pct)}%</span></p><i><b style={{width:String(a.pct)+"%"}}/></i></div>)}</div><div className="assessment-disclaimer">{result.disclaimer_ar}</div></section>}

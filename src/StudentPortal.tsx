@@ -9,6 +9,7 @@ import StudentRedemptionPanel from "./StudentRedemptionPanel";
 import PeriodNoticeCelebration from "./PeriodNoticeCelebration";
 import Phase2ExperiencePanel from "./Phase2ExperiencePanel";
 import PeriodNoticeViewer from "./PeriodNoticeViewer";
+import AssessmentStudentPanel from "./AssessmentStudentPanel";
 import StudentFollowupPanel from "./StudentFollowupPanel";
 import MedalsPanel,{type Medal} from "./MedalsPanel";
 import "./redemption.css";
@@ -30,7 +31,7 @@ type PortalData = {
   announcements: PortalAnnouncement[];
   followup_notes: FollowupNote[];
 };
-type StudentTab="home"|"competitions"|"rewards"|"medals"|"followup"|"checks"|"announcements"|"period-notices"|"account";
+type StudentTab="home"|"competitions"|"rewards"|"medals"|"followup"|"checks"|"announcements"|"period-notices"|"assessments"|"account";
 
 function date(v?:string|null){return v?new Date(v).toLocaleDateString("ar-SA",{year:"numeric",month:"long",day:"numeric"}):"—"}
 function authError(result:any){if(result?.error)throw new Error(result.error.message||result.error.code||"تعذر تنفيذ العملية")}
@@ -156,6 +157,7 @@ export default function StudentPortal({cacheUserId=""}:{cacheUserId?:string}){
     {id:"checks",label:"شيكات التميز",icon:"✓",count:allChecks.length},
     {id:"announcements",label:"الإعلانات",icon:"◉",count:announcements.length},
          ...(allowsPeriodNotices?[{id:"period-notices" as const,label:"إشعارات النتائج",icon:"▤"}]:[]),
+    ...(data.school_code==="MISHKAT"?[{id:"assessments" as const,label:"المقاييس",icon:"◫"}]:[]),
 {id:"account",label:"حسابي",icon:"⚙"}
   ];
 
@@ -222,6 +224,7 @@ export default function StudentPortal({cacheUserId=""}:{cacheUserId?:string}){
         </section>}
 
                  {allowsPeriodNotices&&tab==="period-notices"&&<PeriodNoticeViewer schoolName={data.school_name}/>}
+{data.school_code==="MISHKAT"&&tab==="assessments"&&<AssessmentStudentPanel/>}
 {tab==="account"&&<section className="portal-panel student-account-panel">
           <div className="portal-panel-title"><div><h3>إعدادات حسابي</h3><p>الصورة الشخصية وكلمة المرور</p></div><span>⚙</span></div>
           <div className="student-account-grid">

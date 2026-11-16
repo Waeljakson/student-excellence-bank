@@ -40,28 +40,30 @@
 .student-delete-btn:disabled{opacity:.55;cursor:not-allowed}
 @media(max-width:700px){.student-delete-btn{padding:6px 8px;font-size:8px}}
 
-/* STUDENT_ROW_ACTIONS_LAYOUT_V44 */
+/* STUDENT_ROW_ACTIONS_LAYOUT_V45 */
 .student-wallet-panel .student-row-actions{
-  display:grid;
-  grid-template-columns:repeat(4,minmax(0,1fr));
-  gap:5px;
-  width:100%;
-  max-width:420px;
-  align-items:stretch;
+  display:flex;
+  flex-direction:row;
+  flex-wrap:nowrap;
+  gap:6px;
+  width:max-content;
+  max-width:none;
+  align-items:center;
+  justify-content:flex-start;
 }
 .student-wallet-panel .student-row-actions>button{
-  width:100%;
-  min-width:0 !important;
+  flex:0 0 auto;
+  width:auto;
+  min-width:max-content !important;
   min-height:34px;
   margin:0;
-  padding:6px 6px;
-  display:flex;
+  padding:6px 10px;
+  display:inline-flex;
   align-items:center;
   justify-content:center;
   text-align:center;
   line-height:1.35;
-  white-space:normal;
-  overflow-wrap:anywhere;
+  white-space:nowrap;
   font-family:inherit;
   font-size:8.5px;
   font-weight:800;
@@ -70,23 +72,26 @@
 .student-wallet-panel .table-wrap{
   max-width:100%;
   overflow-x:auto;
+  -webkit-overflow-scrolling:touch;
 }
 .student-wallet-panel .table-wrap th:last-child,
 .student-wallet-panel .table-wrap td:last-child{
-  width:420px;
-  max-width:420px;
-  min-width:0;
+  width:auto;
+  max-width:none;
+  min-width:430px;
+  white-space:nowrap;
 }
 @media(max-width:1180px){
   .student-wallet-panel .student-row-actions{
-    grid-template-columns:repeat(2,minmax(0,1fr));
-    max-width:250px;
+    flex-wrap:nowrap;
+    width:max-content;
+    max-width:none;
   }
   .student-wallet-panel .table-wrap th:last-child,
   .student-wallet-panel .table-wrap td:last-child{
-    width:250px;
-    max-width:250px;
-    min-width:220px;
+    width:auto;
+    max-width:none;
+    min-width:430px;
   }
 }
 @media(max-width:700px){
@@ -100,25 +105,23 @@
     -webkit-overflow-scrolling:touch;
   }
   .student-wallet-panel .student-row-actions{
-    grid-template-columns:repeat(2,minmax(0,1fr));
-    width:210px;
-    max-width:210px;
+    flex-wrap:nowrap;
+    width:max-content;
+    max-width:none;
     gap:4px;
   }
   .student-wallet-panel .student-row-actions>button{
     min-height:32px;
-    padding:5px 4px;
+    padding:5px 8px;
     font-size:7.5px;
   }
   .student-wallet-panel .table-wrap th:last-child,
   .student-wallet-panel .table-wrap td:last-child{
-    width:218px;
-    min-width:218px;
-    max-width:218px;
+    width:auto;
+    min-width:390px;
+    max-width:none;
   }
 }
-
-
 
 /* STUDENT_TABLE_COMPACT_V45 */
 .student-wallet-panel .table-wrap table{

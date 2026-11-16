@@ -386,6 +386,7 @@ export function niceError(error: unknown) {
   if (message.includes("VICE_ROLE_SOURCE_INVALID")) return "يمكن منح أو سحب صلاحية الوكيل للمعلم أو الوكيل فقط.";
   if (message.includes("VICE_TITLE_UPDATE_FAILED")) return "تعذر تحديث المسمى الوظيفي للمعلم. لم يتم تغيير صلاحياته.";
   if (message.includes("VICE_SCOPE_UPDATE_FAILED")) return "تم التراجع عن تغيير المسمى لأن تحديث صلاحية الوكيل لم يكتمل. أعد المحاولة بعد تحديث الصفحة.";
+  if (message.includes("STUDENT_PASSWORD_RESET_FORBIDDEN")) return "ليس لديك صلاحية لإعادة كلمة مرور الطالب.";
   if (message.includes("ASSESSMENT_ALREADY_SUBMITTED")) return "تم إرسال هذا المقياس نهائيًا من قبل، ولا يمكن إعادة الإجابة عليه.";
   if (message.includes("ASSESSMENT_NOT_OPEN")) return "المقياس غير متاح للإجابة حاليًا.";
   if (message.includes("ASSESSMENT_TITLE_REQUIRED")) return "اكتب اسم المقياس قبل الإنشاء.";

@@ -3,6 +3,7 @@ import {niceError,rpc} from "./client";
 import AssessmentAdminPreview from "./AssessmentAdminPreview";
 import AssessmentScaleBuilder from "./AssessmentScaleBuilder";
 import AssessmentSchoolAnalytics from "./AssessmentSchoolAnalytics";
+import GamingAssessmentReport from "./GamingAssessmentReport";
 import "./assessments.css";
 
 const riskClass=(x?:string|null)=>x==="VERY_HIGH"?"danger":x==="HIGH"?"warn":x==="WATCH"?"watch":"good";
@@ -71,6 +72,7 @@ export default function AssessmentAdmin({schoolName}:{schoolName:string}){
    <section className="assessment-kpis"><K icon="👥" v={s?.eligible_students} t="الطلاب المستهدفون"/><K icon="✅" v={s?.submitted_count} t="أتموا المقياس"/><K icon="⏳" v={s?.pending_count} t="لم يرسلوا بعد"/><K icon="📊" v={n(s?.completion_pct)+"%"} t="نسبة المشاركة"/><K icon="🎯" v={n(s?.average_score_pct)+"%"} t="متوسط المؤشر"/><K icon="⚠️" v={s?.high_attention_count} t="بحاجة لاهتمام أعلى"/>{sc.code==="GAMING_USE_V1"&&<K icon="🙋" v={s?.help_requested_count} t="طلبوا مساعدة"/>}</section>
 
    <AssessmentSchoolAnalytics data={data}/>
+   {sc.code==="GAMING_USE_V1"&&<GamingAssessmentReport data={data} schoolName={schoolName}/>}
 
    <div className="admin-grid"><section className="panel"><h3>توزيع مستويات المؤشر</h3>{["VERY_HIGH","HIGH","WATCH","LOW"].map(c=>{const count=Number(s?.risk_counts?.[c]||0),p=s?.submitted_count?count*100/s.submitted_count:0;return <div className="risk-row" key={c}><p><span className={"risk-pill "+riskClass(c)}>{labels[c]}</span><b>{count}</b></p><i><b style={{width:String(p)+"%"}}/></i></div>})}</section><section className="panel"><h3>أكثر المحاور تأثرًا</h3><div className="axis-list">{(data?.axis_averages||[]).map((a:any)=><div key={a.axis_key}><p><b>{a.title}</b><span>{n(a.avg_pct)}%</span></p><i><b style={{width:String(a.avg_pct)+"%"}}/></i></div>)}</div></section></div>
 

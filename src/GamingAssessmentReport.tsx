@@ -1,5 +1,6 @@
 import {useMemo} from "react";
 import "./assessments.css";
+import "./gaming-assessment-report.css";
 
 const pct=(v:any)=>Number.isFinite(Number(v))?Math.round(Number(v)*10)/10:0;
 const riskLabel=(v:number)=>v>=75?"مرتفعة جدًا":v>=50?"مرتفعة":v>=25?"تستحق الانتباه":"منخفضة";
@@ -18,6 +19,7 @@ const axisActions:Record<string,string>={
 
 export default function GamingAssessmentReport({data,schoolName}:{data:any;schoolName:string}){
  const sc=data?.selected_scale,s=data?.summary||{};
+ const displaySchool=schoolName.includes("الشعلة")&&!schoolName.includes("الأهلية")?schoolName+" الأهلية":schoolName;
  const students=(data?.students||[]).filter((x:any)=>x.status==="SUBMITTED");
  const questions=sc?.questions||[];
  const choiceStats=data?.choice_stats||[];
@@ -87,7 +89,7 @@ export default function GamingAssessmentReport({data,schoolName}:{data:any;schoo
 
    <div className="gaming-print-header">
      <div className="gaming-report-mark">🎮</div>
-     <div><span>قسم التوجيه الطلابي</span><h1>التقرير التحليلي لمقياس الإفراط في استخدام الألعاب الإلكترونية</h1><p>{schoolName}</p></div>
+     <div><span>قسم التوجيه الطلابي</span><h1>التقرير التحليلي لمقياس الإفراط في استخدام الألعاب الإلكترونية</h1><p>{displaySchool}</p></div>
      <div className="gaming-report-date"><span>تاريخ التقرير</span><b>{new Date().toLocaleDateString("ar-SA",{dateStyle:"long"})}</b></div>
    </div>
 
@@ -184,7 +186,7 @@ export default function GamingAssessmentReport({data,schoolName}:{data:any;schoo
      </ul>
    </section>
 
-   <footer className="gaming-report-footer"><div><b>قسم التوجيه الطلابي</b><span>{schoolName}</span></div><div><span>تقرير سري للاستخدام الإداري</span><b>{new Date().toLocaleString("ar-SA")}</b></div></footer>
+   <footer className="gaming-report-footer"><div><b>قسم التوجيه الطلابي</b><span>{displaySchool}</span></div><div><span>تقرير سري للاستخدام الإداري</span><b>{new Date().toLocaleString("ar-SA")}</b></div></footer>
  </section>
 }
 

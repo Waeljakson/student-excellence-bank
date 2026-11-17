@@ -65,6 +65,8 @@ export default function GamingAssessmentReport({data,schoolName}:{data:any;schoo
  },[data?.class_stats,students]);
 
  const patterns=choiceStats.filter((q:any)=>Number(q.question_no)<=6);
+ const regulation=choiceStats.filter((q:any)=>Number(q.question_no)>=39&&Number(q.question_no)<=44);
+ const openResponses=questions.filter((q:any)=>Number(q.question_no)>=45&&Number(q.question_no)<=47).map((q:any)=>({question_no:q.question_no,prompt_ar:q.prompt_ar,values:students.map((st:any)=>String(st.answers?.[String(q.question_no)]||"").trim()).filter(Boolean)}));
  const topAxis=axes[0],secondAxis=axes[1],topClass=classRows[0];
  const participationNote=completion>=80
    ?"نسبة المشاركة مرتفعة وتسمح بقراءة مدرسية أكثر استقرارًا للنتائج الحالية."
@@ -144,8 +146,24 @@ export default function GamingAssessmentReport({data,schoolName}:{data:any;schoo
      </article>)}</div>
    </section>
 
+   <section className="gaming-report-section">
+     <header><span>04</span><div><h3>الضبط الذاتي والاستعداد للدعم</h3><p>يوضح وجود قواعد أسرية، ومحاولات خفض اللعب، والجوانب الأكثر تأثرًا، واستعداد الطالب للحصول على مساعدة.</p></div></header>
+     <div className="gaming-pattern-grid regulation-grid">{regulation.map((q:any)=><article key={q.question_no}>
+       <h4>س{q.question_no} · {q.prompt_ar}</h4>
+       <div>{(q.options||[]).map((o:any)=>{
+         const count=Number(o.count||0),p=submitted?count*100/submitted:0;
+         return <div className="pattern-row" key={o.code}><p><span>{o.label}</span><b>{count} · {pct(p)}%</b></p><i><em style={{width:Math.min(100,p)+"%"}}/></i></div>
+       })}</div>
+     </article>)}</div>
+     <div className="open-response-summary">
+       <h4>الإجابات المفتوحة</h4>
+       <p>تُعرض دون أسماء للاستفادة النوعية في التخطيط الإرشادي.</p>
+       {openResponses.map((q:any)=><article key={q.question_no}><header><b>س{q.question_no}</b><span>{q.prompt_ar}</span><em>{q.values.length} إجابة</em></header><div>{q.values.slice(0,10).map((v:string,i:number)=><p key={i}>“{v}”</p>)}</div>{q.values.length>10&&<small>+ {q.values.length-10} إجابة إضافية محفوظة في بيانات المقياس.</small>}</article>)}
+     </div>
+   </section>
+
    <section className="gaming-report-section page-break-before">
-     <header><span>04</span><div><h3>الصفوف والفصول ذات الأولوية</h3><p>المتوسطات ترتب الفصول حسب نتائج الطلاب الذين أتموا المقياس، مع إظهار نسبة المشاركة لتجنب التفسير المضلل.</p></div></header>
+     <header><span>05</span><div><h3>الصفوف والفصول ذات الأولوية</h3><p>المتوسطات ترتب الفصول حسب نتائج الطلاب الذين أتموا المقياس، مع إظهار نسبة المشاركة لتجنب التفسير المضلل.</p></div></header>
      <div className="gaming-two-col align-start">
        <div><h4 className="subhead">حسب الصف</h4><table className="gaming-report-table"><thead><tr><th>الصف</th><th>المشاركة</th><th>المتوسط</th></tr></thead><tbody>{(data?.grade_stats||[]).map((g:any)=><tr key={g.grade_name}><td>{g.grade_name}</td><td>{g.submitted}/{g.eligible} · {pct(g.completion_pct)}%</td><td><b>{pct(g.avg_score_pct)}%</b></td></tr>)}</tbody></table></div>
        <div><h4 className="subhead">أعلى الفصول مؤشرًا</h4><table className="gaming-report-table"><thead><tr><th>الفصل</th><th>المشاركة</th><th>المتوسط</th><th>أولوية مرتفعة</th></tr></thead><tbody>{classRows.slice(0,12).map((c:any)=><tr key={c.grade_name+"|"+c.class_name}><td>{c.grade_name} · {c.class_name}</td><td>{c.submitted}/{c.eligible} · {pct(c.completion_pct)}%</td><td><b>{pct(c.avg_score_pct)}%</b></td><td>{c.high} · {pct(c.highPct)}%</td></tr>)}</tbody></table></div>
@@ -154,19 +172,19 @@ export default function GamingAssessmentReport({data,schoolName}:{data:any;schoo
    </section>
 
    <section className="gaming-report-section page-break-before">
-     <header><span>05</span><div><h3>أعلى البنود الدالة على المشكلة</h3><p>ترتيب البنود المسجلة حسب متوسط شدة الإجابة بين الطلاب المشاركين.</p></div></header>
+     <header><span>06</span><div><h3>أعلى البنود الدالة على المشكلة</h3><p>ترتيب البنود المسجلة حسب متوسط شدة الإجابة بين الطلاب المشاركين.</p></div></header>
      <div className="gaming-question-report">{questionStats.slice(0,15).map((q:any,i:number)=><article key={q.no}>
        <b>{i+1}</b><div><span>س{q.no} · {q.axis}</span><h4>{q.text}</h4><i><em style={{width:Math.min(100,q.avgPct)+"%"}}/></i></div><strong>{pct(q.avgPct)}%</strong>
      </article>)}</div>
    </section>
 
    <section className="gaming-report-section">
-     <header><span>06</span><div><h3>الطلاب ذوو الأولوية المرتفعة</h3><p>قائمة إدارية سرية للمتابعة الفردية، ولا تظهر للطلاب أو أولياء الأمور ضمن التقرير المدرسي.</p></div></header>
+     <header><span>07</span><div><h3>الطلاب ذوو الأولوية المرتفعة</h3><p>قائمة إدارية سرية للمتابعة الفردية، ولا تظهر للطلاب أو أولياء الأمور ضمن التقرير المدرسي.</p></div></header>
      <table className="gaming-report-table priority-table"><thead><tr><th>#</th><th>الطالب</th><th>الصف / الفصل</th><th>المؤشر</th><th>المستوى</th><th>طلب دعم</th></tr></thead><tbody>{students.filter((x:any)=>["HIGH","VERY_HIGH"].includes(String(x.risk_code))).map((x:any,i:number)=><tr key={x.student_id}><td>{i+1}</td><td><b>{x.student_name}</b><small>{x.student_no}</small></td><td>{x.grade_name} · {x.class_name}</td><td>{pct(x.score_pct)}%</td><td>{x.risk_label_ar}</td><td>{["YES","MAYBE"].includes(String(x.answers?.["43"]||""))?"نعم":"—"}</td></tr>)}</tbody></table>
    </section>
 
    <section className="gaming-report-section page-break-before">
-     <header><span>07</span><div><h3>خطة التدخل المدرسية المقترحة</h3><p>تُبنى الأولويات على المحاور الأعلى في النتائج الحالية.</p></div></header>
+     <header><span>08</span><div><h3>خطة التدخل المدرسية المقترحة</h3><p>تُبنى الأولويات على المحاور الأعلى في النتائج الحالية.</p></div></header>
      <div className="gaming-recommendations">{axes.slice(0,4).map((a,i)=><article key={a.key}><span>{i+1}</span><div><h4>{a.title}</h4><p>{axisActions[a.key]||"إعداد تدخل إرشادي موجه لهذا المحور ومتابعة الحالات الأعلى."}</p><small>متوسط المحور {pct(a.avg)}% · {a.attention} طالبًا عند 50% فأكثر</small></div></article>)}</div>
      <div className="gaming-action-timeline">
        <div><b>خلال 48 ساعة</b><p>تحديد الحالات المرتفعة جدًا والتواصل مع أولياء أمورها، ومراجعة الطلاب الذين طلبوا مساعدة.</p></div>
@@ -176,7 +194,7 @@ export default function GamingAssessmentReport({data,schoolName}:{data:any;schoo
    </section>
 
    <section className="gaming-report-section methodology">
-     <header><span>08</span><div><h3>منهجية القراءة وحدود التقرير</h3></div></header>
+     <header><span>09</span><div><h3>منهجية القراءة وحدود التقرير</h3></div></header>
      <ul>
        <li>يعتمد التقرير على {submitted} استجابة مكتملة وقت الطباعة من أصل {eligible} طالبًا مستهدفًا.</li>
        <li>يتكون الجزء المسجل من {scoredCount} بندًا موزعًا على {axesCount} محاور، ويُحوّل المجموع إلى نسبة مئوية.</li>

@@ -14,11 +14,11 @@ const fmt=(v?:string|null)=>v?new Date(v).toLocaleString("ar-SA",{dateStyle:"med
 
 export default function AssessmentAdmin({schoolName}:{schoolName:string}){
  const[data,setData]=useState<any>(null),[scaleId,setScaleId]=useState(""),[busy,setBusy]=useState(false),[error,setError]=useState(""),[message,setMessage]=useState(""),[risk,setRisk]=useState("ALL"),[grade,setGrade]=useState("ALL"),[query,setQuery]=useState("");
- const[opensAt,setOpensAt]=useState(""),[closesAt,setClosesAt]=useState(""),[preview,setPreview]=useState(false),[builder,setBuilder]=useState(false);
+ const[opensAt,setOpensAt]=useState(""),[closesAt,setClosesAt]=useState(""),[extendOpen,setExtendOpen]=useState(false),[extendUntil,setExtendUntil]=useState(""),[preview,setPreview]=useState(false),[builder,setBuilder]=useState(false);
  async function load(id=scaleId){setBusy(true);try{const d=await rpc<any>("api_assessment_admin_data",id?{p_scale_id:id}:{});setData(d);if(!id&&d.selected_scale?.id)setScaleId(d.selected_scale.id);setError("")}catch(e){setError(niceError(e))}finally{setBusy(false)}}
  useEffect(()=>{void load("")},[]);
  const sc=data?.selected_scale,s=data?.summary;
- useEffect(()=>{setOpensAt(toInput(sc?.opens_at));setClosesAt(toInput(sc?.closes_at))},[sc?.id,sc?.opens_at,sc?.closes_at]);
+ useEffect(()=>{setOpensAt(toInput(sc?.opens_at));setClosesAt(toInput(sc?.closes_at));setExtendUntil(toInput(sc?.closes_at));setExtendOpen(false)},[sc?.id,sc?.opens_at,sc?.closes_at]);
 
  async function action(a:string){
   if(!sc)return;setBusy(true);setMessage("");setError("");
@@ -43,6 +43,30 @@ export default function AssessmentAdmin({schoolName}:{schoolName:string}){
   }catch(e){const m=niceError(e);setError(m.includes("ASSESSMENT_SCHEDULE")?"تعذر حفظ الجدولة. راجع وقت النشر والإغلاق.":m)}finally{setBusy(false)}
  }
 
+ async function extendAssessment(nextValue?:string){
+  if(!sc)return;
+  setError("");setMessage("");
+  const currentClose=sc.closes_at?new Date(sc.closes_at):new Date();
+  const next=nextValue?new Date(nextValue):new Date(extendUntil);
+  if(Number.isNaN(next.getTime())){setError("حدد تاريخ ووقت صحيحين للتمديد.");return}
+  if(next<=new Date()){setError("موعد الإغلاق الجديد يجب أن يكون في المستقبل.");return}
+  if(sc.closes_at&&next<=currentClose){setError("موعد الإغلاق الجديد يجب أن يكون بعد موعد الإغلاق الحالي.");return}
+  const openBase=sc.opens_at?new Date(sc.opens_at):new Date(Date.now()-60000);
+  if(!window.confirm("سيتم تمديد المقياس حتى "+next.toLocaleString("ar-SA")+". هل تريد المتابعة؟"))return;
+  setBusy(true);
+  try{
+   await rpc("api_assessment_set_state",{p_scale_id:sc.id,p_action:`SCHEDULE|${openBase.toISOString()}|${next.toISOString()}`});
+   await load(sc.id);
+   setExtendOpen(false);
+   setMessage("تم تمديد مدة المقياس بنجاح حتى "+next.toLocaleString("ar-SA")+". وسيستمر استقبال إجابات الطلاب حتى الموعد الجديد.");
+  }catch(e){const m=niceError(e);setError(m.includes("ASSESSMENT_SCHEDULE")?"تعذر تمديد المقياس. راجع الموعد الجديد.":m)}finally{setBusy(false)}
+ }
+ function quickExtend(days:number){
+  const base=Math.max(Date.now(),sc?.closes_at?new Date(sc.closes_at).getTime():Date.now());
+  const d=new Date(base+days*24*60*60*1000);
+  void extendAssessment(toInput(d.toISOString()));
+ }
+
  const grades=useMemo(()=>[...new Set<string>((data?.students||[]).map((x:any)=>x.grade_name))],[data]);
  const rows=useMemo(()=>(data?.students||[]).filter((x:any)=>x.status==="SUBMITTED"&&(risk==="ALL"||x.risk_code===risk)&&(grade==="ALL"||x.grade_name===grade)&&(!query||String(x.student_name+" "+x.student_no).includes(query))),[data,risk,grade,query]);
  const now=Date.now(),openMs=sc?.opens_at?new Date(sc.opens_at).getTime():0,closeMs=sc?.closes_at?new Date(sc.closes_at).getTime():0;
@@ -51,6 +75,7 @@ export default function AssessmentAdmin({schoolName}:{schoolName:string}){
  const elapsed=sc?.status==="OPEN"&&!!closeMs&&closeMs<now;
  const stateLabel=sc?.status==="DRAFT"?"مسودة غير منشورة":scheduled?"مجدول للنشر":active?"منشور للطلاب":elapsed?"انتهت فترة الإجابة":sc?.status==="CLOSED"?"مغلق":"—";
  const canSchedule=sc?.status==="DRAFT"||scheduled;
+ const canExtend=(active||elapsed)&&!sc?.results_published_at;
 
  function csv(){const a=[["رقم الطالب","اسم الطالب","الصف","الفصل","النسبة","المستوى"],...rows.map((x:any)=>[x.student_no,x.student_name,x.grade_name,x.class_name,x.score_pct,x.risk_label_ar])];const blob=new Blob(["\ufeff"+a.map(r=>r.map((v:any)=>'"'+String(v??"").replace(/"/g,'""')+'"').join(",")).join("\n")],{type:"text/csv;charset=utf-8"});const u=URL.createObjectURL(blob),el=document.createElement("a");el.href=u;el.download="نتائج-المقاييس.csv";el.click();URL.revokeObjectURL(u)}
 
@@ -58,7 +83,7 @@ export default function AssessmentAdmin({schoolName}:{schoolName:string}){
   <header className="assessment-title admin"><div><span>بنك التميز</span><h1>المقاييس والنتائج</h1><p>{schoolName} — إعداد المقاييس وجدولتها ومتابعة النتائج.</p></div><div className="assessment-admin-tools"><label>المقياس<select value={scaleId} onChange={e=>{setScaleId(e.target.value);void load(e.target.value)}}>{(data?.scales||[]).map((x:any)=><option key={x.id} value={x.id}>{x.short_title_ar}</option>)}</select></label><button className="btn primary" onClick={()=>setBuilder(true)}>+ إضافة مقياس جديد</button></div></header>
   {error&&<div className="notice error">{error}</div>}{message&&<div className="notice">{message}</div>}
   {sc&&<>
-   <section className="panel admin-head"><div><h2>{sc.ui_meta?.icon||"📋"} {sc.short_title_ar}</h2><p>الحالة: <b>{stateLabel}</b> · النتائج: <b>{sc.results_published_at?"منشورة":"غير منشورة"}</b></p>{sc.opens_at&&<small>النشر: {fmt(sc.opens_at)} · الإغلاق: {fmt(sc.closes_at)}</small>}</div><div><button className="btn preview-btn" onClick={()=>setPreview(true)}>👁 معاينة المقياس</button>{scheduled&&<button className="btn ghost" disabled={busy} onClick={()=>void action("DRAFT")}>إلغاء الجدولة</button>}{active&&<button className="btn secondary" disabled={busy} onClick={()=>void action("CLOSE")}>إغلاق الآن</button>}{elapsed&&<button className="btn secondary" disabled={busy} onClick={()=>void action("CLOSE")}>اعتماد انتهاء المدة</button>}{sc.status==="CLOSED"&&!sc.results_published_at&&<button className="btn primary" disabled={busy||!s?.submitted_count} onClick={()=>void action("PUBLISH_RESULTS")}>اعتماد ونشر النتائج</button>}{sc.results_published_at&&<button className="btn ghost" disabled={busy} onClick={()=>void action("UNPUBLISH_RESULTS")}>إخفاء النتائج</button>}</div></section>
+   <section className="panel admin-head"><div><h2>{sc.ui_meta?.icon||"📋"} {sc.short_title_ar}</h2><p>الحالة: <b>{stateLabel}</b> · النتائج: <b>{sc.results_published_at?"منشورة":"غير منشورة"}</b></p>{sc.opens_at&&<small>النشر: {fmt(sc.opens_at)} · الإغلاق: {fmt(sc.closes_at)}</small>}</div><div><button className="btn preview-btn" onClick={()=>setPreview(true)}>👁 معاينة المقياس</button>{scheduled&&<button className="btn ghost" disabled={busy} onClick={()=>void action("DRAFT")}>إلغاء الجدولة</button>}{canExtend&&<button className="btn extend-btn" disabled={busy} onClick={()=>setExtendOpen(v=>!v)}>⏱ تمديد مدة المقياس</button>}{active&&<button className="btn secondary" disabled={busy} onClick={()=>void action("CLOSE")}>إغلاق الآن</button>}{elapsed&&<button className="btn secondary" disabled={busy} onClick={()=>void action("CLOSE")}>اعتماد انتهاء المدة</button>}{sc.status==="CLOSED"&&!sc.results_published_at&&<button className="btn primary" disabled={busy||!s?.submitted_count} onClick={()=>void action("PUBLISH_RESULTS")}>اعتماد ونشر النتائج</button>}{sc.results_published_at&&<button className="btn ghost" disabled={busy} onClick={()=>void action("UNPUBLISH_RESULTS")}>إخفاء النتائج</button>}</div></section>
 
    {canSchedule&&<section className="panel assessment-schedule">
     <div className="schedule-copy"><span>التحكم في النشر</span><h3>{sc.status==="DRAFT"?"المقياس جاهز كمسودة — أنت تحدد موعد ظهوره":"تعديل موعد النشر والإغلاق"}</h3><p>لن يظهر المقياس لأي طالب قبل وقت النشر المحدد. ويتوقف استقبال الإجابات تلقائيًا عند وقت الإغلاق.</p></div>
@@ -66,6 +91,19 @@ export default function AssessmentAdmin({schoolName}:{schoolName:string}){
      <label><span>تاريخ ووقت النشر</span><input type="datetime-local" value={opensAt} onChange={e=>setOpensAt(e.target.value)}/></label>
      <label><span>تاريخ ووقت الإغلاق</span><input type="datetime-local" value={closesAt} onChange={e=>setClosesAt(e.target.value)}/></label>
      <button className="btn primary" disabled={busy} onClick={()=>void saveSchedule()}>{scheduled?"حفظ تعديل الجدولة":"حفظ الجدولة"}</button>
+    </div>
+   </section>}
+
+   {extendOpen&&canExtend&&<section className="panel assessment-extend-panel">
+    <div className="extend-copy"><span>تمديد المقياس</span><h3>اختر موعد الإغلاق الجديد</h3><p>لن تتغير إجابات الطلاب السابقة، وسيتم فقط تمديد فترة استقبال الإجابات حتى الموعد الجديد.</p><small>موعد الإغلاق الحالي: <b>{fmt(sc.closes_at)}</b></small></div>
+    <div className="extend-controls">
+      <div className="extend-quick">
+        <button className="btn ghost" disabled={busy} onClick={()=>quickExtend(1)}>+ يوم</button>
+        <button className="btn ghost" disabled={busy} onClick={()=>quickExtend(3)}>+ 3 أيام</button>
+        <button className="btn ghost" disabled={busy} onClick={()=>quickExtend(7)}>+ 7 أيام</button>
+      </div>
+      <label><span>أو حدد التاريخ والوقت</span><input type="datetime-local" value={extendUntil} min={toInput(new Date().toISOString())} onChange={e=>setExtendUntil(e.target.value)}/></label>
+      <div className="extend-actions"><button className="btn primary" disabled={busy||!extendUntil} onClick={()=>void extendAssessment()}>حفظ التمديد</button><button className="btn ghost" disabled={busy} onClick={()=>setExtendOpen(false)}>إلغاء</button></div>
     </div>
    </section>}
 
